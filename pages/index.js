@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import Head from 'next/head';
-import { SessionProvider } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import TabNavigation from '../components/TabNavigation';
 import SearchSection from '../components/SearchSection';
 import ImportSection from '../components/ImportSection';
@@ -8,12 +8,15 @@ import RatingsSection from '../components/RatingsSection';
 import PrivacyDashboard from '../components/PrivacyDashboard';
 import RecommendationsSection from '../components/RecommendationsSection';
 import RatingModal from '../components/RatingModal';
+import SignInModal from '../components/SignInModal';
 import AuthButton from '../components/AuthButton';
 import { useVideos } from '../hooks/useVideos';
 
-function HomeContent() {
+export default function Home() {
   const [activeTab, setActiveTab] = useState('search');
   const [ratingModalVideo, setRatingModalVideo] = useState(null);
+  const [showSignInModal, setShowSignInModal] = useState(false);
+  const { data: session } = useSession();
 
   const {
     videos,
@@ -34,6 +37,11 @@ function HomeContent() {
   };
 
   const handleRateVideo = (video) => {
+    // Check if user is signed in before allowing rating
+    if (!session) {
+      setShowSignInModal(true);
+      return;
+    }
     setRatingModalVideo(video);
   };
 
@@ -67,47 +75,6 @@ function HomeContent() {
   };
 
   return (
-    <main className="container">
-      <header className="header">
-        <div className="header-content">
-          <h1 className="app-title">YouTube Video Rating</h1>
-          <p className="app-subtitle">
-            Rate and manage your YouTube watch history securely
-          </p>
-        </div>
-        <div className="user-section">
-          <AuthButton />
-        </div>
-      </header>
-
-      <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
-
-      <div className="tab-content">
-        {loading && <p>Loading...</p>}
-        {error && <div className="status status--error">{error}</div>}
-        {renderActiveTab()}
-      </div>
-
-      <RatingModal
-        video={ratingModalVideo}
-        isOpen={!!ratingModalVideo}
-        onClose={() => setRatingModalVideo(null)}
-        onSave={handleSaveRating}
-      />
-
-      {process.env.NODE_ENV === 'development' && (
-        <div style={{ position: 'fixed', bottom: '20px', right: '20px' }}>
-          <button onClick={clearAllData} className="btn btn--outline btn--sm">
-            Clear All Data (Dev)
-          </button>
-        </div>
-      )}
-    </main>
-  );
-}
-
-export default function Home() {
-  return (
     <>
       <Head>
         <title>YouTube Video Rating App</title>
@@ -116,9 +83,47 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <SessionProvider>
-        <HomeContent />
-      </SessionProvider>
+      <main className="container">
+        <header className="header">
+          <div className="header-content">
+            <h1 className="app-title">YouTube Video Rating</h1>
+            <p className="app-subtitle">
+              Rate and manage your YouTube watch history securely
+            </p>
+          </div>
+          <div className="user-section">
+            <AuthButton />
+          </div>
+        </header>
+
+        <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+
+        <div className="tab-content">
+          {loading && <p>Loading...</p>}
+          {error && <div className="status status--error">{error}</div>}
+          {renderActiveTab()}
+        </div>
+
+        <RatingModal
+          video={ratingModalVideo}
+          isOpen={!!ratingModalVideo}
+          onClose={() => setRatingModalVideo(null)}
+          onSave={handleSaveRating}
+        />
+
+        <SignInModal
+          isOpen={showSignInModal}
+          onClose={() => setShowSignInModal(false)}
+        />
+
+        {process.env.NODE_ENV === 'development' && (
+          <div style={{ position: 'fixed', bottom: '20px', right: '20px' }}>
+            <button onClick={clearAllData} className="btn btn--outline btn--sm">
+              Clear All Data (Dev)
+            </button>
+          </div>
+        )}
+      </main>
     </>
   );
 }
