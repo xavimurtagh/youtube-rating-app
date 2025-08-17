@@ -7,7 +7,7 @@ export default function RatingModal({ video, isOpen, onClose, onSave }) {
   if (!isOpen || !video) return null;
 
   const handleSave = () => {
-    onSave(video, ratingValue);
+    onSave(video, rating);
     onClose();
   };
 
@@ -106,7 +106,7 @@ export default function RatingModal({ video, isOpen, onClose, onSave }) {
           <button onClick={onClose} className="btn btn--secondary">
             Cancel
           </button>
-          <button onClick={handleSave} className="btn btn--primary">
+          <button onClick={() => onSave(video, rating)} className="btn btn--primary">
             Save Rating
           </button>
         </div>
