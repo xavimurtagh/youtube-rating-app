@@ -7,7 +7,7 @@ export default function RatingModal({ video, isOpen, onClose, onSave }) {
   if (!isOpen || !video) return null;
 
   const handleSave = () => {
-    onSave(video.id, rating);
+    onSave(video, ratingValue);
     onClose();
   };
 
