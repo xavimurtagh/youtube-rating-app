@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import VideoList from './VideoList';
 
-export default function MusicSection({ onRateVideo, musicVideos, ratings }) {
+export default function MusicSection({ onRateVideo, musicVideos, ratings, onIgnoreVideo }) {
   const [searchResults, setSearchResults] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
