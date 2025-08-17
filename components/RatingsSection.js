@@ -59,13 +59,8 @@ export default function RatingsSection({ videos, ratings, onRateVideo, stats }) 
   const filteredVideos = useMemo(() => {
     let filtered = regularVideos;
 
-    switch (filterType) {
-      case 'rated':
-        filtered = filtered.filter(video => getRatingValue(video.id) !== null);
-        break;
-      case 'unrated':
-        filtered = filtered.filter(video => getRatingValue(video.id) === null);
-        break;
+    if (filterType==='rated') {
+      filtered = filtered.filter(v=>getRatingValue(v.id)!==null);
     }
 
     if (ratingFilter !== 'all') {
@@ -235,12 +230,6 @@ export default function RatingsSection({ videos, ratings, onRateVideo, stats }) 
               onClick={() => setFilterType('rated')}
             >
               Rated ({regularVideoStats.ratedVideos})
-            </button>
-            <button
-              className={`btn btn--sm ${filterType === 'unrated' ? 'btn--primary' : 'btn--outline'}`}
-              onClick={() => setFilterType('unrated')}
-            >
-              To Rate ({regularVideoStats.unratedVideos})
             </button>
           </div>
         </div>
