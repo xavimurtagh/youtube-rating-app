@@ -1638,3 +1638,113 @@ p {
     display: none;
   }
 }
+
+.ignore-btn {
+  color: var(--color-warning);
+  border-color: var(--color-warning);
+}
+
+.ignore-btn:hover {
+  background: rgba(var(--color-warning-rgb), 0.1);
+}
+
+/* Statistics Page Styles */
+.stats-overview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--space-16);
+  margin-bottom: var(--space-32);
+}
+
+.stats-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: var(--space-24);
+  border: 1px solid var(--color-card-border);
+  margin-bottom: var(--space-24);
+}
+
+.rating-chart {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+}
+
+.rating-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+}
+
+.rating-label {
+  min-width: 40px;
+  font-weight: var(--font-weight-semibold);
+}
+
+.bar-container {
+  flex: 1;
+  height: 20px;
+  background: var(--color-bg-1);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  background: var(--color-primary);
+  transition: width 0.3s ease;
+}
+
+.rating-count {
+  min-width: 30px;
+  text-align: right;
+  font-weight: var(--font-weight-semibold);
+}
+
+.top-videos-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+}
+
+.top-video-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  padding: var(--space-12);
+  background: var(--color-bg-1);
+  border-radius: var(--radius-base);
+}
+
+.rank {
+  min-width: 30px;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+}
+
+.video-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.video-title {
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: var(--space-4);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.video-channel {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.rating-badge {
+  background: var(--color-primary);
+  color: white;
+  padding: var(--space-4) var(--space-8);
+  border-radius: var(--radius-sm);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
+}
