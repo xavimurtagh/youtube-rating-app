@@ -1345,3 +1345,28 @@ p {
   z-index: 1000;
 }
 
+
+.tab-container {
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+  justify-content: center;
+  margin-top: 60px; /* space below header */
+}
+
+.tab-btn {
+  padding: 15px 30px;
+  font-size: 1.2em;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  background-color: #007bff;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.tab-btn:hover {
+  background-color: #0056b3;
+}
+
