@@ -17,6 +17,21 @@ export default function RatingModal({ video, isOpen, onClose, onSave }) {
     }
   };
 
+  const getRatingColor = (value) => {
+    if (value <= 3) return '#ff4444'; // Red for bad
+    if (value <= 6) return '#ffaa00'; // Orange for okay
+    if (value <= 8) return '#44aa44'; // Green for good
+    return '#0088ff'; // Blue for excellent
+  };
+
+  const getRatingLabel = (value) => {
+    if (value <= 2) return 'Terrible';
+    if (value <= 4) return 'Bad';
+    if (value <= 6) return 'Okay';
+    if (value <= 8) return 'Good';
+    return 'Excellent';
+  };
+
   return (
     <div className="modal" onClick={handleOverlayClick}>
       <div className="modal-content">
@@ -26,7 +41,14 @@ export default function RatingModal({ video, isOpen, onClose, onSave }) {
         </div>
 
         <div className="modal-body">
-          <div className="video-info">
+          <div className="video-info-modal">
+            {video.thumbnail && (
+              <img 
+                src={video.thumbnail} 
+                alt={video.title}
+                className="video-thumbnail"
+              />
+            )}
             <div className="video-details">
               <h4 dangerouslySetInnerHTML={{ __html: escapeHtml(video.title) }} />
               <p dangerouslySetInnerHTML={{ __html: escapeHtml(video.channel) }} />
@@ -37,7 +59,7 @@ export default function RatingModal({ video, isOpen, onClose, onSave }) {
           </div>
 
           <div className="rating-section">
-            <label htmlFor="rating-slider">Rate this video (1-10):</label>
+            <label htmlFor="rating-slider">How would you rate this video?</label>
             <div className="rating-input">
               <input
                 type="range"
@@ -47,11 +69,35 @@ export default function RatingModal({ video, isOpen, onClose, onSave }) {
                 value={rating}
                 onChange={(e) => setRating(parseInt(e.target.value))}
                 className="rating-slider"
+                style={{ 
+                  background: `linear-gradient(to right, ${getRatingColor(rating)} 0%, ${getRatingColor(rating)} ${rating * 10}%, #ddd ${rating * 10}%, #ddd 100%)`
+                }}
               />
               <div className="rating-display">
-                <span id="rating-value">{rating}</span>
-                <span className="stars">{'★'.repeat(Math.ceil(rating / 2))}</span>
+                <div className="rating-value-container">
+                  <span 
+                    className="rating-value" 
+                    style={{ color: getRatingColor(rating) }}
+                  >
+                    {rating}
+                  </span>
+                  <span className="rating-max">/10</span>
+                </div>
+                <span 
+                  className="rating-label"
+                  style={{ color: getRatingColor(rating) }}
+                >
+                  {getRatingLabel(rating)}
+                </span>
               </div>
+            </div>
+
+            <div className="rating-scale">
+              <span>1-2: Terrible</span>
+              <span>3-4: Bad</span>
+              <span>5-6: Okay</span>
+              <span>7-8: Good</span>
+              <span>9-10: Excellent</span>
             </div>
           </div>
         </div>
