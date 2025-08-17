@@ -4,7 +4,9 @@ import { useSession } from 'next-auth/react';
 import TabNavigation from '../components/TabNavigation';
 import SearchSection from '../components/SearchSection';
 import ImportSection from '../components/ImportSection';
+import MusicSection from '../components/MusicSection';
 import RatingsSection from '../components/RatingsSection';
+import UserStatsSection from '../components/UserStatsSection';
 import PrivacyDashboard from '../components/PrivacyDashboard';
 import RecommendationsSection from '../components/RecommendationsSection';
 import RatingModal from '../components/RatingModal';
@@ -16,8 +18,9 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState('search');
   const [ratingModalVideo, setRatingModalVideo] = useState(null);
   const [showSignInModal, setShowSignInModal] = useState(false);
+  const [storageWarning, setStorageWarning] = useState(null);
   const { data: session } = useSession();
-
+  
   const {
     videos,
     ratings,
@@ -32,12 +35,16 @@ export default function Home() {
   const stats = getVideoStats();
 
   const handleImportComplete = (importedVideos) => {
-    addVideos(importedVideos);
-    setActiveTab('ratings');
+    const result = addVideos(importedVideos);
+    
+    if (result && result.truncated) {
+      setStorageWarning(`Large watch history detected! Showing most recent ${result.saved || 500} videos to keep the app running smoothly.`);
+    }
+    
+    setActiveTab('import'); // Stay on import tab to show imported videos
   };
 
   const handleRateVideo = (video) => {
-    // Check if user is signed in before allowing rating
     if (!session) {
       setShowSignInModal(true);
       return;
@@ -55,7 +62,16 @@ export default function Home() {
       case 'search':
         return <SearchSection onRateVideo={handleRateVideo} />;
       case 'import':
-        return <ImportSection onImportComplete={handleImportComplete} />;
+        return (
+          <ImportSection
+            videos={videos}
+            ratings={ratings}
+            onImportComplete={handleImportComplete}
+            onRateVideo={handleRateVideo}
+          />
+        );
+      case 'music':
+        return <MusicSection onRateVideo={handleRateVideo} />;
       case 'ratings':
         return (
           <RatingsSection
@@ -63,6 +79,13 @@ export default function Home() {
             ratings={ratings}
             onRateVideo={handleRateVideo}
             stats={stats}
+          />
+        );
+      case 'stats':
+        return (
+          <UserStatsSection
+            videos={videos}
+            ratings={ratings}
           />
         );
       case 'privacy':
@@ -97,9 +120,27 @@ export default function Home() {
         </header>
 
         <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
-
+        
+        {/* Storage Warning */}
+        {storageWarning && (
+          <div className="status status--warning mb-16">
+            <strong>Storage Notice:</strong> {storageWarning}
+            <button 
+              onClick={() => setStorageWarning(null)} 
+              className="btn btn--outline btn--sm"
+              style={{ marginLeft: '8px' }}
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+        
         <div className="tab-content">
-          {loading && <p>Loading...</p>}
+          {loading && (
+            <div className="loading-state">
+              <p>Loading your data...</p>
+            </div>
+          )}
           {error && <div className="status status--error">{error}</div>}
           {renderActiveTab()}
         </div>
@@ -115,14 +156,6 @@ export default function Home() {
           isOpen={showSignInModal}
           onClose={() => setShowSignInModal(false)}
         />
-
-        {process.env.NODE_ENV === 'development' && (
-          <div style={{ position: 'fixed', bottom: '20px', right: '20px' }}>
-            <button onClick={clearAllData} className="btn btn--outline btn--sm">
-              Clear All Data (Dev)
-            </button>
-          </div>
-        )}
       </main>
     </>
   );
