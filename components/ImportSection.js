@@ -165,8 +165,8 @@ export default function ImportSection({
                 videos={currentVideos}
                 ratings={ratings}
                 onRateVideo={onRateVideo}
-                onIgnoreVideo={handleIgnore}
                 showIgnoreButton={true}
+                onIgnoreVideo={handleIgnore}
                 ignoreButtonText="Ignore"
                 showLimit={null}
               />
