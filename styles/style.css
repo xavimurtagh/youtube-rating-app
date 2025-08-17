@@ -1209,3 +1209,129 @@ p {
     background: linear-gradient(90deg, var(--color-teal-300), var(--color-teal-400));
   }
 }
+
+/* Import Section Enhancements */
+.import-stats {
+  margin: var(--space-24) 0;
+}
+
+.stats-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: var(--space-12);
+}
+
+.section-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-16);
+  flex-wrap: wrap;
+  gap: var(--space-12);
+}
+
+.view-controls {
+  display: flex;
+  gap: var(--space-8);
+}
+
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: var(--space-24) 0;
+  padding: var(--space-16);
+  background: var(--color-surface);
+  border-radius: var(--radius-base);
+  border: 1px solid var(--color-card-border);
+}
+
+.pagination-info {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+/* Video Card Enhancements */
+.video-card.music-video {
+  border: 2px solid var(--color-success);
+  background: var(--color-bg-3);
+}
+
+.music-badge {
+  position: absolute;
+  top: var(--space-8);
+  left: var(--space-8);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: var(--space-2) var(--space-6);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+}
+
+.ignore-btn {
+  color: var(--color-warning);
+  border-color: var(--color-warning);
+}
+
+.ignore-btn:hover {
+  background: rgba(var(--color-warning-rgb), 0.1);
+}
+
+/* Music Section */
+.music-view-toggle {
+  display: flex;
+  gap: var(--space-8);
+  margin-bottom: var(--space-24);
+  justify-content: center;
+}
+
+.music-stats {
+  margin: var(--space-24) 0;
+}
+
+/* Video Actions */
+.video-actions {
+  display: flex;
+  gap: var(--space-8);
+  margin-top: var(--space-16);
+  flex-wrap: wrap;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .section-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .view-controls {
+    justify-content: center;
+  }
+  
+  .pagination {
+    flex-direction: column;
+    gap: var(--space-12);
+  }
+  
+  .music-view-toggle {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .stats-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-cards {
+    grid-template-columns: 1fr;
+  }
+  
+  .video-actions {
+    flex-direction: column;
+  }
+}
+
