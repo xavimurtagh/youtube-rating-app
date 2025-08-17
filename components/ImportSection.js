@@ -12,6 +12,7 @@ export default function ImportSection({
   const [importStatus, setImportStatus] = useState(null);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
+  const [sortOrder, setSortOrder] = useState('newest');
   const VIDEOS_PER_PAGE = 20;
 
   const handleFileParsed = (result) => {
