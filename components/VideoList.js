@@ -18,9 +18,15 @@ export default function VideoList({
     );
   }
 
+  // If showLimit is null/undefined/0, show all
+  const displayVideos =
+    !showLimit || showLimit >= videos.length
+      ? videos
+      : videos.slice(0, showLimit);
+
   return (
     <div className="videos-grid">
-      {videos.slice(0, showLimit).map(video => (
+      {displayVideos.map(video => (
         <VideoCard
           key={video.id}
           video={video}
@@ -31,11 +37,12 @@ export default function VideoList({
           ignoreButtonText={ignoreButtonText}
         />
       ))}
-      {videos.length > showLimit && (
-        <div className="more-videos-info">
-          {videos.length - showLimit} more videos available
-        </div>
-      )}
+      {showLimit &&
+        videos.length > showLimit && (
+          <div className="more-videos-info">
+            {videos.length - showLimit} more videos available
+          </div>
+        )}
     </div>
   );
 }
