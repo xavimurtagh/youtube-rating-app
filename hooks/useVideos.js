@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { loadRatings, saveRatings, loadIgnored, saveIgnored } from '../utils/localStorage';
 
 // SSR-safe localStorage functions
 function safeLoadFromStorage(key, defaultValue = null) {
@@ -41,7 +42,29 @@ export function useVideos() {
   const [ratings, setRatings] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [ratings, setRatings] = useState({});
+  const [ignoredIds, setIgnoredIds] = useState([]);
 
+  useEffect(() => {
+    setRatings(loadRatings());
+    setIgnoredIds(loadIgnored());
+  }, []);
+
+  const rateVideo = (videoId, rating) => {
+    const newRatings = { ...ratings, [videoId]: rating };
+    setRatings(newRatings);
+    saveRatings(newRatings);
+  };
+
+  const ignoreVideo = (videoId) => {
+    const newIgnored = Array.from(new Set([...ignoredIds, videoId]));
+    setIgnoredIds(newIgnored);
+    saveIgnored(newIgnored);
+  };
+
+  // When computing lists:
+  const unrated = allVideos.filter(v => !ratings[v.id] && !ignoredIds.includes(v.id));
+  
   // Load data on mount (client-side only)
   useEffect(() => {
     try {
