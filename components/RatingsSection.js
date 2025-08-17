@@ -4,27 +4,26 @@ import VideoList from './VideoList';
 
 export default function RatingsSection({ videos, ratings, onRateVideo, stats }) {
   const { data: session } = useSession();
-  const [filterType, setFilterType] = useState('all'); // 'all', 'rated', 'unrated'
-  const [ratingFilter, setRatingFilter] = useState('all'); // 'all', '1-2', '3-4', '5-6', '7-8', '9-10'
+  const [filterType, setFilterType] = useState('all');
+  const [ratingFilter, setRatingFilter] = useState('all');
   const [genreFilter, setGenreFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('rating'); // 'rating', 'date', 'title', 'channel'
-  const [sortOrder, setSortOrder] = useState('desc'); // 'asc', 'desc'
-  const [groupBy, setGroupBy] = useState('rating'); // 'rating', 'genre', 'none'
+  const [sortBy, setSortBy] = useState('rating');
+  const [sortOrder, setSortOrder] = useState('desc');
+  const [groupBy, setGroupBy] = useState('rating');
+
+  // Helper to get rating value (handle both old and new format)
+  const getRatingValue = (videoId) => {
+    const rating = ratings[videoId];
+    if (!rating) return null;
+    return typeof rating === 'object' ? rating.rating : rating;
+  };
 
   // Filter out music videos - only show regular videos in ratings
   const regularVideos = videos.filter(video => !video.isMusic && !isMusicVideo(video));
-  
+
   function isMusicVideo(video) {
-    const title = (video.title || '').toLowerCase();
-    const channel = (video.channel || '').toLowerCase();
-    const musicKeywords = [
-      'music', 'song', 'album', 'artist', 'band', 'official music video',
-      'live performance', 'concert', 'acoustic', 'cover', 'remix',
-      'soundtrack', 'single', 'vevo', 'records'
-    ];
-    return musicKeywords.some(keyword => 
-      title.includes(keyword) || channel.includes(keyword)
-    );
+    const text = `${video.title || ''} ${video.channel || ''}`.toLowerCase();
+    return /music|song|album|artist|official music video|vevo|records/i.test(text);
   }
 
   function getVideoGenre(video) {
@@ -32,7 +31,7 @@ export default function RatingsSection({ videos, ratings, onRateVideo, stats }) 
     const channel = (video.channel || '').toLowerCase();
     const description = (video.description || '').toLowerCase();
     const searchText = `${title} ${channel} ${description}`;
-    
+
     const genres = {
       gaming: ['gaming', 'gameplay', 'game', 'playthrough', 'review', 'trailer'],
       education: ['tutorial', 'how to', 'learn', 'education', 'course', 'lesson'],
@@ -43,7 +42,7 @@ export default function RatingsSection({ videos, ratings, onRateVideo, stats }) 
       lifestyle: ['vlog', 'lifestyle', 'daily', 'routine', 'fashion', 'beauty'],
       science: ['science', 'physics', 'chemistry', 'biology', 'space', 'nasa']
     };
-    
+
     for (const [genre, keywords] of Object.entries(genres)) {
       if (keywords.some(keyword => searchText.includes(keyword))) {
         return genre;
@@ -62,18 +61,18 @@ export default function RatingsSection({ videos, ratings, onRateVideo, stats }) 
 
     switch (filterType) {
       case 'rated':
-        filtered = filtered.filter(video => ratings[video.id]);
+        filtered = filtered.filter(video => getRatingValue(video.id) !== null);
         break;
       case 'unrated':
-        filtered = filtered.filter(video => !ratings[video.id]);
+        filtered = filtered.filter(video => getRatingValue(video.id) === null);
         break;
     }
 
     if (ratingFilter !== 'all') {
       filtered = filtered.filter(video => {
-        const rating = ratings[video.id]?.rating;
+        const rating = getRatingValue(video.id);
         if (!rating) return false;
-        
+
         switch (ratingFilter) {
           case '1-2': return rating >= 1 && rating <= 2;
           case '3-4': return rating >= 3 && rating <= 4;
@@ -94,14 +93,14 @@ export default function RatingsSection({ videos, ratings, onRateVideo, stats }) 
 
   const sortedVideos = useMemo(() => {
     const sorted = [...filteredVideos];
-    
+
     sorted.sort((a, b) => {
       let aValue, bValue;
-      
+
       switch (sortBy) {
         case 'rating':
-          aValue = ratings[a.id]?.rating || 0;
-          bValue = ratings[b.id]?.rating || 0;
+          aValue = getRatingValue(a.id) || 0;
+          bValue = getRatingValue(b.id) || 0;
           break;
         case 'date':
           aValue = new Date(ratings[a.id]?.ratedAt || a.watchedAt || 0);
@@ -118,12 +117,12 @@ export default function RatingsSection({ videos, ratings, onRateVideo, stats }) 
         default:
           return 0;
       }
-      
+
       if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
       if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
       return 0;
     });
-    
+
     return sorted;
   }, [filteredVideos, ratings, sortBy, sortOrder]);
 
@@ -131,12 +130,12 @@ export default function RatingsSection({ videos, ratings, onRateVideo, stats }) 
     if (groupBy === 'none') {
       return { 'All Videos': sortedVideos };
     }
-    
+
     const groups = {};
-    
+
     if (groupBy === 'rating') {
       sortedVideos.forEach(video => {
-        const rating = ratings[video.id]?.rating;
+        const rating = getRatingValue(video.id);
         if (rating) {
           const group = `${rating}/10 Stars`;
           if (!groups[group]) groups[group] = [];
@@ -154,25 +153,25 @@ export default function RatingsSection({ videos, ratings, onRateVideo, stats }) 
         groups[genreName].push(video);
       });
     }
-    
+
     return groups;
   }, [sortedVideos, ratings, groupBy]);
 
   // Calculate accurate stats for regular videos only
   const regularVideoStats = useMemo(() => {
     const totalRegularVideos = regularVideos.length;
-    const ratedRegularVideos = regularVideos.filter(video => ratings[video.id]).length;
-    const totalRating = regularVideos
-      .filter(video => ratings[video.id])
-      .reduce((sum, video) => sum + ratings[video.id].rating, 0);
-    const averageRating = ratedRegularVideos > 0 
-      ? Math.round((totalRating / ratedRegularVideos) * 10) / 10 
+    const ratedRegularVideos = regularVideos.filter(video => getRatingValue(video.id) !== null);
+    const ratedCount = ratedRegularVideos.length;
+
+    const ratingValues = ratedRegularVideos.map(video => getRatingValue(video.id)).filter(r => r !== null);
+    const averageRating = ratingValues.length > 0 
+      ? Math.round((ratingValues.reduce((sum, r) => sum + Number(r), 0) / ratingValues.length) * 10) / 10 
       : 0;
 
     return {
       totalVideos: totalRegularVideos,
-      ratedVideos: ratedRegularVideos,
-      unratedVideos: totalRegularVideos - ratedRegularVideos,
+      ratedVideos: ratedCount,
+      unratedVideos: totalRegularVideos - ratedCount,
       averageRating
     };
   }, [regularVideos, ratings]);
