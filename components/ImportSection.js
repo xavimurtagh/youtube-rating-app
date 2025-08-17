@@ -41,7 +41,7 @@ export default function ImportSection({
   // Get videos that need rating (not rated and not ignored)
   const importedVideos = videos.filter(video => video.watchedAt);
   let videosToRate = importedVideos.filter(
-    video => !ratings[video.id] && !video.ignored && !ignoredIds.includes(video.id)
+    video => !ratings[video.id] && !ignoredIds.includes(video.id)
   );
   videosToRate = videosToRate.sort((a,b) => {
     const ta = new Date(a.watchedAt).getTime();
