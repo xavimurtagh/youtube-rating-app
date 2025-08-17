@@ -1,6 +1,6 @@
 import VideoCard from './VideoCard';
 
-export default function VideoList({ videos, ratings, onRateVideo, showLimit = 20 }) {
+export default function VideoList({ videos, ratings, onRateVideo, showLimit = 100 }) {
   if (!videos || videos.length === 0) {
     return (
       <div className="empty-state">
