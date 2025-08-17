@@ -222,8 +222,8 @@ export default function MusicSection({ onRateVideo, musicVideos, ratings }) {
                    'No Music Videos Found'}
                 </h3>
                 <p>
-                  {filterType === 'rated' ? 'You haven't rated any music videos yet.' :
-                   filterType === 'unrated' ? 'Great! You've rated all your music videos.' :
+                  {filterType === 'rated' ? 'You have not rated any music videos yet.' :
+                   filterType === 'unrated' ? 'Great! You have rated all your music videos.' :
                    'No music videos were detected in your imported watch history.'}
                 </p>
                 {filterType === 'all' && (
