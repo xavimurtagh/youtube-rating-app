@@ -39,9 +39,15 @@ export default function ImportSection({
 
   // Get videos that need rating (not rated and not ignored)
   const importedVideos = videos.filter(video => video.watchedAt);
-  const videosToRate = importedVideos.filter(video => 
+  let videosToRate = importedVideos.filter(video => 
     !ratings[video.id] && !video.ignored
   );
+  videosToRate = videosToRate.sort((a,b) => {
+    const ta = new Date(a.watchedAt).getTime();
+    const tb = new Date(b.watchedAt).getTime();
+    return sortOrder==='newest' ? tb - ta : ta - tb;
+  });
+  
   const ratedVideos = importedVideos.filter(video => ratings[video.id]);
   const ignoredVideos = importedVideos.filter(video => video.ignored);
 
@@ -139,8 +145,22 @@ export default function ImportSection({
             </p>
           </div>
 
+
           {currentVideos.length > 0 ? (
             <>
+              <div className="sort-controls" style={{ marginBottom: '16px' }}>
+                <label style={{ display:'flex', alignItems:'center', gap:'8px' }}>
+                  Sort:
+                  <select
+                    value={sortOrder}
+                    onChange={e => setSortOrder(e.target.value)}
+                    className="form-control filter-select"
+                  >
+                    <option value="newest">Newest First</option>
+                    <option value="oldest">Oldest First</option>
+                  </select>
+                </label>
+              </div>
               <VideoList
                 videos={currentVideos}
                 ratings={ratings}
