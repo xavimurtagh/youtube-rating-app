@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
+import { saveVideos } from '../utils/localStorage';
 import {
+  loadVideos,
   loadRatings,
   saveRatings,
   loadIgnored,
-  saveIgnored,
-  safeLoadFromStorage,
-  safeSaveToStorage
+  saveIgnored
 } from '../utils/localStorage';
 
 export function useVideos() {
@@ -15,17 +15,15 @@ export function useVideos() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Load ratings & ignored IDs first
   useEffect(() => {
     setRatings(loadRatings());
     setIgnoredIds(loadIgnored());
   }, []);
-
-  // Then load videos (imported full list)
+  
   useEffect(() => {
     try {
-      const savedVideos = safeLoadFromStorage('youtube_rating_videos', []);
-      setVideos(savedVideos);
+      const allVideos = loadVideos();          // loadVideos instead of safeLoad
+      setVideos(allVideos);
     } catch (err) {
       console.error('Error loading videos:', err);
       setError('Failed to load videos');
@@ -62,6 +60,8 @@ export function useVideos() {
     const text = `${video.title || ''} ${video.channel || ''}`.toLowerCase();
     return /music|song|album|artist|official music video|vevo|records/.test(text);
   };
+
+  const result = saveVideos(updatedVideos);
 
   const getMusicVideos = () =>
     videos.filter(v => !ignoredIds.includes(v.id) && isMusicVideo(v));
