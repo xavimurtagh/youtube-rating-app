@@ -93,6 +93,7 @@ export default function Home() {
             onRateVideo={handleRateVideo}
             musicVideos={musicVideos}
             ratings={ratings}
+            onIgnoreVideo={ignoreVideo}
           />
         );
       
