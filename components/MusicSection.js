@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import VideoList from './VideoList';
 
@@ -7,11 +7,26 @@ export default function MusicSection({ onRateVideo, musicVideos, ratings }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [activeView, setActiveView] = useState('imported'); // 'imported' or 'search'
+  const [activeView, setActiveView] = useState('imported');
+  const [filterType, setFilterType] = useState('all'); // 'all', 'rated', 'unrated'
   const { data: session } = useSession();
 
-  // Filter music videos
+  // Filter music videos only - no regular videos
   const importedMusicVideos = musicVideos ? musicVideos.filter(video => !video.ignored) : [];
+  
+  // Apply filter based on rating status
+  const getFilteredMusicVideos = () => {
+    switch (filterType) {
+      case 'rated':
+        return importedMusicVideos.filter(video => ratings[video.id]);
+      case 'unrated':
+        return importedMusicVideos.filter(video => !ratings[video.id]);
+      default:
+        return importedMusicVideos;
+    }
+  };
+
+  const filteredMusicVideos = getFilteredMusicVideos();
   const unratedMusicVideos = importedMusicVideos.filter(video => !ratings[video.id]);
   const ratedMusicVideos = importedMusicVideos.filter(video => ratings[video.id]);
 
@@ -23,14 +38,24 @@ export default function MusicSection({ onRateVideo, musicVideos, ratings }) {
     setError(null);
 
     try {
-      const response = await fetch(`/api/youtube/search?q=${encodeURIComponent(searchTerm + ' music')}&maxResults=20`);
+      const musicQuery = `${searchTerm} music official`;
+      const response = await fetch(`/api/youtube/search?q=${encodeURIComponent(musicQuery)}&maxResults=20`);
       
       if (!response.ok) {
         throw new Error('Search failed');
       }
 
       const data = await response.json();
-      setSearchResults(data.videos || []);
+      // Filter results to prioritize music content
+      const musicResults = data.videos ? data.videos.filter(video => {
+        const title = (video.title || '').toLowerCase();
+        const channel = (video.channel || '').toLowerCase();
+        return title.includes('music') || title.includes('official') || 
+               channel.includes('vevo') || channel.includes('records') ||
+               title.includes('song') || title.includes('album');
+      }) : [];
+      
+      setSearchResults(musicResults);
       setActiveView('search');
     } catch (err) {
       setError(err.message || 'Failed to search music. Please try again.');
@@ -56,47 +81,74 @@ export default function MusicSection({ onRateVideo, musicVideos, ratings }) {
       <div className="music-header">
         <h2>🎵 Music & Songs</h2>
         <p className="section-description">
-          Discover, rate, and get recommendations for music based on your taste
+          Discover and rate music videos based on your taste
         </p>
       </div>
 
       {/* View Toggle */}
       <div className="music-view-toggle">
         <button
-          className={`btn btn--sm ${activeView === 'imported' ? 'btn--primary' : 'btn--outline'}`}
+          className={`btn btn--md ${activeView === 'imported' ? 'btn--primary' : 'btn--outline'}`}
           onClick={() => setActiveView('imported')}
         >
-          🎵 Your Music ({importedMusicVideos.length})
+          🎵 Your Music Library ({importedMusicVideos.length})
         </button>
         <button
-          className={`btn btn--sm ${activeView === 'search' ? 'btn--primary' : 'btn--outline'}`}
+          className={`btn btn--md ${activeView === 'search' ? 'btn--primary' : 'btn--outline'}`}
           onClick={() => setActiveView('search')}
         >
-          🔍 Search Music
+          🔍 Discover New Music
         </button>
       </div>
 
-      {/* Music Stats */}
+      {/* Music Stats and Filters */}
       {importedMusicVideos.length > 0 && activeView === 'imported' && (
-        <div className="music-stats">
-          <div className="stats-cards">
-            <div className="stat-card">
-              <div className="stat-number">{importedMusicVideos.length}</div>
-              <div className="stat-label">Music Videos</div>
+        <div className="music-stats-and-filters">
+          <div className="music-stats">
+            <div className="stats-cards">
+              <div className="stat-card">
+                <div className="stat-number">{importedMusicVideos.length}</div>
+                <div className="stat-label">Music Videos</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-number">{unratedMusicVideos.length}</div>
+                <div className="stat-label">To Rate</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-number">{ratedMusicVideos.length}</div>
+                <div className="stat-label">Rated</div>
+              </div>
             </div>
-            <div className="stat-card">
-              <div className="stat-number">{unratedMusicVideos.length}</div>
-              <div className="stat-label">To Rate</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-number">{ratedMusicVideos.length}</div>
-              <div className="stat-label">Rated</div>
+          </div>
+          
+          {/* Filter Buttons */}
+          <div className="music-filters">
+            <div className="filter-group">
+              <span className="filter-label">Show:</span>
+              <button
+                className={`btn btn--sm ${filterType === 'all' ? 'btn--primary' : 'btn--outline'}`}
+                onClick={() => setFilterType('all')}
+              >
+                All Music ({importedMusicVideos.length})
+              </button>
+              <button
+                className={`btn btn--sm ${filterType === 'unrated' ? 'btn--primary' : 'btn--outline'}`}
+                onClick={() => setFilterType('unrated')}
+              >
+                To Rate ({unratedMusicVideos.length})
+              </button>
+              <button
+                className={`btn btn--sm ${filterType === 'rated' ? 'btn--primary' : 'btn--outline'}`}
+                onClick={() => setFilterType('rated')}
+              >
+                Rated ({ratedMusicVideos.length})
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Search Bar */}
+      {/* Search Form */}
       {activeView === 'search' && (
         <div className="music-search">
           <form onSubmit={handleSearch} className="search-bar">
@@ -122,14 +174,15 @@ export default function MusicSection({ onRateVideo, musicVideos, ratings }) {
       {/* Content Display */}
       <div className="music-content">
         {activeView === 'imported' ? (
-          importedMusicVideos.length > 0 ? (
+          filteredMusicVideos.length > 0 ? (
             <>
-              <h3>🎵 Your Imported Music Videos</h3>
-              <p className="section-description mb-16">
-                These music videos were automatically detected from your YouTube watch history.
-              </p>
+              <h3>
+                🎵 {filterType === 'all' ? 'All Music Videos' : 
+                     filterType === 'rated' ? 'Rated Music Videos' : 
+                     'Music Videos to Rate'}
+              </h3>
               <VideoList
-                videos={importedMusicVideos}
+                videos={filteredMusicVideos}
                 ratings={ratings}
                 onRateVideo={onRateVideo}
                 showLimit={20}
@@ -140,23 +193,13 @@ export default function MusicSection({ onRateVideo, musicVideos, ratings }) {
               <div className="placeholder-content">
                 <div className="music-icon">🎵</div>
                 <h3>No Music Videos Found</h3>
-                <p>No music videos were detected in your imported watch history. Try importing more data or search for music!</p>
-                <button 
-                  className="btn btn--primary"
-                  onClick={() => setActiveView('search')}
-                >
-                  Search for Music
-                </button>
+                <p>Try searching for new music or import your YouTube history.</p>
               </div>
             </div>
           )
         ) : (
           // Search Results
-          loading ? (
-            <div className="loading-state">
-              <p>🎵 Searching for music...</p>
-            </div>
-          ) : searchResults.length > 0 ? (
+          searchResults.length > 0 ? (
             <>
               <h3>🎵 Music Search Results ({searchResults.length})</h3>
               <VideoList
