@@ -5,11 +5,12 @@ import VideoList from './VideoList';
 export default function ImportSection({ 
   videos, 
   ratings, 
-  ignoredIds,
+  ignoredIds = [], 
   onImportComplete, 
   onRateVideo, 
   onIgnoreVideo 
-}) {
+}) 
+{
   const [importStatus, setImportStatus] = useState(null);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
