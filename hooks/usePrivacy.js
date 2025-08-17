@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { savePrivacyPreferences, loadPrivacyPreferences } from '../utils/localStorage';
+import { loadPrivacyPreferences, savePrivacyPreferences } from '../utils/localStorage';
 
 export function usePrivacy() {
   const [preferences, setPreferences] = useState({
@@ -9,10 +9,20 @@ export function usePrivacy() {
     marketing: false
   });
 
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    // Load saved privacy preferences
-    const savedPreferences = loadPrivacyPreferences();
-    setPreferences(savedPreferences);
+    // Load preferences from localStorage on mount
+    try {
+      const savedPreferences = loadPrivacyPreferences();
+      if (savedPreferences) {
+        setPreferences(savedPreferences);
+      }
+    } catch (error) {
+      console.warn('Failed to load privacy preferences:', error);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   const updatePreference = (key, value) => {
@@ -21,33 +31,31 @@ export function usePrivacy() {
       [key]: value
     };
     setPreferences(newPreferences);
-    savePrivacyPreferences(newPreferences);
-  };
-
-  const updateMultiplePreferences = (updates) => {
-    const newPreferences = {
-      ...preferences,
-      ...updates
-    };
-    setPreferences(newPreferences);
-    savePrivacyPreferences(newPreferences);
+    
+    // Save to localStorage
+    try {
+      savePrivacyPreferences(newPreferences);
+    } catch (error) {
+      console.warn('Failed to save privacy preferences:', error);
+    }
   };
 
   const resetToDefaults = () => {
-    const defaults = {
+    const defaultPreferences = {
       essential: true,
       analytics: false,
       personalization: false,
       marketing: false
     };
-    setPreferences(defaults);
-    savePrivacyPreferences(defaults);
+    setPreferences(defaultPreferences);
+    
+    try {
+      savePrivacyPreferences(defaultPreferences);
+    } catch (error) {
+      console.warn('Failed to reset privacy preferences:', error);
+    }
   };
 
   return {
     preferences,
-    updatePreference,
-    updateMultiplePreferences,
-    resetToDefaults
-  };
-}
+    loading,
