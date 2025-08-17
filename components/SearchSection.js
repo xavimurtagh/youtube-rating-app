@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useSession } from 'next-auth/react';
 import VideoList from './VideoList';
 
 export default function SearchSection({ onRateVideo }) {
@@ -8,7 +7,7 @@ export default function SearchSection({ onRateVideo }) {
   const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const { data: session } = useSession();
+  const [hasSearched, setHasSearched] = useState(false);
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -16,20 +15,25 @@ export default function SearchSection({ onRateVideo }) {
 
     setLoading(true);
     setError(null);
+    setHasSearched(true);
 
     try {
       const query = category === 'all' ? searchTerm : `${searchTerm} ${category}`;
       const response = await fetch(`/api/youtube/search?q=${encodeURIComponent(query)}&maxResults=20`);
 
       if (!response.ok) {
-        throw new Error('Search failed');
+        if (response.status === 403) {
+          throw new Error('YouTube API quota exceeded. Please try again later.');
+        }
+        throw new Error(`Search failed: ${response.status}`);
       }
 
       const data = await response.json();
-      setSearchResults(data.videos);
+      setSearchResults(data.videos || []);
     } catch (err) {
-      setError('Failed to search videos. Please try again.');
+      setError(err.message || 'Failed to search videos. Please try again.');
       console.error('Search error:', err);
+      setSearchResults([]);
     } finally {
       setLoading(false);
     }
@@ -64,9 +68,12 @@ export default function SearchSection({ onRateVideo }) {
           <option value="gaming">Gaming</option>
           <option value="education">Education</option>
           <option value="entertainment">Entertainment</option>
-          <option value="tech">Technology</option>
+          <option value="technology">Technology</option>
+          <option value="sports">Sports</option>
+          <option value="news">News</option>
+          <option value="comedy">Comedy</option>
         </select>
-        <button type="submit" className="btn btn--primary" disabled={loading}>
+        <button type="submit" className="btn btn--primary" disabled={loading || !searchTerm.trim()}>
           {loading ? 'Searching...' : 'Search'}
         </button>
       </form>
@@ -79,19 +86,39 @@ export default function SearchSection({ onRateVideo }) {
 
       <div className="search-results">
         {loading ? (
-          <p>Searching videos...</p>
-        ) : searchResults.length > 0 ? (
-          <VideoList
-            videos={searchResults}
-            ratings={{}}
-            onRateVideo={onRateVideo}
-            showLimit={null}
-          />
-        ) : searchTerm && !loading ? (
-          <p>No videos found for "{searchTerm}". Try adjusting your search criteria.</p>
-        ) : (
-          <p>Enter a search term to find YouTube videos</p>
-        )}
+          <div className="loading-state">
+            <p>🔍 Searching YouTube for "{searchTerm}"...</p>
+          </div>
+        ) : hasSearched && searchResults.length > 0 ? (
+          <>
+            <p className="mb-16">Found {searchResults.length} videos for "{searchTerm}"</p>
+            <VideoList
+              videos={searchResults}
+              ratings={{}}
+              onRateVideo={onRateVideo}
+              showLimit={null}
+            />
+          </>
+        ) : hasSearched && searchResults.length === 0 && !error ? (
+          <div className="empty-state">
+            <h3>No videos found</h3>
+            <p>No videos found for "{searchTerm}". Try different keywords or check your spelling.</p>
+          </div>
+        ) : !hasSearched ? (
+          <div className="search-placeholder">
+            <div className="placeholder-icon">🔍</div>
+            <h3>Search YouTube Videos</h3>
+            <p>Enter a search term above to find YouTube videos you can rate and add to your collection.</p>
+            <div className="search-tips">
+              <h4>Search Tips:</h4>
+              <ul>
+                <li>Try specific video titles or channel names</li>
+                <li>Use category filters to narrow results</li>
+                <li>Search for topics you're interested in</li>
+              </ul>
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );
