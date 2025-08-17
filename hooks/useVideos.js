@@ -138,7 +138,6 @@ export function useVideos() {
     ignoreVideo,
     getMusicVideos,
     getRegularVideos,
-    clearAllData,
     getVideoRating,
     getRatedVideos,
     getUnratedVideos,
