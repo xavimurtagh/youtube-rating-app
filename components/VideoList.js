@@ -1,36 +1,40 @@
 import VideoCard from './VideoCard';
 
-export default function VideoList({ videos, ratings, onRateVideo, showLimit = 100 }) {
+export default function VideoList({
+  videos,
+  ratings,
+  onRateVideo,
+  onIgnoreVideo,
+  showIgnoreButton = false,
+  ignoreButtonText = 'Ignore',
+  showLimit = 100
+}) {
   if (!videos || videos.length === 0) {
     return (
       <div className="empty-state">
-        <p>Start rating videos to see your history here</p>
+        <h3>Start rating videos to see your history here</h3>
+        <p>Showing first {showLimit} videos...</p>
       </div>
     );
   }
 
-  const displayVideos = showLimit ? videos.slice(0, showLimit) : videos;
-  const hasMore = showLimit && videos.length > showLimit;
-
   return (
-    <div>
-      {hasMore && (
-        <p className="mb-16">Showing first {showLimit} videos...</p>
-      )}
-      <div className="videos-grid">
-        {displayVideos.map((video) => (
-          <VideoCard
-            key={video.id}
-            video={video}
-            rating={ratings[video.id]?.rating}
-            onRate={onRateVideo}
-          />
-        ))}
-      </div>
-      {hasMore && (
-        <p className="mb-16">
+    <div className="videos-grid">
+      {videos.slice(0, showLimit).map(video => (
+        <VideoCard
+          key={video.id}
+          video={video}
+          rating={ratings[video.id]}
+          onRate={onRateVideo}
+          onIgnore={onIgnoreVideo}
+          showIgnoreButton={showIgnoreButton}
+          ignoreButtonText={ignoreButtonText}
+        />
+      ))}
+      {videos.length > showLimit && (
+        <div className="more-videos-info">
           {videos.length - showLimit} more videos available
-        </p>
+        </div>
       )}
     </div>
   );
