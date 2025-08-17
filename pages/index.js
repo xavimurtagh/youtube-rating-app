@@ -61,8 +61,12 @@ export default function Home() {
     ignoreVideo(videoId, ignore);
   };
 
-  const handleSaveRating = (videoId, rating) => {
-    rateVideo(videoId, rating);
+  const handleSaveRating = (videoOrId, rating) => {
+    const videoObj = typeof videoOrId === 'object' ? videoOrId : videos.find(v => v.id === videoOrId);
+    if (videoObj && !videos.some(v => v.id === videoObj.id)) {
+      addVideos([videoObj]);
+    }
+    rateVideo(videoObj.id, rating);
     setRatingModalVideo(null);
   };
 
