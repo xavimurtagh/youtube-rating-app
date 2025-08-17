@@ -20,7 +20,7 @@ export default function Home() {
   const [showSignInModal, setShowSignInModal] = useState(false);
   const [storageWarning, setStorageWarning] = useState(null);
   const { data: session } = useSession();
-
+  
   const {
     videos,
     ratings,
@@ -41,12 +41,11 @@ export default function Home() {
 
   const handleImportComplete = (importedVideos) => {
     const result = addVideos(importedVideos);
-
+    
     if (result && result.truncated) {
       setStorageWarning(`Large watch history detected! Showing most recent ${result.saved || 500} videos to keep the app running smoothly.`);
     }
-
-    // Stay on import tab to show the imported videos
+    
     setActiveTab('import');
   };
 
@@ -65,41 +64,13 @@ export default function Home() {
   const handleSaveRating = (videoId, rating) => {
     rateVideo(videoId, rating);
     setRatingModalVideo(null);
-
-    // Auto-switch to appropriate tab after rating
-    const ratedVideo = videos.find(v => v.id === videoId);
-    if (ratedVideo && (ratedVideo.isMusic || isMusicVideo(ratedVideo))) {
-      // If it's a music video, could switch to music tab
-      // setActiveTab('music');
-    } else {
-      // For regular videos, could switch to ratings tab
-      // setActiveTab('ratings');
-    }
-  };
-
-  // Function to detect music videos (duplicate from VideoCard for consistency)
-  const isMusicVideo = (video) => {
-    const title = (video.title || '').toLowerCase();
-    const channel = (video.channel || '').toLowerCase();
-    const description = (video.description || '').toLowerCase();
-
-    const musicKeywords = [
-      'music', 'song', 'album', 'artist', 'band', 'official music video',
-      'live performance', 'concert', 'acoustic', 'cover', 'remix',
-      'soundtrack', 'single', 'ep', 'track', 'instrumental',
-      'vevo', 'records'
-    ];
-
-    return musicKeywords.some(keyword => 
-      title.includes(keyword) || channel.includes(keyword) || description.includes(keyword)
-    );
   };
 
   const renderActiveTab = () => {
     switch (activeTab) {
       case 'search':
         return <SearchSection onRateVideo={handleRateVideo} />;
-
+      
       case 'import':
         return (
           <ImportSection
@@ -110,7 +81,7 @@ export default function Home() {
             onIgnoreVideo={handleIgnoreVideo}
           />
         );
-
+      
       case 'music':
         return (
           <MusicSection 
@@ -119,17 +90,17 @@ export default function Home() {
             ratings={ratings}
           />
         );
-
+      
       case 'ratings':
         return (
           <RatingsSection
-            videos={regularVideos} // Show only non-music videos
+            videos={regularVideos}
             ratings={ratings}
             onRateVideo={handleRateVideo}
             stats={stats}
           />
         );
-
+      
       case 'stats':
         return (
           <UserStatsSection
@@ -137,13 +108,13 @@ export default function Home() {
             ratings={ratings}
           />
         );
-
+      
       case 'privacy':
         return <PrivacyDashboard />;
-
+      
       case 'recommendations':
         return <RecommendationsSection />;
-
+      
       default:
         return <SearchSection onRateVideo={handleRateVideo} />;
     }
@@ -158,21 +129,23 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <main className="container">
-        <header className="header">
-          <div className="header-content">
+      <main className="app-container">
+        {/* Top Header with Sign In/Out */}
+        <header className="app-header">
+          <div className="header-left">
             <h1 className="app-title">YouTube Video Rating</h1>
             <p className="app-subtitle">
               Rate and manage your YouTube watch history securely
             </p>
           </div>
-          <div className="user-section">
+          <div className="header-right">
             <AuthButton />
           </div>
         </header>
 
+        {/* Navigation Tabs */}
         <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
-
+        
         {/* Storage Warning */}
         {storageWarning && (
           <div className="status status--warning mb-16">
@@ -186,8 +159,9 @@ export default function Home() {
             </button>
           </div>
         )}
-
-        <div className="tab-content">
+        
+        {/* Main Content */}
+        <div className="main-content">
           {loading && (
             <div className="loading-state">
               <p>Loading your data...</p>
@@ -197,6 +171,7 @@ export default function Home() {
           {renderActiveTab()}
         </div>
 
+        {/* Modals */}
         <RatingModal
           video={ratingModalVideo}
           isOpen={!!ratingModalVideo}
@@ -208,9 +183,10 @@ export default function Home() {
           isOpen={showSignInModal}
           onClose={() => setShowSignInModal(false)}
         />
-
+        
+        {/* Dev Tools */}
         {process.env.NODE_ENV === 'development' && (
-          <div style={{ position: 'fixed', bottom: '20px', right: '20px' }}>
+          <div className="dev-tools">
             <button onClick={clearAllData} className="btn btn--outline btn--sm">
               Clear All Data (Dev)
             </button>
