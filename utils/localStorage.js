@@ -1,4 +1,4 @@
-// Enhanced localStorage utility with compression and chunking
+// Enhanced localStorage utility with all required functions
 const CHUNK_SIZE = 1024 * 1024; // 1MB chunks
 
 function compressData(data) {
@@ -10,14 +10,21 @@ function compressData(data) {
   }
 }
 
+function decompressData(compressedData) {
+  try {
+    return JSON.parse(compressedData);
+  } catch (error) {
+    console.warn('Data decompression failed:', error);
+    return null;
+  }
+}
+
 export function saveToLocalStorage(key, data) {
   try {
     const serializedData = compressData(data);
     
-    // Check if data is too large
     if (serializedData.length > CHUNK_SIZE * 5) { // 5MB limit
       console.warn('Data too large for localStorage, truncating...');
-      // If it's an array (like videos), keep only recent items
       if (Array.isArray(data)) {
         const truncatedData = data.slice(-500); // Keep last 500 items
         localStorage.setItem(key, compressData(truncatedData));
@@ -29,14 +36,12 @@ export function saveToLocalStorage(key, data) {
     return { success: true, truncated: false };
   } catch (error) {
     if (error.name === 'QuotaExceededError') {
-      // Try to free up space by clearing old data
       try {
         const oldKeys = Object.keys(localStorage).filter(k => k.startsWith('youtube_rating_'));
         oldKeys.forEach(k => {
           if (k !== key) localStorage.removeItem(k);
         });
         
-        // Try again with cleaned storage
         localStorage.setItem(key, compressData(data));
         return { success: true, truncated: false };
       } catch (retryError) {
@@ -54,11 +59,39 @@ export function loadFromLocalStorage(key, defaultValue = null) {
     const item = localStorage.getItem(key);
     if (!item) return defaultValue;
     
-    const decompressed = JSON.parse(item);
+    const decompressed = decompressData(item);
     return decompressed !== null ? decompressed : defaultValue;
   } catch (error) {
     console.error('Failed to load from localStorage:', error);
     return defaultValue;
+  }
+}
+
+export function removeFromLocalStorage(key) {
+  try {
+    localStorage.removeItem(key);
+    return true;
+  } catch (error) {
+    console.error('Failed to remove from localStorage:', error);
+    return false;
+  }
+}
+
+export function getStorageInfo() {
+  try {
+    let totalSize = 0;
+    for (let key in localStorage) {
+      if (localStorage.hasOwnProperty(key)) {
+        totalSize += localStorage[key].length;
+      }
+    }
+    return {
+      used: Math.round(totalSize / 1024), // KB
+      availableEstimate: Math.round((5 * 1024 * 1024 - totalSize) / 1024), // KB
+      keys: Object.keys(localStorage).length
+    };
+  } catch (error) {
+    return { used: 0, availableEstimate: 0, keys: 0 };
   }
 }
 
@@ -94,4 +127,46 @@ export function saveRating(videoId, rating) {
 
 export function loadRatings() {
   return loadFromLocalStorage(STORAGE_KEYS.RATINGS, {});
+}
+
+export function saveUserStats(stats) {
+  return saveToLocalStorage(STORAGE_KEYS.USER_STATS, stats);
+}
+
+export function loadUserStats() {
+  return loadFromLocalStorage(STORAGE_KEYS.USER_STATS, {});
+}
+
+// Privacy preferences functions - THESE WERE MISSING
+export function savePrivacyPreferences(preferences) {
+  return saveToLocalStorage(STORAGE_KEYS.PRIVACY_PREFERENCES, preferences);
+}
+
+export function loadPrivacyPreferences() {
+  return loadFromLocalStorage(STORAGE_KEYS.PRIVACY_PREFERENCES, {
+    essential: true,
+    analytics: false,
+    personalization: false,
+    marketing: false
+  });
+}
+
+export function saveSettings(settings) {
+  return saveToLocalStorage(STORAGE_KEYS.SETTINGS, settings);
+}
+
+export function loadSettings() {
+  return loadFromLocalStorage(STORAGE_KEYS.SETTINGS, {});
+}
+
+export function clearAllAppData() {
+  try {
+    Object.values(STORAGE_KEYS).forEach(key => {
+      localStorage.removeItem(key);
+    });
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to clear app data:', error);
+    return { success: false, error: error.message };
+  }
 }
