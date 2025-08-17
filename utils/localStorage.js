@@ -99,10 +99,16 @@ export function getStorageInfo() {
 export const STORAGE_KEYS = {
   VIDEOS: 'youtube_rating_videos',
   RATINGS: 'youtube_rating_ratings',
+  IGNORED: 'youtube_rating_ignored',
   SETTINGS: 'youtube_rating_settings',
   PRIVACY_PREFERENCES: 'youtube_rating_privacy',
   USER_STATS: 'youtube_rating_user_stats'
 };
+
+// Save only ratings
+export function saveRatings(ratings) {
+  localStorage.setItem(STORAGE_KEYS.RATINGS, JSON.stringify(ratings));
+}
 
 export function saveVideos(videos) {
   const result = saveToLocalStorage(STORAGE_KEYS.VIDEOS, videos);
@@ -116,17 +122,10 @@ export function loadVideos() {
   return loadFromLocalStorage(STORAGE_KEYS.VIDEOS, []);
 }
 
-export function saveRating(videoId, rating) {
-  const ratings = loadFromLocalStorage(STORAGE_KEYS.RATINGS, {});
-  ratings[videoId] = {
-    rating,
-    ratedAt: new Date().toISOString()
-  };
-  return saveToLocalStorage(STORAGE_KEYS.RATINGS, ratings);
-}
-
+// Load only ratings
 export function loadRatings() {
-  return loadFromLocalStorage(STORAGE_KEYS.RATINGS, {});
+  const item = localStorage.getItem(STORAGE_KEYS.RATINGS);
+  return item ? JSON.parse(item) : {};
 }
 
 export function saveUserStats(stats) {
@@ -135,6 +134,17 @@ export function saveUserStats(stats) {
 
 export function loadUserStats() {
   return loadFromLocalStorage(STORAGE_KEYS.USER_STATS, {});
+}
+
+// Save only ignored IDs array
+export function saveIgnored(ids) {
+  localStorage.setItem(STORAGE_KEYS.IGNORED, JSON.stringify(ids));
+}
+
+// Load ignored IDs
+export function loadIgnored() {
+  const item = localStorage.getItem(STORAGE_KEYS.IGNORED);
+  return item ? JSON.parse(item) : [];
 }
 
 // Privacy preferences functions - THESE WERE MISSING
