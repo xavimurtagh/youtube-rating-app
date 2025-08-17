@@ -1,4 +1,3 @@
-// hooks/useVideos.js
 import { useState, useEffect } from 'react';
 import {
   loadVideos,
@@ -16,94 +15,146 @@ export function useVideos() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Rehydrate ratings & ignored IDs
-  useEffect(() => {
-    setRatings(loadRatings());
-    setIgnoredIds(loadIgnored());
-  }, []);
-
-  // Load full video list
+  // Load data on mount
   useEffect(() => {
     try {
-      const all = loadVideos();
-      setVideos(all);
+      const savedVideos = loadVideos();
+      const savedRatings = loadRatings();
+      const savedIgnored = loadIgnored();
+
+      setVideos(savedVideos);
+      setRatings(savedRatings);
+      setIgnoredIds(savedIgnored);
     } catch (err) {
-      console.error('Error loading videos:', err);
-      setError('Failed to load videos');
+      console.error('Error loading data:', err);
+      setError('Failed to load data');
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // Add new videos (e.g. after Takeout import)
+  // Add new videos (from import)
   const addVideos = (newVideos) => {
-    const existingIds = new Set(videos.map(v => v.id));
-    const unique = newVideos.filter(v => !existingIds.has(v.id));
-    if (unique.length === 0) return { success: true, added: 0 };
+    try {
+      const existingIds = new Set(videos.map(v => v.id));
+      const unique = newVideos.filter(v => !existingIds.has(v.id));
 
-    const updated = [...videos, ...unique];
-    const result = saveVideos(updated);
-    if (result.success) {
-      setVideos(updated);
-      return { success: true, added: unique.length };
-    } else {
-      console.error('Failed to save videos:', result.error);
-      return { success: false, error: result.error };
+      if (unique.length === 0) {
+        return { success: true, added: 0 };
+      }
+
+      // Mark music videos
+      const categorized = unique.map(video => ({
+        ...video,
+        isMusic: isMusicVideo(video)
+      }));
+
+      const updated = [...videos, ...categorized];
+      const result = saveVideos(updated);
+
+      if (result.success) {
+        setVideos(updated);
+        return { 
+          success: true, 
+          added: unique.length,
+          truncated: result.truncated,
+          saved: result.saved
+        };
+      } else {
+        throw new Error(result.error || 'Failed to save videos');
+      }
+    } catch (err) {
+      setError('Failed to add videos: ' + err.message);
+      return { success: false, error: err.message };
     }
   };
 
-  // Rate a video
+  // Rate a video - store rating as number, not object
   const rateVideo = (videoId, rating) => {
-    const next = { ...ratings, [videoId]: rating };
-    setRatings(next);
-    saveRatings(next);
+    try {
+      const updated = {
+        ...ratings,
+        [videoId]: {
+          rating: Number(rating),
+          ratedAt: new Date().toISOString()
+        }
+      };
+
+      setRatings(updated);
+      const result = saveRatings(updated);
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to save rating');
+      }
+    } catch (err) {
+      console.error('Failed to save rating:', err);
+      setError('Failed to save rating: ' + err.message);
+    }
   };
 
   // Ignore a video
   const ignoreVideo = (videoId) => {
-    const next = Array.from(new Set([...ignoredIds, videoId]));
-    setIgnoredIds(next);
-    saveIgnored(next);
+    try {
+      const updated = Array.from(new Set([...ignoredIds, videoId]));
+      setIgnoredIds(updated);
+
+      const result = saveIgnored(updated);
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to save ignored list');
+      }
+    } catch (err) {
+      console.error('Failed to ignore video:', err);
+      setError('Failed to ignore video: ' + err.message);
+    }
   };
 
-  // Dev-only: clear all data
+  // Clear all data
   const clearAllData = () => {
-    localStorage.clear();
-    setVideos([]);
-    setRatings({});
-    setIgnoredIds([]);
-    setError(null);
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.clear();
+      }
+      setVideos([]);
+      setRatings({});
+      setIgnoredIds([]);
+      setError(null);
+    } catch (err) {
+      setError('Failed to clear data');
+    }
   };
 
-  // Helpers
-  const isMusicVideo = (v) =>
-    /music|song|album|artist|official music video|vevo|records/i.test(
-      `${v.title || ''} ${v.channel || ''}`
-    );
+  // Helper functions
+  const isMusicVideo = (video) => {
+    const text = `${video.title || ''} ${video.channel || ''}`.toLowerCase();
+    return /music|song|album|artist|official music video|vevo|records|acoustic|cover|remix|soundtrack|live performance|concert/i.test(text);
+  };
 
-  const getMusicVideos = () =>
-    videos.filter(v => !ignoredIds.includes(v.id) && isMusicVideo(v));
+  const getMusicVideos = () => {
+    return videos.filter(v => !ignoredIds.includes(v.id) && (v.isMusic || isMusicVideo(v)));
+  };
 
-  const getRegularVideos = () =>
-    videos.filter(v => !ignoredIds.includes(v.id) && !isMusicVideo(v));
+  const getRegularVideos = () => {
+    return videos.filter(v => !ignoredIds.includes(v.id) && !(v.isMusic || isMusicVideo(v)));
+  };
 
-  const getImportList = () =>
-    videos.filter(v => !ratings[v.id] && !ignoredIds.includes(v.id));
+  const getImportList = () => {
+    return videos.filter(v => !ratings[v.id] && !ignoredIds.includes(v.id));
+  };
 
   const getVideoStats = () => {
     const total = videos.length - ignoredIds.length;
-    const rated = Object.keys(ratings).length;
-    const avg =
-      rated > 0
-        ? Math.round(
-            Object.values(ratings).reduce((sum, r) => sum + r, 0) / rated * 10
-          ) / 10
-        : 0;
+    const ratedCount = Object.keys(ratings).length;
+
+    // Calculate average from actual rating values
+    const ratingValues = Object.values(ratings).map(r => r.rating || r);
+    const avg = ratingValues.length > 0 
+      ? Math.round((ratingValues.reduce((sum, r) => sum + Number(r), 0) / ratingValues.length) * 10) / 10 
+      : 0;
 
     return {
       totalVideos: total,
-      ratedVideos: rated,
-      unratedVideos: total - rated,
+      ratedVideos: ratedCount,
+      unratedVideos: total - ratedCount,
       averageRating: avg,
       musicVideos: getMusicVideos().length,
       regularVideos: getRegularVideos().length,
