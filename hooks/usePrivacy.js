@@ -59,3 +59,7 @@ export function usePrivacy() {
   return {
     preferences,
     loading,
+    updatePreference,
+    resetToDefaults
+  };
+}
