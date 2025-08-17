@@ -4,7 +4,7 @@ import VideoList from './VideoList';
 
 export default function RatingsSection({ videos, ratings, onRateVideo, stats }) {
   const { data: session } = useSession();
-  const [filterType, setFilterType] = useState('all');
+  const [filterType, setFilterType] = useState('rated');
   const [ratingFilter, setRatingFilter] = useState('all');
   const [genreFilter, setGenreFilter] = useState('all');
   const [sortBy, setSortBy] = useState('rating');
@@ -61,7 +61,12 @@ export default function RatingsSection({ videos, ratings, onRateVideo, stats }) 
 
     if (filterType==='rated') {
       filtered = filtered.filter(v=>getRatingValue(v.id)!==null);
+    } else if (filterType==='all') {
+      // nothing
     }
+    
+    // After, simply:
+    filtered = filtered.filter(v=> getRatingValue(v.id) !== null);
 
     if (ratingFilter !== 'all') {
       filtered = filtered.filter(video => {
@@ -219,12 +224,6 @@ export default function RatingsSection({ videos, ratings, onRateVideo, stats }) 
         <div className="filter-row">
           <div className="filter-group">
             <span className="filter-label">Show:</span>
-            <button
-              className={`btn btn--sm ${filterType === 'all' ? 'btn--primary' : 'btn--outline'}`}
-              onClick={() => setFilterType('all')}
-            >
-              All ({regularVideoStats.totalVideos})
-            </button>
             <button
               className={`btn btn--sm ${filterType === 'rated' ? 'btn--primary' : 'btn--outline'}`}
               onClick={() => setFilterType('rated')}
