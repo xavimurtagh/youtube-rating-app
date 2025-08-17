@@ -137,11 +137,7 @@ export function useVideos() {
     rateVideo,
     ignoreVideo,
     getMusicVideos,
-    getRegularVideos,
-    getVideoRating,
-    getRatedVideos,
-    getUnratedVideos,
-    getVideoStats
+    getRegularVideos
     // ... other existing functions
   };
 }
