@@ -209,7 +209,10 @@ export default function MusicSection({ onRateVideo, musicVideos, ratings }) {
                 videos={filteredMusicVideos}
                 ratings={ratings}
                 onRateVideo={onRateVideo}
-                showLimit={20}
+                onIgnoreVideo={onIgnoreVideo}     
+                showIgnoreButton={true}
+                ignoreButtonText="Ignore"
+                showLimit={100}
               />
             </>
           ) : (
