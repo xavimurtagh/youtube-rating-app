@@ -29,3 +29,21 @@ function Header() {
     </div>
   );
 }
+
+// Tabs component
+function Tabs({ activeTab, setActiveTab }) {
+  const tabs = ['Search', 'Ratings', 'Music', 'Statistics'];
+  return (
+    <div className="tab-container">
+      {tabs.map((tab) => (
+        <button
+          key={tab}
+          className={`tab-btn ${activeTab === tab ? 'active' : ''}`}
+          onClick={() => setActiveTab(tab)}
+        >
+          {tab}
+        </button>
+      ))}
+    </div>
+  );
+}
