@@ -5,6 +5,7 @@ import VideoList from './VideoList';
 export default function ImportSection({ 
   videos, 
   ratings, 
+  ignoredIds,
   onImportComplete, 
   onRateVideo, 
   onIgnoreVideo 
