@@ -8,27 +8,36 @@ export default function MusicSection({ onRateVideo, musicVideos, ratings }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [activeView, setActiveView] = useState('imported');
-  const [filterType, setFilterType] = useState('all'); // 'all', 'rated', 'unrated'
+  const [filterType, setFilterType] = useState('all');
   const { data: session } = useSession();
 
-  // Filter music videos only - no regular videos
-  const importedMusicVideos = musicVideos ? musicVideos.filter(video => !video.ignored) : [];
-  
-  // Apply filter based on rating status
+  // Helper to get rating value (handle both old and new format)
+  const getRatingValue = (videoId) => {
+    const rating = ratings[videoId];
+    if (!rating) return null;
+    return typeof rating === 'object' ? rating.rating : rating;
+  };
+
+  // Filter music videos and remove duplicates
+  const uniqueMusicVideos = musicVideos ? 
+    musicVideos.filter((video, index, self) => 
+      index === self.findIndex(v => v.id === video.id)
+    ) : [];
+
   const getFilteredMusicVideos = () => {
     switch (filterType) {
       case 'rated':
-        return importedMusicVideos.filter(video => ratings[video.id]);
+        return uniqueMusicVideos.filter(video => getRatingValue(video.id) !== null);
       case 'unrated':
-        return importedMusicVideos.filter(video => !ratings[video.id]);
+        return uniqueMusicVideos.filter(video => getRatingValue(video.id) === null);
       default:
-        return importedMusicVideos;
+        return uniqueMusicVideos;
     }
   };
 
   const filteredMusicVideos = getFilteredMusicVideos();
-  const unratedMusicVideos = importedMusicVideos.filter(video => !ratings[video.id]);
-  const ratedMusicVideos = importedMusicVideos.filter(video => ratings[video.id]);
+  const unratedMusicVideos = uniqueMusicVideos.filter(video => getRatingValue(video.id) === null);
+  const ratedMusicVideos = uniqueMusicVideos.filter(video => getRatingValue(video.id) !== null);
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -40,13 +49,12 @@ export default function MusicSection({ onRateVideo, musicVideos, ratings }) {
     try {
       const musicQuery = `${searchTerm} music official`;
       const response = await fetch(`/api/youtube/search?q=${encodeURIComponent(musicQuery)}&maxResults=20`);
-      
+
       if (!response.ok) {
         throw new Error('Search failed');
       }
 
       const data = await response.json();
-      // Filter results to prioritize music content
       const musicResults = data.videos ? data.videos.filter(video => {
         const title = (video.title || '').toLowerCase();
         const channel = (video.channel || '').toLowerCase();
@@ -54,7 +62,7 @@ export default function MusicSection({ onRateVideo, musicVideos, ratings }) {
                channel.includes('vevo') || channel.includes('records') ||
                title.includes('song') || title.includes('album');
       }) : [];
-      
+
       setSearchResults(musicResults);
       setActiveView('search');
     } catch (err) {
@@ -81,7 +89,7 @@ export default function MusicSection({ onRateVideo, musicVideos, ratings }) {
       <div className="music-header">
         <h2>🎵 Music & Songs</h2>
         <p className="section-description">
-          Discover and rate music videos based on your taste
+          Rate and discover music videos based on your taste
         </p>
       </div>
 
@@ -91,7 +99,7 @@ export default function MusicSection({ onRateVideo, musicVideos, ratings }) {
           className={`btn btn--md ${activeView === 'imported' ? 'btn--primary' : 'btn--outline'}`}
           onClick={() => setActiveView('imported')}
         >
-          🎵 Your Music Library ({importedMusicVideos.length})
+          🎵 Your Music Library ({uniqueMusicVideos.length})
         </button>
         <button
           className={`btn btn--md ${activeView === 'search' ? 'btn--primary' : 'btn--outline'}`}
@@ -102,12 +110,12 @@ export default function MusicSection({ onRateVideo, musicVideos, ratings }) {
       </div>
 
       {/* Music Stats and Filters */}
-      {importedMusicVideos.length > 0 && activeView === 'imported' && (
+      {uniqueMusicVideos.length > 0 && activeView === 'imported' && (
         <div className="music-stats-and-filters">
           <div className="music-stats">
             <div className="stats-cards">
               <div className="stat-card">
-                <div className="stat-number">{importedMusicVideos.length}</div>
+                <div className="stat-number">{uniqueMusicVideos.length}</div>
                 <div className="stat-label">Music Videos</div>
               </div>
               <div className="stat-card">
@@ -118,9 +126,18 @@ export default function MusicSection({ onRateVideo, musicVideos, ratings }) {
                 <div className="stat-number">{ratedMusicVideos.length}</div>
                 <div className="stat-label">Rated</div>
               </div>
+              <div className="stat-card">
+                <div className="stat-number">
+                  {ratedMusicVideos.length > 0 ? 
+                    Math.round((ratedMusicVideos.reduce((sum, v) => sum + (getRatingValue(v.id) || 0), 0) / ratedMusicVideos.length) * 10) / 10 : 
+                    0
+                  }
+                </div>
+                <div className="stat-label">Avg Rating</div>
+              </div>
             </div>
           </div>
-          
+
           {/* Filter Buttons */}
           <div className="music-filters">
             <div className="filter-group">
@@ -129,7 +146,7 @@ export default function MusicSection({ onRateVideo, musicVideos, ratings }) {
                 className={`btn btn--sm ${filterType === 'all' ? 'btn--primary' : 'btn--outline'}`}
                 onClick={() => setFilterType('all')}
               >
-                All Music ({importedMusicVideos.length})
+                All Music ({uniqueMusicVideos.length})
               </button>
               <button
                 className={`btn btn--sm ${filterType === 'unrated' ? 'btn--primary' : 'btn--outline'}`}
@@ -171,6 +188,13 @@ export default function MusicSection({ onRateVideo, musicVideos, ratings }) {
         </div>
       )}
 
+      {/* Error Display */}
+      {error && (
+        <div className="status status--error mb-16">
+          {error}
+        </div>
+      )}
+
       {/* Content Display */}
       <div className="music-content">
         {activeView === 'imported' ? (
@@ -192,14 +216,34 @@ export default function MusicSection({ onRateVideo, musicVideos, ratings }) {
             <div className="music-placeholder">
               <div className="placeholder-content">
                 <div className="music-icon">🎵</div>
-                <h3>No Music Videos Found</h3>
-                <p>Try searching for new music or import your YouTube history.</p>
+                <h3>
+                  {filterType === 'rated' ? 'No Rated Music Videos' :
+                   filterType === 'unrated' ? 'No Music Videos to Rate' :
+                   'No Music Videos Found'}
+                </h3>
+                <p>
+                  {filterType === 'rated' ? 'You haven't rated any music videos yet.' :
+                   filterType === 'unrated' ? 'Great! You've rated all your music videos.' :
+                   'No music videos were detected in your imported watch history.'}
+                </p>
+                {filterType === 'all' && (
+                  <button 
+                    className="btn btn--primary"
+                    onClick={() => setActiveView('search')}
+                  >
+                    Search for Music
+                  </button>
+                )}
               </div>
             </div>
           )
         ) : (
           // Search Results
-          searchResults.length > 0 ? (
+          loading ? (
+            <div className="loading-state">
+              <p>🎵 Searching for music...</p>
+            </div>
+          ) : searchResults.length > 0 ? (
             <>
               <h3>🎵 Music Search Results ({searchResults.length})</h3>
               <VideoList
@@ -209,6 +253,11 @@ export default function MusicSection({ onRateVideo, musicVideos, ratings }) {
                 showLimit={null}
               />
             </>
+          ) : searchTerm && !loading ? (
+            <div className="empty-state">
+              <h3>No music found</h3>
+              <p>No music found for "{searchTerm}". Try different keywords or artists.</p>
+            </div>
           ) : (
             <div className="music-placeholder">
               <div className="placeholder-content">
