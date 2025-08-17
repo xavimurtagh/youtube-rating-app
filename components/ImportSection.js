@@ -2,19 +2,27 @@ import { useState } from 'react';
 import FileUpload from './FileUpload';
 import VideoList from './VideoList';
 
-export default function ImportSection({ videos, ratings, onImportComplete, onRateVideo, onIgnoreVideo }) {
+export default function ImportSection({ 
+  videos, 
+  ratings, 
+  onImportComplete, 
+  onRateVideo, 
+  onIgnoreVideo 
+}) {
   const [importStatus, setImportStatus] = useState(null);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
-  const [showIgnored, setShowIgnored] = useState(false);
-  
   const VIDEOS_PER_PAGE = 20;
 
   const handleFileParsed = (result) => {
-    const message = `Successfully imported ${result.videos.length} videos`;
-    setImportStatus(message);
-    setError(null);
-    onImportComplete(result.videos);
+    if (result && result.videos) {
+      const message = `Successfully imported ${result.videos.length} videos`;
+      setImportStatus(message);
+      setError(null);
+      onImportComplete(result.videos);
+    } else {
+      setError('Failed to parse video data from file');
+    }
   };
 
   const handleError = (errorMessage) => {
@@ -22,32 +30,35 @@ export default function ImportSection({ videos, ratings, onImportComplete, onRat
     setImportStatus(null);
   };
 
-  // Filter videos: imported videos that haven't been rated or ignored
+  const handleIgnore = (videoId) => {
+    if (onIgnoreVideo) {
+      onIgnoreVideo(videoId);
+    }
+  };
+
+  // Get videos that need rating (not rated and not ignored)
   const importedVideos = videos.filter(video => video.watchedAt);
-  const unratedVideos = importedVideos.filter(video => 
+  const videosToRate = importedVideos.filter(video => 
     !ratings[video.id] && !video.ignored
   );
-  const ratedVideos = importedVideos.filter(video => 
-    ratings[video.id] && !video.ignored
-  );
+  const ratedVideos = importedVideos.filter(video => ratings[video.id]);
   const ignoredVideos = importedVideos.filter(video => video.ignored);
-  
-  const videosToShow = showIgnored ? ignoredVideos : unratedVideos;
-  const totalPages = Math.ceil(videosToShow.length / VIDEOS_PER_PAGE);
-  const currentVideos = videosToShow.slice(
+
+  const totalPages = Math.ceil(videosToRate.length / VIDEOS_PER_PAGE);
+  const currentVideos = videosToRate.slice(
     currentPage * VIDEOS_PER_PAGE,
     (currentPage + 1) * VIDEOS_PER_PAGE
   );
 
-  const handleIgnore = (video) => {
-    if (onIgnoreVideo) {
-      onIgnoreVideo(video.id);
+  const handleNextPage = () => {
+    if (currentPage < totalPages - 1) {
+      setCurrentPage(currentPage + 1);
     }
   };
 
-  const handleUnignore = (video) => {
-    if (onIgnoreVideo) {
-      onIgnoreVideo(video.id, false); // Second parameter false means unignore
+  const handlePrevPage = () => {
+    if (currentPage > 0) {
+      setCurrentPage(currentPage - 1);
     }
   };
 
@@ -56,7 +67,7 @@ export default function ImportSection({ videos, ratings, onImportComplete, onRat
       <div className="history-header">
         <h2>Import Watch History</h2>
         <p className="section-description">
-          Import your YouTube watch history from Google Takeout
+          Import your YouTube watch history from Google Takeout and rate or ignore videos
         </p>
       </div>
 
@@ -65,23 +76,28 @@ export default function ImportSection({ videos, ratings, onImportComplete, onRat
           <h3>📁 Upload Google Takeout</h3>
           <p>
             Upload your Google Takeout file to import your YouTube watch history.
-            Rate videos or ignore them to keep your list organized.
+            You can then rate videos or ignore them to keep your list organized.
           </p>
-          
+
           <FileUpload
             onFileParsed={handleFileParsed}
             onError={handleError}
           />
-          
+
           {importStatus && (
             <div className="status status--success">
               {importStatus}
             </div>
           )}
-          
+
           {error && (
             <div className="status status--error">
               {error}
+              {error.includes('quota') && (
+                <div className="error-help">
+                  <p>💡 <strong>Large file detected:</strong> Your watch history has been truncated to the most recent videos.</p>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -96,7 +112,7 @@ export default function ImportSection({ videos, ratings, onImportComplete, onRat
               <div className="stat-label">Total Imported</div>
             </div>
             <div className="stat-card">
-              <div className="stat-number">{unratedVideos.length}</div>
+              <div className="stat-number">{videosToRate.length}</div>
               <div className="stat-label">To Rate</div>
             </div>
             <div className="stat-card">
@@ -115,41 +131,12 @@ export default function ImportSection({ videos, ratings, onImportComplete, onRat
       {importedVideos.length > 0 && (
         <div className="imported-videos-section">
           <div className="section-controls">
-            <h3>
-              {showIgnored ? 
-                `Ignored Videos (${ignoredVideos.length})` : 
-                `Videos to Rate (${unratedVideos.length})`
-              }
-            </h3>
-            
-            <div className="view-controls">
-              <button
-                className={`btn btn--sm ${!showIgnored ? 'btn--primary' : 'btn--outline'}`}
-                onClick={() => {
-                  setShowIgnored(false);
-                  setCurrentPage(0);
-                }}
-              >
-                To Rate ({unratedVideos.length})
-              </button>
-              <button
-                className={`btn btn--sm ${showIgnored ? 'btn--primary' : 'btn--outline'}`}
-                onClick={() => {
-                  setShowIgnored(true);
-                  setCurrentPage(0);
-                }}
-              >
-                Ignored ({ignoredVideos.length})
-              </button>
-            </div>
+            <h3>Videos to Rate ({videosToRate.length})</h3>
+            <p className="section-description">
+              Rate these videos or ignore them to remove them from this list. 
+              Music videos will appear in the Music tab after rating.
+            </p>
           </div>
-          
-          <p className="section-description">
-            {showIgnored ? 
-              'These videos have been ignored. You can unignore them to rate them later.' :
-              'Rate these videos or ignore them to remove from this list.'
-            }
-          </p>
 
           {currentVideos.length > 0 ? (
             <>
@@ -157,9 +144,9 @@ export default function ImportSection({ videos, ratings, onImportComplete, onRat
                 videos={currentVideos}
                 ratings={ratings}
                 onRateVideo={onRateVideo}
-                onIgnoreVideo={showIgnored ? handleUnignore : handleIgnore}
+                onIgnoreVideo={handleIgnore}
                 showIgnoreButton={true}
-                ignoreButtonText={showIgnored ? 'Unignore' : 'Ignore'}
+                ignoreButtonText="Ignore"
                 showLimit={null}
               />
 
@@ -168,20 +155,20 @@ export default function ImportSection({ videos, ratings, onImportComplete, onRat
                 <div className="pagination">
                   <button
                     className="btn btn--outline btn--sm"
-                    onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+                    onClick={handlePrevPage}
                     disabled={currentPage === 0}
                   >
                     ← Previous
                   </button>
-                  
+
                   <span className="pagination-info">
-                    Page {currentPage + 1} of {totalPages}
-                    ({videosToShow.length} videos)
+                    Page {currentPage + 1} of {totalPages} 
+                    ({videosToRate.length} videos to rate)
                   </span>
-                  
+
                   <button
                     className="btn btn--outline btn--sm"
-                    onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
+                    onClick={handleNextPage}
                     disabled={currentPage >= totalPages - 1}
                   >
                     Next →
@@ -191,17 +178,48 @@ export default function ImportSection({ videos, ratings, onImportComplete, onRat
             </>
           ) : (
             <div className="empty-state">
-              <h3>{showIgnored ? 'No ignored videos' : 'No videos to rate'}</h3>
+              <h3>🎉 All Videos Processed!</h3>
               <p>
-                {showIgnored ? 
-                  'You haven\'t ignored any videos yet.' :
-                  'Great job! You\'ve rated all your imported videos.'
-                }
+                You've rated or ignored all your imported videos. 
+                Great job organizing your watch history!
               </p>
+              <div className="next-steps">
+                <p>What's next?</p>
+                <ul>
+                  <li>Check your <strong>Ratings</strong> tab to see all rated videos</li>
+                  <li>Visit the <strong>Music</strong> tab for your rated music videos</li>
+                  <li>View your <strong>Statistics</strong> to see your viewing patterns</li>
+                </ul>
+              </div>
             </div>
           )}
         </div>
       )}
+
+      <div className="import-help">
+        <details>
+          <summary>How to get your Google Takeout file</summary>
+          <ol>
+            <li>Go to <a href="https://takeout.google.com" target="_blank" rel="noopener noreferrer">Google Takeout</a></li>
+            <li>Select "YouTube and YouTube Music"</li>
+            <li>Choose "history" in the YouTube data options</li>
+            <li>Select JSON format</li>
+            <li>Download your archive</li>
+            <li>Extract and upload the "watch-history.json" file here</li>
+          </ol>
+
+          <div className="import-tips">
+            <h4>💡 Tips for better organization:</h4>
+            <ul>
+              <li><strong>Rate videos</strong> to track your preferences and get recommendations</li>
+              <li><strong>Ignore videos</strong> to hide them permanently from your rating list</li>
+              <li><strong>Music videos</strong> are automatically detected and organized in the Music tab</li>
+              <li><strong>Regular videos</strong> appear in the Ratings tab after being rated</li>
+              <li>Your ratings persist across browser sessions</li>
+            </ul>
+          </div>
+        </details>
+      </div>
     </div>
   );
 }
