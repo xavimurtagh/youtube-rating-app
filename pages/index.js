@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Head from 'next/head';
+import { SessionProvider } from 'next-auth/react';
 import TabNavigation from '../components/TabNavigation';
 import SearchSection from '../components/SearchSection';
 import ImportSection from '../components/ImportSection';
@@ -7,9 +8,10 @@ import RatingsSection from '../components/RatingsSection';
 import PrivacyDashboard from '../components/PrivacyDashboard';
 import RecommendationsSection from '../components/RecommendationsSection';
 import RatingModal from '../components/RatingModal';
+import AuthButton from '../components/AuthButton';
 import { useVideos } from '../hooks/useVideos';
 
-export default function Home() {
+function HomeContent() {
   const [activeTab, setActiveTab] = useState('search');
   const [ratingModalVideo, setRatingModalVideo] = useState(null);
 
@@ -28,7 +30,7 @@ export default function Home() {
 
   const handleImportComplete = (importedVideos) => {
     addVideos(importedVideos);
-    setActiveTab('ratings'); // Switch to ratings tab after import
+    setActiveTab('ratings');
   };
 
   const handleRateVideo = (video) => {
@@ -40,15 +42,10 @@ export default function Home() {
     setRatingModalVideo(null);
   };
 
-  const handleSearch = (searchParams) => {
-    // TODO: Implement actual search functionality
-    console.log('Search params:', searchParams);
-  };
-
   const renderActiveTab = () => {
     switch (activeTab) {
       case 'search':
-        return <SearchSection onSearch={handleSearch} />;
+        return <SearchSection onRateVideo={handleRateVideo} />;
       case 'import':
         return <ImportSection onImportComplete={handleImportComplete} />;
       case 'ratings':
@@ -65,10 +62,51 @@ export default function Home() {
       case 'recommendations':
         return <RecommendationsSection />;
       default:
-        return <SearchSection onSearch={handleSearch} />;
+        return <SearchSection onRateVideo={handleRateVideo} />;
     }
   };
 
+  return (
+    <main className="container">
+      <header className="header">
+        <div className="header-content">
+          <h1 className="app-title">YouTube Video Rating</h1>
+          <p className="app-subtitle">
+            Rate and manage your YouTube watch history securely
+          </p>
+        </div>
+        <div className="user-section">
+          <AuthButton />
+        </div>
+      </header>
+
+      <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+
+      <div className="tab-content">
+        {loading && <p>Loading...</p>}
+        {error && <div className="status status--error">{error}</div>}
+        {renderActiveTab()}
+      </div>
+
+      <RatingModal
+        video={ratingModalVideo}
+        isOpen={!!ratingModalVideo}
+        onClose={() => setRatingModalVideo(null)}
+        onSave={handleSaveRating}
+      />
+
+      {process.env.NODE_ENV === 'development' && (
+        <div style={{ position: 'fixed', bottom: '20px', right: '20px' }}>
+          <button onClick={clearAllData} className="btn btn--outline btn--sm">
+            Clear All Data (Dev)
+          </button>
+        </div>
+      )}
+    </main>
+  );
+}
+
+export default function Home() {
   return (
     <>
       <Head>
@@ -78,39 +116,9 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <main className="container">
-        <header className="header">
-          <div className="header-content">
-            <h1 className="app-title">YouTube Video Rating</h1>
-            <p className="app-subtitle">
-              Rate and manage your YouTube watch history securely
-            </p>
-          </div>
-        </header>
-
-        <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
-
-        <div className="tab-content">
-          {loading && <p>Loading...</p>}
-          {error && <div className="status status--error">{error}</div>}
-          {renderActiveTab()}
-        </div>
-
-        <RatingModal
-          video={ratingModalVideo}
-          isOpen={!!ratingModalVideo}
-          onClose={() => setRatingModalVideo(null)}
-          onSave={handleSaveRating}
-        />
-
-        {process.env.NODE_ENV === 'development' && (
-          <div style={{ position: 'fixed', bottom: '20px', right: '20px' }}>
-            <button onClick={clearAllData} className="btn btn--outline btn--sm">
-              Clear All Data (Dev)
-            </button>
-          </div>
-        )}
-      </main>
+      <SessionProvider>
+        <HomeContent />
+      </SessionProvider>
     </>
   );
 }
