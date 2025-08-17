@@ -4,28 +4,32 @@ export default function AuthButton() {
   const { data: session, status } = useSession();
 
   if (status === 'loading') {
-    return <div className="btn btn--secondary">Loading...</div>;
+    return (
+      <div className="auth-button loading">
+        <span className="loading-text">Loading...</span>
+      </div>
+    );
   }
 
   if (session) {
     return (
-      <div className="user-profile">
+      <div className="auth-button signed-in">
         <div className="user-info">
           {session.user.image && (
-            <img
-              src={session.user.image}
-              alt={session.user.name}
+            <img 
+              src={session.user.image} 
+              alt={session.user.name || 'Profile'} 
               className="user-avatar"
             />
           )}
           <div className="user-details">
-            <div className="user-name">{session.user.name}</div>
-            <div className="user-email">{session.user.email}</div>
+            <span className="user-name">{session.user.name}</span>
+            <span className="user-email">{session.user.email}</span>
           </div>
         </div>
-        <button
-          onClick={() => signOut()}
-          className="btn btn--outline btn--sm"
+        <button 
+          onClick={() => signOut()} 
+          className="btn btn--outline btn--sm sign-out-btn"
         >
           Sign Out
         </button>
@@ -34,16 +38,15 @@ export default function AuthButton() {
   }
 
   return (
-    <div className="auth-section">
-      <button
-        onClick={() => signIn('google')}
-        className="btn btn--primary"
+    <div className="auth-button signed-out">
+      <button 
+        onClick={() => signIn('google')} 
+        className="btn btn--primary sign-in-btn"
       >
-        🔐 Sign in with Google
+        <span className="sign-in-icon">🔐</span>
+        Sign In
       </button>
-      <p className="auth-note">
-        Sign in to sync your ratings and access YouTube features
-      </p>
     </div>
   );
 }
+  
