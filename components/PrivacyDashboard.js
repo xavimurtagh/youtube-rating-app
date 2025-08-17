@@ -1,13 +1,15 @@
+import { useSession } from 'next-auth/react';
 import { usePrivacy } from '../hooks/usePrivacy';
 
 export default function PrivacyDashboard() {
+  const { data: session } = useSession();
   const { preferences, updatePreference, resetToDefaults } = usePrivacy();
 
   const securityFeatures = [
     {
       title: 'Google OAuth2 Authentication',
       description: 'Secure sign-in using your existing Google account',
-      active: false // This would be true when OAuth is implemented
+      active: !!session // Now shows active when user is signed in
     },
     {
       title: 'Encrypted Data Storage',
@@ -53,6 +55,33 @@ export default function PrivacyDashboard() {
     }
   ];
 
+  const handleExportData = () => {
+    // Export user data
+    const data = {
+      videos: JSON.parse(localStorage.getItem('youtube_rating_videos') || '[]'),
+      ratings: JSON.parse(localStorage.getItem('youtube_rating_ratings') || '{}'),
+      preferences: preferences,
+      exportedAt: new Date().toISOString()
+    };
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `youtube-rating-data-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleDeleteAllData = () => {
+    if (confirm('Are you sure you want to delete all your data? This cannot be undone.')) {
+      localStorage.clear();
+      window.location.reload();
+    }
+  };
+
   return (
     <div className="privacy-sections">
       <div className="privacy-card">
@@ -66,6 +95,9 @@ export default function PrivacyDashboard() {
               <div className="security-info">
                 <strong>{feature.title}</strong>
                 <p>{feature.description}</p>
+                {feature.title.includes('OAuth') && session && (
+                  <small>Signed in as: {session.user.email}</small>
+                )}
               </div>
             </div>
           ))}
@@ -99,13 +131,13 @@ export default function PrivacyDashboard() {
       <div className="privacy-card">
         <h3>🗂️ Data Management</h3>
         <div className="data-actions">
-          <button className="btn btn--outline">
+          <button className="btn btn--outline" onClick={handleExportData}>
             Export My Data
           </button>
-          <button className="btn btn--outline danger" onClick={resetToDefaults}>
+          <button className="btn btn--outline" onClick={resetToDefaults}>
             Reset Preferences
           </button>
-          <button className="btn btn--outline danger">
+          <button className="btn btn--outline danger" onClick={handleDeleteAllData}>
             Delete All Data
           </button>
         </div>
