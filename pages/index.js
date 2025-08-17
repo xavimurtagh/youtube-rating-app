@@ -80,6 +80,7 @@ export default function Home() {
           <ImportSection
             videos={videos}
             ratings={ratings}
+            ignoredIds={ignoredIds}
             onImportComplete={handleImportComplete}
             onRateVideo={handleRateVideo}
             onIgnoreVideo={handleIgnoreVideo}
