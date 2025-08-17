@@ -1,11 +1,40 @@
 import { useState, useEffect } from 'react';
-import { 
-  loadVideos, 
-  saveVideos, 
-  loadRatings, 
-  saveRating,
-  getStorageInfo 
-} from '../utils/localStorage';
+
+// SSR-safe localStorage functions
+function safeLoadFromStorage(key, defaultValue = null) {
+  if (typeof window === 'undefined') return defaultValue;
+  
+  try {
+    const item = localStorage.getItem(key);
+    return item ? JSON.parse(item) : defaultValue;
+  } catch (error) {
+    console.error('Failed to load from localStorage:', error);
+    return defaultValue;
+  }
+}
+
+function safeSaveToStorage(key, data) {
+  if (typeof window === 'undefined') return { success: false };
+  
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+    return { success: true };
+  } catch (error) {
+    if (error.name === 'QuotaExceededError') {
+      console.warn('Storage quota exceeded, truncating data...');
+      if (Array.isArray(data) && data.length > 500) {
+        const truncated = data.slice(-500);
+        try {
+          localStorage.setItem(key, JSON.stringify(truncated));
+          return { success: true, truncated: true, saved: truncated.length };
+        } catch (retryError) {
+          return { success: false, error: 'Storage quota exceeded' };
+        }
+      }
+    }
+    return { success: false, error: error.message };
+  }
+}
 
 export function useVideos() {
   const [videos, setVideos] = useState([]);
@@ -13,11 +42,11 @@ export function useVideos() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Load data on mount
+  // Load data on mount (client-side only)
   useEffect(() => {
     try {
-      const savedVideos = loadVideos();
-      const savedRatings = loadRatings();
+      const savedVideos = safeLoadFromStorage('youtube_rating_videos', []);
+      const savedRatings = safeLoadFromStorage('youtube_rating_ratings', {});
       
       setVideos(savedVideos);
       setRatings(savedRatings);
@@ -63,7 +92,7 @@ export function useVideos() {
       }));
 
       const updatedVideos = [...videos, ...categorizedVideos];
-      const result = saveVideos(updatedVideos);
+      const result = safeSaveToStorage('youtube_rating_videos', updatedVideos);
       
       if (result.success) {
         setVideos(updatedVideos);
@@ -84,15 +113,19 @@ export function useVideos() {
 
   const rateVideo = (videoId, rating) => {
     try {
-      const result = saveRating(videoId, rating);
+      const newRating = {
+        rating,
+        ratedAt: new Date().toISOString()
+      };
+      
+      const updatedRatings = {
+        ...ratings,
+        [videoId]: newRating
+      };
+      
+      const result = safeSaveToStorage('youtube_rating_ratings', updatedRatings);
       if (result.success) {
-        setRatings(prev => ({
-          ...prev,
-          [videoId]: {
-            rating,
-            ratedAt: new Date().toISOString()
-          }
-        }));
+        setRatings(updatedRatings);
       } else {
         throw new Error(result.error || 'Failed to save rating');
       }
@@ -109,7 +142,7 @@ export function useVideos() {
           : video
       );
       
-      const result = saveVideos(updatedVideos);
+      const result = safeSaveToStorage('youtube_rating_videos', updatedVideos);
       if (result.success) {
         setVideos(updatedVideos);
       } else {
@@ -118,6 +151,42 @@ export function useVideos() {
     } catch (err) {
       setError('Failed to ignore video: ' + err.message);
     }
+  };
+
+  const clearAllData = () => {
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('youtube_rating_videos');
+        localStorage.removeItem('youtube_rating_ratings');
+        localStorage.removeItem('youtube_rating_privacy');
+      }
+      setVideos([]);
+      setRatings({});
+      setError(null);
+    } catch (err) {
+      setError('Failed to clear data');
+    }
+  };
+
+  const getVideoStats = () => {
+    const totalVideos = videos.length;
+    const ratedVideos = Object.keys(ratings).length;
+    const averageRating = ratedVideos > 0 
+      ? Math.round((Object.values(ratings).reduce((sum, r) => sum + r.rating, 0) / ratedVideos) * 10) / 10 
+      : 0;
+    
+    const musicVideos = videos.filter(v => v.isMusic || isMusicVideo(v)).length;
+    const regularVideos = totalVideos - musicVideos;
+    const ignoredVideos = videos.filter(v => v.ignored).length;
+
+    return {
+      totalVideos,
+      ratedVideos,
+      averageRating,
+      musicVideos,
+      regularVideos,
+      ignoredVideos
+    };
   };
 
   const getMusicVideos = () => {
@@ -136,11 +205,9 @@ export function useVideos() {
     addVideos,
     rateVideo,
     ignoreVideo,
+    clearAllData,
+    getVideoStats,
     getMusicVideos,
     getRegularVideos
-    // ... other existing functions
   };
 }
-
-
- 
