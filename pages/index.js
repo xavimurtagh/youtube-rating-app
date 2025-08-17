@@ -32,7 +32,8 @@ export default function Home() {
     clearAllData,
     getVideoStats,
     getMusicVideos,
-    getRegularVideos
+    getRegularVideos,
+    ignoredIds
   } = useVideos();
 
   const stats = getVideoStats();
@@ -93,7 +94,7 @@ export default function Home() {
             onRateVideo={handleRateVideo}
             musicVideos={musicVideos}
             ratings={ratings}
-            onIgnoreVideo={ignoreVideo}
+            onIgnoreVideo={handleIgnoreVideo}
           />
         );
       
