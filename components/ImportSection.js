@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import FileUpload from './FileUpload';
 import VideoList from './VideoList';
@@ -25,6 +26,16 @@ export default function ImportSection({
       onImportComplete(result.videos);
     } else {
       setError('Failed to parse video data from file');
+    }
+  };
+
+  const handleClearAllUnrated = () => {
+    if (confirm(`Are you sure you want to ignore all ${videosToRate.length} unrated videos? This will remove them from your to-rate list.`)) {
+      videosToRate.forEach(video => {
+        if (onIgnoreVideo) {
+          onIgnoreVideo(video.id);
+        }
+      });
     }
   };
 
@@ -163,6 +174,17 @@ export default function ImportSection({
                   </select>
                 </label>
               </div>
+              {videosToRate.length > 0 && (
+                <div className="bulk-actions" style={{ marginBottom: '16px', textAlign: 'center' }}>
+                  <button 
+                    onClick={handleClearAllUnrated}
+                    className="btn btn--outline btn--warning"
+                    title="Ignore all unrated videos and remove them from this list"
+                  >
+                    🗑️ Clear All Unrated ({videosToRate.length})
+                  </button>
+                </div>
+              )}
               <VideoList
                 videos={currentVideos}
                 ratings={ratings}
