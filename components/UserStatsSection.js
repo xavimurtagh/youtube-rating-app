@@ -7,51 +7,71 @@ export default function UserStatsSection({ videos, ratings }) {
 
   useEffect(() => {
     if (videos.length > 0) {
-      const calculatedStats = calculateUserStats(videos, ratings);
+      const calculatedStats = calculateEnhancedStats(videos, ratings);
       setStats(calculatedStats);
     }
   }, [videos, ratings]);
 
-  // Helper to get rating value (handle both old and new format)
+  // Helper to get rating value
   const getRatingValue = (videoId) => {
     const rating = ratings[videoId];
     if (!rating) return null;
     return typeof rating === 'object' ? rating.rating : rating;
   };
 
-  function calculateUserStats(videos, ratings) {
+  function calculateEnhancedStats(videos, ratings) {
     if (!videos.length) return null;
 
-    // Separate music and regular videos
+    // Basic stats
     const musicVideos = videos.filter(v => v.isMusic || isMusicVideo(v));
     const regularVideos = videos.filter(v => !(v.isMusic || isMusicVideo(v)));
-    const ignoredVideos = videos.filter(v => v.ignored);
-
-    // Rating statistics
     const ratedVideos = videos.filter(v => getRatingValue(v.id) !== null);
     const ratingValues = ratedVideos.map(v => getRatingValue(v.id)).filter(r => r !== null);
-
-    const totalRating = ratingValues.reduce((sum, r) => sum + Number(r), 0);
-    const averageRating = ratingValues.length > 0 ? 
-      Math.round((totalRating / ratingValues.length) * 10) / 10 : 0;
-
-    // Channel statistics
-    const channelCounts = {};
-    const channelRatings = {};
-
+    
+    // Channel statistics with watch counts
+    const channelStats = {};
     videos.forEach(video => {
       const channel = video.channel || 'Unknown';
-      channelCounts[channel] = (channelCounts[channel] || 0) + 1;
-
+      if (!channelStats[channel]) {
+        channelStats[channel] = { 
+          watchCount: 0, 
+          ratings: [], 
+          totalWatchTime: 0,
+          videos: []
+        };
+      }
+      channelStats[channel].watchCount++;
+      channelStats[channel].videos.push(video);
+      channelStats[channel].totalWatchTime += estimateWatchTime(video);
+      
       const rating = getRatingValue(video.id);
       if (rating) {
-        if (!channelRatings[channel]) channelRatings[channel] = [];
-        channelRatings[channel].push(rating);
+        channelStats[channel].ratings.push(rating);
       }
     });
 
-    // Genre detection
-    const genreStats = calculateGenreStats(videos, ratings);
+    // Most watched channels
+    const mostWatchedChannels = Object.entries(channelStats)
+      .sort(([,a], [,b]) => b.watchCount - a.watchCount)
+      .slice(0, 10)
+      .map(([channel, data]) => ({
+        name: channel,
+        watchCount: data.watchCount,
+        totalWatchTime: Math.round(data.totalWatchTime / 60), // hours
+        averageRating: data.ratings.length > 0 
+          ? Math.round((data.ratings.reduce((a, b) => a + b, 0) / data.ratings.length) * 10) / 10 
+          : null
+      }));
+
+    // Watch time per month/year
+    const monthlyStats = calculateMonthlyStats(videos);
+    const yearlyStats = calculateYearlyStats(videos);
+
+    // Top 5 favorites (highest rated videos)
+    const topFavorites = ratedVideos
+      .map(v => ({ ...v, rating: getRatingValue(v.id) }))
+      .sort((a, b) => b.rating - a.rating)
+      .slice(0, 5);
 
     // Rating distribution
     const ratingDistribution = {};
@@ -59,116 +79,98 @@ export default function UserStatsSection({ videos, ratings }) {
       ratingDistribution[rating] = (ratingDistribution[rating] || 0) + 1;
     });
 
-    // Top and bottom rated videos
-    const ratedVideosList = ratedVideos.map(v => ({
-      ...v,
-      rating: getRatingValue(v.id)
-    })).sort((a, b) => b.rating - a.rating);
-
-    const topRatedVideos = ratedVideosList.slice(0, 5);
-    const bottomRatedVideos = ratedVideosList.slice(-5).reverse();
-
-    // Viewing patterns
-    const watchTimeEstimate = videos.filter(v => v.watchedAt).length * 5; // 5 min average
-    const videosPerMonth = calculateVideosPerMonth(videos);
-
-    // Top channels
-    const topChannels = Object.entries(channelCounts)
-      .sort(([,a], [,b]) => b - a)
-      .slice(0, 10)
-      .map(([channel, count]) => ({
-        name: channel,
-        videoCount: count,
-        averageRating: channelRatings[channel] 
-          ? Math.round((channelRatings[channel].reduce((a, b) => a + b, 0) / channelRatings[channel].length) * 10) / 10
-          : null
-      }));
+    // Total estimated watch time
+    const totalWatchTimeMinutes = videos.reduce((sum, v) => sum + estimateWatchTime(v), 0);
 
     return {
       overview: {
         totalVideos: videos.length,
         musicVideos: musicVideos.length,
         regularVideos: regularVideos.length,
-        ignoredVideos: ignoredVideos.length,
         ratedVideos: ratedVideos.length,
-        averageRating,
-        estimatedWatchTimeHours: Math.round(watchTimeEstimate / 60),
-        completionRate: videos.length > 0 ? Math.round((ratedVideos.length / (videos.length - ignoredVideos.length)) * 100) : 0
+        averageRating: ratingValues.length > 0 
+          ? Math.round((ratingValues.reduce((a, b) => a + b, 0) / ratingValues.length) * 10) / 10 
+          : 0,
+        totalWatchTimeHours: Math.round(totalWatchTimeMinutes / 60),
+        totalWatchTimeDays: Math.round(totalWatchTimeMinutes / (60 * 24) * 10) / 10
       },
+      mostWatchedChannels,
+      monthlyStats,
+      yearlyStats,
+      topFavorites,
       ratingDistribution,
-      topRatedVideos,
-      bottomRatedVideos,
-      topChannels,
-      genreStats,
-      videosPerMonth,
       watchingHabits: calculateWatchingHabits(videos)
     };
+  }
+
+  function estimateWatchTime(video) {
+    // Estimate based on video type and duration if available
+    if (video.duration) {
+      // Parse duration like "PT4M13S" or "4:13"
+      const match = video.duration.match(/(\d+):(\d+)/);
+      if (match) {
+        return parseInt(match[1]) * 60 + parseInt(match[1]);
+      }
+    }
+    // Default estimates by type
+    if (video.isMusic || isMusicVideo(video)) return 4; // 4 minutes
+    return 8; // 8 minutes for regular videos
+  }
+
+  function calculateMonthlyStats(videos) {
+    const monthlyData = {};
+    
+    videos.filter(v => v.watchedAt).forEach(video => {
+      const date = new Date(video.watchedAt);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      
+      if (!monthlyData[monthKey]) {
+        monthlyData[monthKey] = { 
+          count: 0, 
+          watchTime: 0,
+          month: date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' })
+        };
+      }
+      monthlyData[monthKey].count++;
+      monthlyData[monthKey].watchTime += estimateWatchTime(video);
+    });
+
+    return Object.values(monthlyData)
+      .sort((a, b) => new Date(a.month + ' 01') - new Date(b.month + ' 01'))
+      .slice(-12)
+      .map(data => ({
+        ...data,
+        watchTimeHours: Math.round(data.watchTime / 60 * 10) / 10
+      }));
+  }
+
+  function calculateYearlyStats(videos) {
+    const yearlyData = {};
+    
+    videos.filter(v => v.watchedAt).forEach(video => {
+      const year = new Date(video.watchedAt).getFullYear();
+      
+      if (!yearlyData[year]) {
+        yearlyData[year] = { count: 0, watchTime: 0 };
+      }
+      yearlyData[year].count++;
+      yearlyData[year].watchTime += estimateWatchTime(video);
+    });
+
+    return Object.entries(yearlyData)
+      .sort(([a], [b]) => parseInt(b) - parseInt(a))
+      .slice(0, 5)
+      .map(([year, data]) => ({
+        year: parseInt(year),
+        count: data.count,
+        watchTimeHours: Math.round(data.watchTime / 60),
+        watchTimeDays: Math.round(data.watchTime / (60 * 24) * 10) / 10
+      }));
   }
 
   function isMusicVideo(video) {
     const text = `${video.title || ''} ${video.channel || ''}`.toLowerCase();
     return /music|song|album|artist|official music video|vevo|records/i.test(text);
-  }
-
-  function calculateGenreStats(videos, ratings) {
-    const genreKeywords = {
-      gaming: ['gaming', 'gameplay', 'game', 'playthrough'],
-      education: ['tutorial', 'how to', 'learn', 'education'],
-      entertainment: ['comedy', 'funny', 'entertainment', 'show'],
-      tech: ['tech', 'technology', 'review', 'unboxing'],
-      sports: ['sports', 'football', 'basketball', 'soccer'],
-      news: ['news', 'breaking', 'report', 'politics'],
-      lifestyle: ['vlog', 'lifestyle', 'fashion', 'beauty'],
-      science: ['science', 'physics', 'chemistry', 'space']
-    };
-
-    const genreStats = {};
-
-    videos.forEach(video => {
-      const title = (video.title || '').toLowerCase();
-      const channel = (video.channel || '').toLowerCase();
-      const searchText = `${title} ${channel}`;
-
-      for (const [genre, keywords] of Object.entries(genreKeywords)) {
-        if (keywords.some(keyword => searchText.includes(keyword))) {
-          if (!genreStats[genre]) {
-            genreStats[genre] = { count: 0, ratings: [] };
-          }
-          genreStats[genre].count++;
-
-          const rating = getRatingValue(video.id);
-          if (rating) {
-            genreStats[genre].ratings.push(rating);
-          }
-          break;
-        }
-      }
-    });
-
-    return Object.entries(genreStats)
-      .map(([genre, data]) => ({
-        name: genre.charAt(0).toUpperCase() + genre.slice(1),
-        videoCount: data.count,
-        averageRating: data.ratings.length > 0 ?
-          Math.round((data.ratings.reduce((a, b) => a + b, 0) / data.ratings.length) * 10) / 10 : null
-      }))
-      .sort((a, b) => b.videoCount - a.videoCount)
-      .slice(0, 8);
-  }
-
-  function calculateVideosPerMonth(videos) {
-    const monthCounts = {};
-
-    videos.filter(v => v.watchedAt).forEach(video => {
-      const date = new Date(video.watchedAt);
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      monthCounts[monthKey] = (monthCounts[monthKey] || 0) + 1;
-    });
-
-    return Object.entries(monthCounts)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .slice(-12) // Last 12 months
-      .map(([month, count]) => ({ month, count }));
   }
 
   function calculateWatchingHabits(videos) {
@@ -177,29 +179,41 @@ export default function UserStatsSection({ videos, ratings }) {
 
     const hourCounts = {};
     const dayOfWeekCounts = {};
-
+    
     watchedVideos.forEach(video => {
       const date = new Date(video.watchedAt);
       const hour = date.getHours();
       const dayOfWeek = date.getDay();
-
+      
       hourCounts[hour] = (hourCounts[hour] || 0) + 1;
       dayOfWeekCounts[dayOfWeek] = (dayOfWeekCounts[dayOfWeek] || 0) + 1;
     });
 
     const peakHour = Object.entries(hourCounts)
-      .sort(([,a], [,b]) => b - a)[0]?.[0];
-
+      .sort(([,a], [,b]) => b - a)[0]?.;
+    
     const peakDay = Object.entries(dayOfWeekCounts)
-      .sort(([,a], [,b]) => b - a)[0]?.[0];
-
+      .sort(([,a], [,b]) => b - a)?.;
+    
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
     return {
       peakHour: peakHour ? `${peakHour}:00` : null,
       peakDay: peakDay ? dayNames[peakDay] : null,
-      totalDaysActive: new Set(watchedVideos.map(v => new Date(v.watchedAt).toDateString())).size
+      totalDaysActive: new Set(watchedVideos.map(v => new Date(v.watchedAt).toDateString())).size,
+      busiestMonth: calculateBusiestMonth(watchedVideos)
     };
+  }
+
+  function calculateBusiestMonth(videos) {
+    const monthCounts = {};
+    videos.forEach(video => {
+      const month = new Date(video.watchedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+      monthCounts[month] = (monthCounts[month] || 0) + 1;
+    });
+    
+    return Object.entries(monthCounts)
+      .sort(([,a], [,b]) => b - a)[0]?. || null;
   }
 
   if (!session) {
@@ -217,7 +231,7 @@ export default function UserStatsSection({ videos, ratings }) {
     return (
       <div className="empty-state">
         <h3>📊 No Statistics Available</h3>
-        <p>Import your YouTube watch history to see detailed statistics about your viewing habits!</p>
+        <p>Import your YouTube watch history to see detailed statistics!</p>
       </div>
     );
   }
@@ -231,11 +245,19 @@ export default function UserStatsSection({ videos, ratings }) {
         </p>
       </div>
 
-      {/* Overview Stats */}
+      {/* Enhanced Overview Stats */}
       <div className="stats-overview">
         <div className="stat-card">
           <div className="stat-number">{stats.overview.totalVideos}</div>
           <div className="stat-label">Total Videos</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-number">{stats.overview.totalWatchTimeHours}h</div>
+          <div className="stat-label">Watch Time</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-number">{stats.overview.totalWatchTimeDays}</div>
+          <div className="stat-label">Days Watched</div>
         </div>
         <div className="stat-card">
           <div className="stat-number">{stats.overview.ratedVideos}</div>
@@ -246,76 +268,49 @@ export default function UserStatsSection({ videos, ratings }) {
           <div className="stat-label">Average Rating</div>
         </div>
         <div className="stat-card">
-          <div className="stat-number">{stats.overview.completionRate}%</div>
-          <div className="stat-label">Rating Progress</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-number">{stats.overview.estimatedWatchTimeHours}h</div>
-          <div className="stat-label">Est. Watch Time</div>
-        </div>
-        <div className="stat-card">
           <div className="stat-number">{stats.overview.musicVideos}</div>
           <div className="stat-label">Music Videos</div>
         </div>
       </div>
 
-      {/* Top Rated Videos */}
-      {stats.topRatedVideos.length > 0 && (
+      {/* Top 5 Favorites */}
+      {stats.topFavorites.length > 0 && (
         <div className="stats-card">
-          <h3>⭐ Your Top Rated Videos</h3>
-          <div className="top-videos-list">
-            {stats.topRatedVideos.map((video, index) => (
-              <div key={video.id} className="top-video-item">
-                <div className="rank">#{index + 1}</div>
-                <div className="video-details">
-                  <div className="video-title">{video.title}</div>
-                  <div className="video-channel">{video.channel}</div>
+          <h3>⭐ Your Top 5 Favorite Videos</h3>
+          <div className="favorites-grid">
+            {stats.topFavorites.map((video, index) => (
+              <div key={video.id} className="favorite-item">
+                <div className="favorite-rank">#{index + 1}</div>
+                <div className="favorite-content">
+                  {video.thumbnail && (
+                    <img src={video.thumbnail} alt={video.title} className="favorite-thumbnail" />
+                  )}
+                  <div className="favorite-details">
+                    <h4 className="favorite-title">{video.title}</h4>
+                    <p className="favorite-channel">{video.channel}</p>
+                    <div className="favorite-rating">{video.rating}/10 ⭐</div>
+                  </div>
                 </div>
-                <div className="rating-badge">{video.rating}/10</div>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* Rating Distribution */}
-      {Object.keys(stats.ratingDistribution).length > 0 && (
-        <div className="stats-card">
-          <h3>📈 Rating Distribution</h3>
-          <div className="rating-chart">
-            {Object.entries(stats.ratingDistribution)
-              .sort(([a], [b]) => Number(b) - Number(a))
-              .map(([rating, count]) => (
-                <div key={rating} className="rating-bar">
-                  <span className="rating-label">{rating}/10</span>
-                  <div className="bar-container">
-                    <div 
-                      className="bar-fill" 
-                      style={{ 
-                        width: `${(count / Math.max(...Object.values(stats.ratingDistribution))) * 100}%` 
-                      }}
-                    ></div>
-                  </div>
-                  <span className="rating-count">{count}</span>
-                </div>
-              ))}
-          </div>
-        </div>
-      )}
-
-      {/* Top Channels */}
+      {/* Most Watched Channels */}
       <div className="stats-card">
-        <h3>📺 Top Channels</h3>
-        <div className="top-list">
-          {stats.topChannels.slice(0, 5).map((channel, index) => (
-            <div key={channel.name} className="top-item">
+        <h3>📺 Most Watched Channels</h3>
+        <div className="channel-stats-grid">
+          {stats.mostWatchedChannels.slice(0, 8).map((channel, index) => (
+            <div key={channel.name} className="channel-stat-item">
               <div className="rank">#{index + 1}</div>
-              <div className="item-details">
-                <div className="item-name">{channel.name}</div>
-                <div className="item-stats">
-                  {channel.videoCount} videos
+              <div className="channel-info">
+                <div className="channel-name">{channel.name}</div>
+                <div className="channel-metrics">
+                  <span>{channel.watchCount} videos</span>
+                  <span>{channel.totalWatchTime}h watched</span>
                   {channel.averageRating && (
-                    <span> • Avg: {channel.averageRating}/10</span>
+                    <span>Avg: {channel.averageRating}/10</span>
                   )}
                 </div>
               </div>
@@ -324,22 +319,25 @@ export default function UserStatsSection({ videos, ratings }) {
         </div>
       </div>
 
-      {/* Genre Preferences */}
-      {stats.genreStats.length > 0 && (
+      {/* Monthly Watch Time */}
+      {stats.monthlyStats.length > 0 && (
         <div className="stats-card">
-          <h3>🎬 Content Preferences</h3>
-          <div className="top-list">
-            {stats.genreStats.slice(0, 5).map((genre, index) => (
-              <div key={genre.name} className="top-item">
-                <div className="rank">#{index + 1}</div>
-                <div className="item-details">
-                  <div className="item-name">{genre.name}</div>
-                  <div className="item-stats">
-                    {genre.videoCount} videos
-                    {genre.averageRating && (
-                      <span> • Avg: {genre.averageRating}/10</span>
-                    )}
-                  </div>
+          <h3>📅 Monthly Watch Time</h3>
+          <div className="monthly-chart">
+            {stats.monthlyStats.map(month => (
+              <div key={month.month} className="month-bar">
+                <div className="month-label">{month.month}</div>
+                <div className="bar-container">
+                  <div 
+                    className="bar-fill" 
+                    style={{ 
+                      width: `${(month.watchTimeHours / Math.max(...stats.monthlyStats.map(m => m.watchTimeHours))) * 100}%` 
+                    }}
+                  ></div>
+                </div>
+                <div className="month-stats">
+                  <span>{month.count} videos</span>
+                  <span>{month.watchTimeHours}h</span>
                 </div>
               </div>
             ))}
@@ -347,22 +345,45 @@ export default function UserStatsSection({ videos, ratings }) {
         </div>
       )}
 
-      {/* Watching Habits */}
+      {/* Yearly Overview */}
+      {stats.yearlyStats.length > 0 && (
+        <div className="stats-card">
+          <h3>🗓️ Yearly Overview</h3>
+          <div className="yearly-grid">
+            {stats.yearlyStats.map(year => (
+              <div key={year.year} className="year-stat">
+                <div className="year-label">{year.year}</div>
+                <div className="year-metrics">
+                  <div>{year.count} videos</div>
+                  <div>{year.watchTimeHours}h watched</div>
+                  <div>{year.watchTimeDays} days</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Enhanced Watching Habits */}
       {stats.watchingHabits && (
         <div className="stats-card">
           <h3>⏰ Watching Habits</h3>
           <div className="habits-grid">
             <div className="habit-item">
-              <div className="habit-label">Most Active Hour</div>
+              <div className="habit-label">Peak Hour</div>
               <div className="habit-value">{stats.watchingHabits.peakHour || 'N/A'}</div>
             </div>
             <div className="habit-item">
-              <div className="habit-label">Most Active Day</div>
+              <div className="habit-label">Peak Day</div>
               <div className="habit-value">{stats.watchingHabits.peakDay || 'N/A'}</div>
             </div>
             <div className="habit-item">
               <div className="habit-label">Active Days</div>
               <div className="habit-value">{stats.watchingHabits.totalDaysActive}</div>
+            </div>
+            <div className="habit-item">
+              <div className="habit-label">Busiest Month</div>
+              <div className="habit-value">{stats.watchingHabits.busiestMonth || 'N/A'}</div>
             </div>
           </div>
         </div>
