@@ -197,17 +197,18 @@ export default function PrivacyDashboard() {
               <div className="setting-info">
                 <strong>{setting.title}</strong>
                 <p>{setting.description}</p>
+              
+                <label className={`privacy-label ${setting.required ? 'required' : ''}`}>
+                  <input
+                    type="checkbox"
+                    checked={preferences[setting.key] || setting.required}
+                    onChange={(e) => updatePreference(setting.key, e.target.checked)}
+                    disabled={setting.required}
+                    className="privacy-checkbox"
+                  />
+                  {setting.required ? 'Required' : 'Optional'}
+                </label>
               </div>
-              <label className={`privacy-label ${setting.required ? 'required' : ''}`}>
-                <input
-                  type="checkbox"
-                  checked={preferences[setting.key] || setting.required}
-                  onChange={(e) => updatePreference(setting.key, e.target.checked)}
-                  disabled={setting.required}
-                  className="privacy-checkbox"
-                />
-                {setting.required ? 'Required' : 'Optional'}
-              </label>
             </div>
           ))}
         </div>
