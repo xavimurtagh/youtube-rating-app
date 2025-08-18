@@ -9,14 +9,6 @@ export default function Document() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <body>
-        <div className="security-banner">
-          <div className="container">
-            <div className="security-info">
-              <span className="security-icon">🛡️</span>
-              All data is stored locally and encrypted for your privacy
-            </div>
-          </div>
-        </div>
         <Main />
         <NextScript />
       </body>
