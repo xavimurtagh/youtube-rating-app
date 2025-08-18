@@ -189,9 +189,9 @@ export default function UserStatsSection({ videos, ratings }) {
       dayOfWeekCounts[dayOfWeek] = (dayOfWeekCounts[dayOfWeek] || 0) + 1;
     });
 
-    const peakHour = Object.entries(hourCounts).sort(([,a], [,b]) => b - a)[0]?.;
+    const peakHour = Object.entries(hourCounts).sort(([,a], [,b]) => b - a)[0];
     
-    const peakDay = Object.entries(dayOfWeekCounts).sort(([,a], [,b]) => b - a)?.;
+    const peakDay = Object.entries(dayOfWeekCounts).sort(([,a], [,b]) => b - a);
     
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -211,7 +211,7 @@ export default function UserStatsSection({ videos, ratings }) {
     });
     
     return Object.entries(monthCounts)
-      .sort(([,a], [,b]) => b - a)[0]?. || null;
+      .sort(([,a], [,b]) => b - a)[0] || null;
   }
 
   if (!session) {
