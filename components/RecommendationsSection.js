@@ -2,8 +2,8 @@ export default function RecommendationsSection() {
   return (
     <div className="recommendations-placeholder">
       <div className="placeholder-content">
-        <h2>🤖 AI-Powered Recommendations</h2>
-        <p>Our collaborative filtering algorithm will recommend videos based on users with similar preferences.</p>
+        <h2>🤖 AI-Powered Recommendations COMING SOON!</h2>
+        <p>Our collaborative filtering algorithm will be able to recommend videos.</p>
 
         <div className="feature-list">
           <div className="feature-item">
@@ -39,9 +39,6 @@ export default function RecommendationsSection() {
           </div>
         </div>
 
-        <div className="coming-soon">
-          <p><em>AI recommendations will be available once you have rated at least 10 videos.</em></p>
-        </div>
       </div>
     </div>
   );
