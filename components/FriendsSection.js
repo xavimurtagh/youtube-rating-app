@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { socialAPI } from '../utils/api';
 
@@ -6,7 +6,27 @@ export default function FriendsSection() {
   const { data: session } = useSession();
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
+  const [following, setFollowing] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadingFollowing, setLoadingFollowing] = useState(true);
+
+  // Load following list on mount
+  useEffect(() => {
+    if (session) {
+      loadFollowing();
+    }
+  }, [session]);
+
+  const loadFollowing = async () => {
+    try {
+      const followingData = await socialAPI.getFollowing();
+      setFollowing(followingData);
+    } catch (error) {
+      console.error('Failed to load following:', error);
+    } finally {
+      setLoadingFollowing(false);
+    }
+  };
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -32,10 +52,32 @@ export default function FriendsSection() {
           user.id === userId ? { ...user, isFollowing: true } : user
         )
       );
+      // Refresh following list
+      loadFollowing();
     } catch (error) {
       console.error('Follow failed:', error);
       alert('Follow failed: ' + error.message);
     }
+  };
+
+  const handleUnfollow = async (userId) => {
+    try {
+      await socialAPI.unfollowUser(userId);
+      setFollowing(prev => prev.filter(user => user.id !== userId));
+      setSearchResults(prev => 
+        prev.map(user => 
+          user.id === userId ? { ...user, isFollowing: false } : user
+        )
+      );
+    } catch (error) {
+      console.error('Unfollow failed:', error);
+      alert('Unfollow failed: ' + error.message);
+    }
+  };
+
+  const handleViewProfile = (userId) => {
+    // You can implement this to show user profile modal or navigate to profile page
+    alert(`Profile view for user ${userId} - implement this feature!`);
   };
 
   if (!session) {
@@ -52,13 +94,60 @@ export default function FriendsSection() {
   return (
     <div className="friends-section">
       <div className="friends-header">
-        <h2>👥 Find & Follow Friends</h2>
+        <h2>👥 Friends & Following</h2>
         <p className="section-description">
-          Search by name or email to find other users
+          Manage your social connections and discover new users
         </p>
       </div>
 
-      <div className="friend-search">
+      {/* Following List */}
+      <div className="following-section">
+        <h3>👥 People You Follow ({following.length})</h3>
+        {loadingFollowing ? (
+          <div className="loading-state">
+            <p>Loading your connections...</p>
+          </div>
+        ) : following.length > 0 ? (
+          <div className="users-grid">
+            {following.map(user => (
+              <div key={user.id} className="user-card following-card">
+                <img 
+                  src={user.avatar || '/default-avatar.png'} 
+                  alt={user.name}
+                  className="user-avatar" 
+                />
+                <div className="user-info">
+                  <h4 className="user-name">{user.name}</h4>
+                  <p className="user-email">{user.email}</p>
+                  <p className="user-stats">{user.totalRatings} ratings</p>
+                </div>
+                <div className="user-actions">
+                  <button 
+                    className="btn btn--sm btn--outline"
+                    onClick={() => handleViewProfile(user.id)}
+                  >
+                    👁️ Profile
+                  </button>
+                  <button 
+                    className="btn btn--sm btn--danger"
+                    onClick={() => handleUnfollow(user.id)}
+                  >
+                    ❌ Unfollow
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="empty-following">
+            <p>You're not following anyone yet. Search below to find users!</p>
+          </div>
+        )}
+      </div>
+
+      {/* Search Section */}
+      <div className="search-section">
+        <h3>🔍 Find New Friends</h3>
         <form onSubmit={handleSearch} className="search-bar">
           <input
             type="text"
@@ -76,42 +165,41 @@ export default function FriendsSection() {
             {loading ? 'Searching...' : '🔍 Search Users'}
           </button>
         </form>
-      </div>
 
-      {searchResults.length > 0 && (
-        <div className="search-results">
-          <h3>Search Results ({searchResults.length})</h3>
-          <div className="users-grid">
-            {searchResults.map(user => (
-              <div key={user.id} className="user-card">
-                <img 
-                  src={user.avatar || '/default-avatar.png'} 
-                  alt={user.name}
-                  className="user-avatar" 
-                />
-                <div className="user-info">
-                  <h4 className="user-name">{user.name}</h4>
-                  <p className="user-email">{user.email}</p>
-                  <p className="user-stats">{user.totalRatings} ratings</p>
+        {searchResults.length > 0 && (
+          <div className="search-results">
+            <h4>Search Results ({searchResults.length})</h4>
+            <div className="users-grid">
+              {searchResults.map(user => (
+                <div key={user.id} className="user-card">
+                  <img 
+                    src={user.avatar || '/default-avatar.png'} 
+                    alt={user.name}
+                    className="user-avatar" 
+                  />
+                  <div className="user-info">
+                    <h4 className="user-name">{user.name}</h4>
+                    <p className="user-email">{user.email}</p>
+                    <p className="user-stats">{user.totalRatings} ratings</p>
+                  </div>
+                  <button 
+                    className={`btn btn--sm ${user.isFollowing ? 'btn--outline' : 'btn--primary'}`}
+                    onClick={() => user.isFollowing ? handleUnfollow(user.id) : handleFollow(user.id)}
+                  >
+                    {user.isFollowing ? '✓ Following' : 'Follow'}
+                  </button>
                 </div>
-                <button 
-                  className={`btn btn--sm ${user.isFollowing ? 'btn--outline' : 'btn--primary'}`}
-                  onClick={() => handleFollow(user.id)}
-                  disabled={user.isFollowing}
-                >
-                  {user.isFollowing ? '✓ Following' : 'Follow'}
-                </button>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {searchTerm && searchResults.length === 0 && !loading && (
-        <div className="no-results">
-          <p>No users found for "{searchTerm}". Try searching by name or email.</p>
-        </div>
-      )}
+        {searchTerm && searchResults.length === 0 && !loading && (
+          <div className="no-results">
+            <p>No users found for "{searchTerm}". Try searching by name or email.</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
