@@ -23,6 +23,11 @@ export default function AIRecommendationsSection({ videos, ratings, onRateVideo 
     setError(null);
     try {
       const response = await fetch('/api/recommendations');
+      if (response.status === 400) {
+        const err = await response.json();
+        setError(err.error || 'Need more ratings for recommendations'); 
+        return;
+      }
       if (!response.ok) {
         throw new Error('Failed to load recommendations');
       }
@@ -35,6 +40,7 @@ export default function AIRecommendationsSection({ videos, ratings, onRateVideo 
       setLoading(false);
     }
   };
+
 
   const handleRefreshRecommendations = () => {
     loadRecommendations();
@@ -115,7 +121,7 @@ export default function AIRecommendationsSection({ videos, ratings, onRateVideo 
             </div>
           ) : error ? (
             <div className="error-state">
-              <h3>❌ Failed to Load Recommendations</h3>
+              <h3>❌ Unable  to Load Recommendations</h3>
               <p>{error}</p>
               <button className="btn btn--outline" onClick={handleRefreshRecommendations}>
                 Try Again
