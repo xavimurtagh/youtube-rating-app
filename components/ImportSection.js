@@ -43,9 +43,7 @@ export default function ImportSection({ videos, ratings, ignoredIds = [], onImpo
 
     setClearing(true);
     try {
-      for (let i = 0; i < videosToIgnore.length; i++) {
-        await onIgnoreVideo(videosToIgnore[i]);
-      }
+      await Promise.all(videosToIgnore.map(videoId => onIgnoreVideo(videoId)));
       window.location.reload();    
     } catch (error) {
       console.error('Failed to clear all unrated:', error);
