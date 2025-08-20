@@ -22,12 +22,10 @@ export async function api<T = any>(path: string, opts: RequestInit = {}) {
 
 // Social API
 export const socialAPI = {
-  // User search function - searches by name
   searchUsers: (query: string) =>
     api(`users/search?q=${encodeURIComponent(query)}`),
   
-  rateVideo: (video: any, score: number) =>
-    api('rate', { method: 'POST', body: JSON.stringify({ video, score }) }),
+  getFollowing: () => api('following'),
   
   followUser: (userId: string) =>
     api(`follow/${userId}`, { method: 'POST' }),
@@ -38,4 +36,8 @@ export const socialAPI = {
   getFeed: () => api('feed'),
   
   getProfile: (userId: string) => api(`profile/${userId}`),
+  
+  rateVideo: (video: any, score: number) =>
+    api('rate', { method: 'POST', body: JSON.stringify({ video, score }) }),
 };
+
