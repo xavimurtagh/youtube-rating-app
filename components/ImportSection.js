@@ -43,19 +43,10 @@ export default function ImportSection({ videos, ratings, ignoredIds = [], onImpo
 
     setClearing(true);
     try {
-      // Use your existing ignore function for each video
       for (let i = 0; i < videosToIgnore.length; i++) {
-        const videoId = videosToIgnore[i];
-        await onIgnoreVideo(videoId);
-        
-        // Update UI every 10 videos to show progress
-        if (i % 10 === 0) {
-          console.log(`Ignored ${i + 1}/${videosToIgnore.length} videos`);
-        }
+        await onIgnoreVideo(videosToIgnore[i]);
       }
-      
-      alert(`Successfully ignored ${videosToIgnore.length} videos!`);
-      
+      window.location.reload();    
     } catch (error) {
       console.error('Failed to clear all unrated:', error);
       alert('Failed to clear some videos. Please try again.');
