@@ -2173,6 +2173,59 @@ select.form-control:focus {
 }
 
 
+/* Enhanced User Card Layout */
+.user-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  padding: var(--space-16);
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-card-border);
+  min-height: 80px; /* Ensure consistent height */
+}
+
+.user-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0; /* Prevent shrinking */
+}
+
+.user-info {
+  flex: 1; /* Take available space */
+  min-width: 0; /* Allow text to wrap */
+}
+
+.user-name {
+  font-weight: var(--font-weight-semibold);
+  margin: 0 0 4px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-email {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  margin: 0 0 4px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-stats {
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-xs);
+  margin: 0;
+}
+
+/* Follow button styling */
+.user-card .btn {
+  flex-shrink: 0; /* Prevent button from shrinking */
+  min-width: 80px;
+}
 
 
 
