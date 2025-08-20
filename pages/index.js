@@ -70,7 +70,13 @@ export default function Home() {
   };
 
   const handleIgnoreVideo = (videoId, ignore = true) => {
-    ignoreVideo(videoId, ignore);
+    console.log('Ignoring video:', videoId);
+    try {
+      ignoreVideo(videoId, ignore);
+      console.log('Successfully ignored video:', videoId);
+    } catch (error) {
+      console.error('Failed to ignore video:', videoId, error);
+    }
   };
 
   const handleSaveRating = (videoOrId, rating) => {
