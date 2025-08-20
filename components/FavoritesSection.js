@@ -24,20 +24,31 @@ export default function FavoritesSection({ ratings, videos, onRateVideo, onToggl
     .filter(video => customFavorites.size === 0 || customFavorites.has(video.id))
     .slice(0, 5);
 
-  const handleToggleFavorite = (videoId) => {
-    setCustomFavorites(prev => {
-      const newFavorites = new Set(prev);
-      if (newFavorites.has(videoId)) {
-        newFavorites.delete(videoId);
-      } else if (newFavorites.size < 5) {
-        newFavorites.add(videoId);
+  const handleToggleFavorite = async (videoId) => {
+    try {
+      if (customFavorites.has(videoId)) {
+        await socialAPI.removeFavorite(videoId);
+        setCustomFavorites(prev => {
+          const newFavorites = new Set(prev);
+          newFavorites.delete(videoId);
+          return newFavorites;
+        });
+      } else if (customFavorites.size < 5) {
+        await socialAPI.addFavorite(videoId);
+        setCustomFavorites(prev => {
+          const newFavorites = new Set(prev);
+          newFavorites.add(videoId);
+          return newFavorites;
+        });
       } else {
         alert('You can only have 5 favorites! Remove one first.');
-        return prev;
       }
-      return newFavorites;
-    });
+    } catch (error) {
+      console.error('Failed to toggle favorite:', error);
+      alert('Failed to update favorite. Please try again.');
+    }
   };
+
 
   if (!session) {
     return (
