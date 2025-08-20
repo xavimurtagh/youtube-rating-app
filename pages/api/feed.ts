@@ -8,17 +8,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const request = new Request('http://localhost', {
-      method: req.method,
-      headers: req.headers as any,
-    });
-
-    const me = await getUser(request);
+    // Use NextAuth session instead of JWT
+    const me = await getUser(req, res);
     if (!me) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    // Get activities from people I follow
+    // Rest of your feed logic stays the same
     const activities = await prisma.activity.findMany({
       where: {
         user: {
@@ -34,7 +30,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       take: 50
     });
 
-    // If no activities from friends, return empty array (not error)
     res.status(200).json(activities);
   } catch (error) {
     console.error('Feed error:', error);
