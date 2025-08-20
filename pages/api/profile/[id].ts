@@ -6,6 +6,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   // Normalize id to string
   const rawId = req.query.id;
   const id = Array.isArray(rawId) ? rawId[0] : rawId;
+  const user = await prisma.user.findUnique({
+    where:{ id },
+    select:{
+      id:true, name:true, avatar:true, bio:true,
 
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -22,7 +26,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         name: true,
         avatar: true,
         bio: true,
-        favourites: { select: { id: true, title: true, channel: true, thumbnail: true } },
+        favorites: { select: { id: true, title: true, channel: true, thumbnail: true } },
         ratings: { select: { videoId: true, score: true } },
         followers: { select: { followerId: true } },
         following: { select: { followeeId: true } }
