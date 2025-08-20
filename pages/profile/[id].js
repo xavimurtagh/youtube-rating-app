@@ -5,7 +5,8 @@ import VideoList from '../../components/VideoList';
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { id } = router.query;
+  const { id:rawId } = router.query;
+  const id = Array.isArray(rawId) ? rawId[0] : rawId;
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
