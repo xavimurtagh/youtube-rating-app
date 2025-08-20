@@ -7,8 +7,7 @@ export default function VideoCard({
   onRate, 
   onIgnore, 
   showIgnoreButton = false, 
-  ignoreButtonText = 'Ignore',
-  onVideoClick 
+  ignoreButtonText = 'Ignore'
 }) {
   const [videoStats, setVideoStats] = useState(null);
   const [loadingStats, setLoadingStats] = useState(false);
@@ -33,21 +32,17 @@ export default function VideoCard({
     }
   };
 
-  const handleRate = () => {
+  const handleRate = (e) => {
+    e.stopPropagation();
     if (onRate) {
       onRate(video);
     }
   };
 
-  const handleIgnore = () => {
+  const handleIgnore = (e) => {
+    e.stopPropagation();
     if (onIgnore) {
       onIgnore(video.id);
-    }
-  };
-
-  const handleVideoClick = () => {
-    if (onVideoClick) {
-      onVideoClick(video, videoStats);
     }
   };
 
@@ -68,7 +63,7 @@ export default function VideoCard({
   const ratingValue = getRatingValue();
 
   return (
-    <div className="video-card" onClick={handleVideoClick}>
+    <div className="video-card">
       <div className="video-thumbnail">
         {video.thumbnail ? (
           <img src={video.thumbnail} alt={video.title} />
@@ -121,7 +116,7 @@ export default function VideoCard({
       </div>
 
       <div className="video-actions">
-        <button onClick={(e) => { e.stopPropagation(); handleRate(); }} className="btn btn--primary btn--sm">
+        <button onClick={handleRate} className="btn btn--primary btn--sm">
           Rate Video
         </button>
         
@@ -137,7 +132,7 @@ export default function VideoCard({
         
         {showIgnoreButton && (
           <button 
-            onClick={(e) => { e.stopPropagation(); handleIgnore(); }} 
+            onClick={handleIgnore} 
             className="btn btn--outline btn--sm ignore-btn"
             title="Ignore this video and remove from import list"
           >
