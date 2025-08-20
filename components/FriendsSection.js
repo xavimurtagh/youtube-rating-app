@@ -81,11 +81,6 @@ export default function FriendsSection() {
     }
   };
 
-  const handleViewProfile = (userId) => {
-    // You can implement this to show user profile modal or navigate to profile page
-    alert(`Profile view for user ${userId} - implement this feature!`);
-  };
-
   if (!session) {
     return (
       <div className="auth-required">
