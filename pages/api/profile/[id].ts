@@ -1,7 +1,7 @@
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
-import { socialAPI } from 'utils/api';
-import VideoList from 'components/VideoList';
+import { socialAPI } from '../../../utils/api';
+import VideoList from '../../../components/VideoList';
 
 export default function ProfilePage() {
   const router = useRouter();
