@@ -22,31 +22,22 @@ export default function AIRecommendationsSection({ videos, ratings, onRateVideo 
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/recommendations');
-      
-      if (response.status === 400) {
-        const errorData = await response.json();
-        setError(errorData.error || 'Need at least 10 ratings for recommendations');
+      const res = await fetch('/api/recommendations');
+      if (res.status === 400) {
+        const data = await res.json();
+        setError(data.error || 'Need to rate at least 10 videos to get recommendations');
         setRecommendations([]);
         return;
       }
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      
-      const data = await response.json();
+      if (!res.ok) throw new Error('Failed to load');
+      const data = await res.json();
       setRecommendations(data.recommendations || []);
-    } catch (error) {
-      console.error('Failed to load recommendations:', error);
-      setError('Failed to load recommendations. Please try again later.');
-      setRecommendations([]);
+    } catch(e) {
+      setError('Failed to load recommendations');
     } finally {
       setLoading(false);
     }
   };
-
-
 
   const handleRefreshRecommendations = () => {
     loadRecommendations();
