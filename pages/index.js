@@ -15,6 +15,8 @@ import AuthButton from '../components/AuthButton';
 import FriendsSection from '../components/FriendsSection';
 import FavoritesSection from '../components/FavoritesSection';
 import SocialFeedSection from '../components/SocialFeedSection';
+import VideoDetailsModal from '../components/VideoDetailsModal';
+import AIRecommendationsSection from '../components/AIRecommendationsSection';
 import { useVideos } from '../hooks/useVideos';
 
 export default function Home() {
@@ -22,6 +24,8 @@ export default function Home() {
   const [ratingModalVideo, setRatingModalVideo] = useState(null);
   const [showSignInModal, setShowSignInModal] = useState(false);
   const [storageWarning, setStorageWarning] = useState(null);
+  const [videoDetailsModal, setVideoDetailsModal] = useState(null);
+
   const { data: session } = useSession();
   
   const {
@@ -61,6 +65,10 @@ export default function Home() {
     setRatingModalVideo(video);
   };
 
+  const handleVideoClick = async (video, videoStats) => {
+    setVideoDetailsModal({ video, videoStats });
+  };
+
   const handleIgnoreVideo = (videoId, ignore = true) => {
     ignoreVideo(videoId, ignore);
   };
@@ -78,22 +86,6 @@ export default function Home() {
     switch (activeTab) {
       case 'search':
         return <SearchSection onRateVideo={handleRateVideo} />;
-
-
-      case 'friends':
-        return <FriendsSection />;
-      
-      case 'favorites':
-        return (
-          <FavoritesSection 
-            ratings={ratings}
-            videos={videos}
-            onRateVideo={handleRateVideo}
-          />
-        );
-      
-      case 'feed':
-        return <SocialFeedSection />;
       
       case 'import':
         return (
@@ -109,43 +101,58 @@ export default function Home() {
       
       case 'music':
         return (
-          <MusicSection 
+          <MusicSection
             onRateVideo={handleRateVideo}
             musicVideos={musicVideos}
             ratings={ratings}
-            onIgnoreVideo={handleIgnoreVideo}
+            onIgnoreVideo={ignoreVideo}
           />
         );
       
       case 'ratings':
         return (
           <RatingsSection
-            videos={regularVideos}
-            ratings={ratings}
-            onRateVideo={handleRateVideo}
-            stats={stats}
-          />
-        );
-      
-      case 'stats':
-        return (
-          <UserStatsSection
             videos={videos}
             ratings={ratings}
+            onRateVideo={handleRateVideo}
+            onVideoClick={handleVideoClick}
           />
         );
       
-      case 'privacy':
-        return <PrivacyDashboard />;
+      case 'friends':
+        return <FriendsSection />;
       
-      case 'recommendations':
-        return <RecommendationsSection />;
+      case 'favorites':
+        return (
+          <FavoritesSection 
+            ratings={ratings}
+            videos={videos}
+            onRateVideo={handleRateVideo}
+          />
+        );
+      
+      case 'feed':
+        return <SocialFeedSection />;
+      
+      case 'stats':
+        return <UserStatsSection videos={videos} ratings={ratings} />;
+      
+      case 'privacy':
+        return <PrivacyDashboard onClearData={clearAllData} />;
+      
+      case 'ai':
+        return (
+          <AIRecommendationsSection
+            videos={videos}
+            ratings={ratings}
+            onRateVideo={handleRateVideo}
+          />
+        );
       
       default:
         return <SearchSection onRateVideo={handleRateVideo} />;
     }
   };
-
   return (
     <>
       <Head>
@@ -209,6 +216,15 @@ export default function Home() {
           isOpen={showSignInModal}
           onClose={() => setShowSignInModal(false)}
         />
+
+        {videoDetailsModal && (
+          <VideoDetailsModal
+            video={videoDetailsModal.video}
+            videoStats={videoDetailsModal.videoStats}
+            onClose={() => setVideoDetailsModal(null)}
+            onRate={handleRateVideo}
+          />
+        )}
         
         {/* Dev Tools */}
         {process.env.NODE_ENV === 'development' && (
