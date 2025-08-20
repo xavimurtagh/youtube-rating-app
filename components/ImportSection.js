@@ -16,6 +16,7 @@ export default function ImportSection({
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [sortOrder, setSortOrder] = useState('newest');
+  const [clearing, setClearing] = useState(false);
   const VIDEOS_PER_PAGE = 20;
 
   const handleFileParsed = (result) => {
@@ -29,31 +30,44 @@ export default function ImportSection({
     }
   };
 
-  // Update the handleClearAllUnrated function
   const handleClearAllUnrated = async () => {
-    if (!confirm(`Are you sure you want to ignore all ${videosToRate.length} unrated videos?`)) {
+    const videosToIgnore = videosToRate.map(v => v.id);
+    
+    if (!confirm(`Are you sure you want to ignore all ${videosToIgnore.length} unrated videos? This will remove them from your to-rate list.`)) {
       return;
     }
-  
+
+    setClearing(true);
     try {
-      const videoIds = videosToRate.map(video => video.id);
+      // Process in batches to avoid overwhelming the system
+      const batchSize = 10;
+      let processed = 0;
       
-      const response = await fetch('/api/bulk-ignore', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ videoIds })
-      });
-  
-      if (response.ok) {
-        alert(`Successfully ignored ${videoIds.length} videos!`);
-        // Refresh the page or update state
-        window.location.reload();
-      } else {
-        throw new Error('Bulk ignore failed');
+      for (let i = 0; i < videosToIgnore.length; i += batchSize) {
+        const batch = videosToIgnore.slice(i, i + batchSize);
+        
+        // Process batch
+        await Promise.all(
+          batch.map(videoId => onIgnoreVideo(videoId))
+        );
+        
+        processed += batch.length;
+        console.log(`Processed ${processed}/${videosToIgnore.length} videos`);
+        
+        // Small delay to prevent overwhelming the system
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
+      
+      alert(`Successfully ignored ${videosToIgnore.length} videos!`);
+      
+      // Force a page refresh to update the UI
+      window.location.reload();
+      
     } catch (error) {
       console.error('Failed to clear all unrated:', error);
-      alert('Failed to clear all videos. Please try again.');
+      alert('Failed to clear some videos. Please try again.');
+    } finally {
+      setClearing(false);
     }
   };
 
@@ -69,17 +83,17 @@ export default function ImportSection({
     }
   };
 
-  // Get videos that need rating (not rated and not ignored)
   const importedVideos = videos.filter(video => video.watchedAt);
-  let videosToRate = importedVideos.filter(
-    video => !ratings[video.id] && !ignoredIds.includes(video.id)
+  let videosToRate = importedVideos.filter(video => 
+    !ratings[video.id] && !video.ignored
   );
+  
   videosToRate = videosToRate.sort((a,b) => {
     const ta = new Date(a.watchedAt).getTime();
     const tb = new Date(b.watchedAt).getTime();
     return sortOrder==='newest' ? tb - ta : ta - tb;
   });
-  
+
   const ratedVideos = importedVideos.filter(video => ratings[video.id]);
   const ignoredVideos = importedVideos.filter(video => video.ignored);
 
@@ -198,22 +212,23 @@ export default function ImportSection({
                   <button 
                     onClick={handleClearAllUnrated}
                     className="btn btn--outline btn--warning"
+                    disabled={clearing}
                     title="Ignore all unrated videos and remove them from this list"
                   >
-                    🗑️ Clear All Unrated ({videosToRate.length})
+                    {clearing ? '🔄 Clearing...' : `🗑️ Clear All Unrated (${videosToRate.length})`}
                   </button>
                 </div>
               )}
+        
               <VideoList
                 videos={currentVideos}
                 ratings={ratings}
                 onRateVideo={onRateVideo}
+                onIgnoreVideo={onIgnoreVideo}
                 showIgnoreButton={true}
-                onIgnoreVideo={handleIgnore}
                 ignoreButtonText="Ignore"
                 showLimit={null}
               />
-
               {/* Pagination */}
               {totalPages > 1 && (
                 <div className="pagination">
