@@ -13,7 +13,6 @@ export default function VideoList({
     return (
       <div className="empty-state">
         <h3>Start rating videos to see your history here</h3>
-        <p>Showing first {showLimit} videos...</p>
       </div>
     );
   }
