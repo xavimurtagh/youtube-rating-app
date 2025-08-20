@@ -18,19 +18,26 @@ export default function VideoCard({
   }, [video.id]);
 
   const loadVideoStats = async () => {
+    if (!video?.id) return;
+    
     setLoadingStats(true);
     try {
       const response = await fetch(`/api/video/${video.id}/stats`);
       if (response.ok) {
         const stats = await response.json();
         setVideoStats(stats);
+      } else {
+        console.warn('Failed to load video stats:', response.status);
+        setVideoStats({ totalRatings: 0, averageRating: null });
       }
     } catch (error) {
       console.error('Failed to load video stats:', error);
+      setVideoStats({ totalRatings: 0, averageRating: null });
     } finally {
       setLoadingStats(false);
     }
   };
+
 
   const handleRate = (e) => {
     e.stopPropagation();
@@ -89,19 +96,22 @@ export default function VideoCard({
           </p>
         )}
 
-        {/* Video Statistics */}
         <div className="video-stats">
           {loadingStats ? (
             <span className="stats-loading">Loading stats...</span>
-          ) : videoStats && videoStats.totalRatings > 0 ? (
-            <div className="stats-display">
-              <span className="average-rating">
-                ⭐ {videoStats.averageRating}/10
-              </span>
-              <span className="rating-count">
-                ({videoStats.totalRatings} rating{videoStats.totalRatings !== 1 ? 's' : ''})
-              </span>
-            </div>
+          ) : videoStats ? (
+            videoStats.totalRatings > 0 ? (
+              <div className="stats-display">
+                <span className="average-rating">
+                  ⭐ {videoStats.averageRating}/10
+                </span>
+                <span className="rating-count">
+                  ({videoStats.totalRatings} rating{videoStats.totalRatings !== 1 ? 's' : ''})
+                </span>
+              </div>
+            ) : (
+              <span className="no-stats">No ratings yet</span>
+            )
           ) : (
             <span className="no-stats">No ratings yet</span>
           )}
