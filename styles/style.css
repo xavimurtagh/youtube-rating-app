@@ -2231,6 +2231,225 @@ select.form-control:focus {
 
 
 
+/* Video Details Modal */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.video-details-modal {
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.video-details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-24);
+  margin-bottom: var(--space-24);
+}
+
+.video-thumbnail-large img {
+  width: 100%;
+  border-radius: var(--radius-base);
+}
+
+.community-stats {
+  background: var(--color-bg-1);
+  border-radius: var(--radius-base);
+  padding: var(--space-16);
+  margin: var(--space-16) 0;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-16);
+  margin: var(--space-16) 0;
+}
+
+.distribution-row {
+  display: grid;
+  grid-template-columns: 30px 1fr 50px;
+  gap: var(--space-8);
+  align-items: center;
+  margin-bottom: var(--space-4);
+}
+
+.bar-container {
+  background: var(--color-bg-2);
+  border-radius: var(--radius-sm);
+  height: 8px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  background: var(--color-primary);
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+/* AI Recommendations */
+.recommendations-disclaimer {
+  background: var(--color-bg-1);
+  border-radius: var(--radius-lg);
+  padding: var(--space-20);
+  margin-bottom: var(--space-24);
+  border-left: 4px solid var(--color-primary);
+}
+
+.progress-bar {
+  background: var(--color-bg-2);
+  border-radius: var(--radius-full);
+  height: 8px;
+  overflow: hidden;
+  margin-top: var(--space-8);
+}
+
+.progress-fill {
+  background: linear-gradient(90deg, var(--color-primary), var(--color-success));
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 0.5s ease;
+}
+
+.requirement-text {
+  color: var(--color-warning);
+  font-weight: var(--font-weight-semibold);
+}
+
+.recommendations-grid {
+  display: grid;
+  gap: var(--space-24);
+}
+
+.recommendation-card {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: var(--space-16);
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: var(--space-16);
+  border: 1px solid var(--color-card-border);
+}
+
+.match-score {
+  margin-bottom: var(--space-12);
+}
+
+.match-percentage {
+  font-weight: var(--font-weight-bold);
+  color: var(--color-success);
+}
+
+.match-bar {
+  background: var(--color-bg-2);
+  border-radius: var(--radius-full);
+  height: 6px;
+  overflow: hidden;
+  margin-top: var(--space-4);
+}
+
+.match-fill {
+  background: linear-gradient(90deg, var(--color-success), var(--color-primary));
+  height: 100%;
+  border-radius: var(--radius-full);
+}
+
+/* Enhanced User Actions */
+.user-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  min-width: 100px;
+}
+
+.following-card {
+  border-left: 3px solid var(--color-success);
+}
+
+.btn--danger {
+  background: var(--color-red-400);
+  color: white;
+  border-color: var(--color-red-400);
+}
+
+.btn--danger:hover {
+  background: var(--color-red-500);
+  border-color: var(--color-red-500);
+}
+
+/* Favorite Selection */
+.favorite-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-16);
+  padding: var(--space-16);
+  background: var(--color-surface);
+  border-radius: var(--radius-base);
+  border: 2px solid transparent;
+  margin-bottom: var(--space-12);
+  transition: all 0.2s ease;
+}
+
+.favorite-option.selected {
+  border-color: var(--color-primary);
+  background: rgba(var(--color-primary-rgb), 0.1);
+}
+
+.video-thumbnail {
+  width: 80px;
+  height: 45px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+/* Video Stats in Cards */
+.video-stats {
+  margin: var(--space-8) 0;
+  font-size: var(--font-size-sm);
+}
+
+.stats-display {
+  display: flex;
+  gap: var(--space-8);
+  align-items: center;
+}
+
+.average-rating {
+  color: var(--color-warning);
+  font-weight: var(--font-weight-semibold);
+}
+
+.rating-count {
+  color: var(--color-text-secondary);
+}
+
+.personal-rating {
+  background: rgba(var(--color-primary-rgb), 0.1);
+  border-radius: var(--radius-sm);
+  padding: var(--space-4) var(--space-8);
+  font-size: var(--font-size-sm);
+  margin-top: var(--space-8);
+}
+
+.rating-badge {
+  background: var(--color-primary);
+  color: white;
+  padding: var(--space-2) var(--space-6);
+  border-radius: var(--radius-sm);
+  font-weight: var(--font-weight-semibold);
+}
 
 
 
