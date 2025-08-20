@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { socialAPI } from '../utils/api';
+import { useRouter } from 'next/router';
 
 export default function FriendsSection() {
   const { data: session } = useSession();
@@ -16,6 +17,11 @@ export default function FriendsSection() {
       loadFollowing();
     }
   }, [session]);
+
+  const router = useRouter();
+  const handleViewProfile = (userId) => {
+    router.push(`/profile/${userId}`);
+  };
 
   const loadFollowing = async () => {
     try {
