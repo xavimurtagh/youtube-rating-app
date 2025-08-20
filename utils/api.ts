@@ -1,12 +1,11 @@
-import { getSession } from 'next-auth/react';
 export async function api<T = any>(path: string, opts: RequestInit = {}) {
-  const session = await getSession();
+  const token = typeof window !== 'undefined' ? localStorage.getItem('jwt') : null;
   
   const res = await fetch(`/api/${path}`, {
     ...opts,
     headers: { 
       'Content-Type': 'application/json', 
-      ...(session?.user?.email ? { 'X-User-Email': session.user.email } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(opts.headers || {}) 
     }
   });
@@ -19,13 +18,20 @@ export async function api<T = any>(path: string, opts: RequestInit = {}) {
   return res.json() as Promise<T>;
 }
 
+// Auth API
+export const authAPI = {
+  login: (email: string, password: string) => 
+    api('auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
+  
+  signup: (email: string, password: string, name: string) =>
+    api('auth/signup', { method: 'POST', body: JSON.stringify({ email, password, name }) }),
+};
 
-// Social API
 export const socialAPI = {
   searchUsers: (query: string) =>
     api(`users/search?q=${encodeURIComponent(query)}`),
   
-  getFollowing: () => api('following'),
+  getFollowing: () => api('following'),  // <-- This was missing!
   
   followUser: (userId: string) =>
     api(`follow/${userId}`, { method: 'POST' }),
@@ -40,4 +46,3 @@ export const socialAPI = {
   rateVideo: (video: any, score: number) =>
     api('rate', { method: 'POST', body: JSON.stringify({ video, score }) }),
 };
-
