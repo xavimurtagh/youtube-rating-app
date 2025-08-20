@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { decodeHtmlEntities } from '../utils/htmlUtils';
 
 export default function VideoCard({ 
@@ -5,9 +6,33 @@ export default function VideoCard({
   rating, 
   onRate, 
   onIgnore, 
-  showIgnoreButton = false,
-  ignoreButtonText = 'Ignore'
+  showIgnoreButton = false, 
+  ignoreButtonText = 'Ignore',
+  onVideoClick 
 }) {
+  const [videoStats, setVideoStats] = useState(null);
+  const [loadingStats, setLoadingStats] = useState(false);
+
+  // Load video stats
+  useEffect(() => {
+    loadVideoStats();
+  }, [video.id]);
+
+  const loadVideoStats = async () => {
+    setLoadingStats(true);
+    try {
+      const response = await fetch(`/api/video/${video.id}/stats`);
+      if (response.ok) {
+        const stats = await response.json();
+        setVideoStats(stats);
+      }
+    } catch (error) {
+      console.error('Failed to load video stats:', error);
+    } finally {
+      setLoadingStats(false);
+    }
+  };
+
   const handleRate = () => {
     if (onRate) {
       onRate(video);
@@ -17,6 +42,12 @@ export default function VideoCard({
   const handleIgnore = () => {
     if (onIgnore) {
       onIgnore(video.id);
+    }
+  };
+
+  const handleVideoClick = () => {
+    if (onVideoClick) {
+      onVideoClick(video, videoStats);
     }
   };
 
@@ -37,91 +68,82 @@ export default function VideoCard({
   const ratingValue = getRatingValue();
 
   return (
-    <div className={`video-card ${isMusic ? 'music-video' : ''}`}>
-      {video.thumbnail && (
-        <div className="video-thumbnail-container">
-          <img 
-            src={video.thumbnail} 
-            alt={decodeHtmlEntities(video.title)}
-            className="video-thumbnail"
-          />
-          {video.duration && (
-            <span className="video-duration">{video.duration}</span>
-          )}
-          {isMusic && (
-            <span className="music-badge">🎵</span>
-          )}
-        </div>
-      )}
-
-      <div className="video-info">
-        <h3 className="video-title">
-          {decodeHtmlEntities(video.title)}
-        </h3>
-        <p className="video-channel">
-          {decodeHtmlEntities(video.channel)}
-        </p>
-
+    <div className="video-card" onClick={handleVideoClick}>
+      <div className="video-thumbnail">
+        {video.thumbnail ? (
+          <img src={video.thumbnail} alt={video.title} />
+        ) : (
+          <div className="no-thumbnail">📺</div>
+        )}
+        {isMusic && <div className="music-badge">🎵</div>}
+      </div>
+      
+      <div className="video-content">
+        <h3 className="video-title">{decodeHtmlEntities(video.title)}</h3>
+        <p className="video-channel">{decodeHtmlEntities(video.channel)}</p>
+        
         {video.watchedAt && (
-          <p className="watch-date">
+          <p className="video-date">
             Watched: {new Date(video.watchedAt).toLocaleDateString()}
           </p>
         )}
-
+        
         {video.description && (
           <p className="video-description">
             {decodeHtmlEntities(video.description).substring(0, 100)}...
           </p>
         )}
 
+        {/* Video Statistics */}
         <div className="video-stats">
-          {video.viewCount && (
-            <span>{parseInt(video.viewCount).toLocaleString()} views</span>
-          )}
-          {video.publishedAt && (
-            <span>{new Date(video.publishedAt).toLocaleDateString()}</span>
-          )}
-        </div>
-
-        <div className="video-actions">
-          {ratingValue ? (
-            <div className="current-rating">
-              <span className="rating-number">{ratingValue}</span>
-              <span className="rating-label">/10</span>
-              <button 
-                onClick={handleRate}
-                className="btn btn--outline btn--sm"
-              >
-                Edit Rating
-              </button>
+          {loadingStats ? (
+            <span className="stats-loading">Loading stats...</span>
+          ) : videoStats && videoStats.totalRatings > 0 ? (
+            <div className="stats-display">
+              <span className="average-rating">
+                ⭐ {videoStats.averageRating}/10
+              </span>
+              <span className="rating-count">
+                ({videoStats.totalRatings} rating{videoStats.totalRatings !== 1 ? 's' : ''})
+              </span>
             </div>
           ) : (
-            <button onClick={handleRate} className="btn btn--primary btn--sm">
-              Rate Video
-            </button>
-          )}
-
-          {showIgnoreButton && (
-            <button 
-              onClick={handleIgnore} 
-              className="btn btn--outline btn--sm ignore-btn"
-              title={ignoreButtonText === 'Ignore' ? 'Hide this video from your list' : 'Show this video again'}
-            >
-              {ignoreButtonText}
-            </button>
-          )}
-
-          {video.url && (
-            <a 
-              href={video.url} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="btn btn--outline btn--sm"
-            >
-              Watch on YouTube
-            </a>
+            <span className="no-stats">No ratings yet</span>
           )}
         </div>
+
+        {/* Personal Rating */}
+        {ratingValue && (
+          <div className="personal-rating">
+            Your rating: <span className="rating-badge">{ratingValue}/10</span>
+          </div>
+        )}
+      </div>
+
+      <div className="video-actions">
+        <button onClick={(e) => { e.stopPropagation(); handleRate(); }} className="btn btn--primary btn--sm">
+          Rate Video
+        </button>
+        
+        <a 
+          href={`https://www.youtube.com/watch?v=${video.id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn btn--outline btn--sm"
+          onClick={(e) => e.stopPropagation()}
+        >
+          Watch on YouTube
+        </a>
+        
+        {showIgnoreButton && (
+          <button 
+            onClick={(e) => { e.stopPropagation(); handleIgnore(); }} 
+            className="btn btn--outline btn--sm ignore-btn"
+            title="Ignore this video and remove from import list"
+          >
+            {ignoreButtonText}
+          </button>
+        )}
       </div>
     </div>
   );
