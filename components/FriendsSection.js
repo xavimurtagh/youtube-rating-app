@@ -1,14 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { socialAPI, authAPI } from '../utils/api';
+import { socialAPI } from '../utils/api';
 
 export default function FriendsSection() {
   const { data: session } = useSession();
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [authMode, setAuthMode] = useState('login');
-  const [authForm, setAuthForm] = useState({ email: '', password: '', name: '' });
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -20,26 +18,9 @@ export default function FriendsSection() {
       setSearchResults(results);
     } catch (error) {
       console.error('Search failed:', error);
-      alert('Search failed. Make sure you\'re logged in.');
+      alert('Search failed: ' + error.message);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleAuth = async (e) => {
-    e.preventDefault();
-    try {
-      if (authMode === 'login') {
-        const result = await authAPI.login(authForm.email, authForm.password);
-        localStorage.setItem('jwt', result.token);
-        window.location.reload(); // Simple refresh to update session
-      } else {
-        const result = await authAPI.signup(authForm.email, authForm.password, authForm.name);
-        localStorage.setItem('jwt', result.token);
-        window.location.reload();
-      }
-    } catch (error) {
-      alert('Authentication failed: ' + error.message);
     }
   };
 
@@ -53,56 +34,16 @@ export default function FriendsSection() {
       );
     } catch (error) {
       console.error('Follow failed:', error);
-      alert('Follow failed. Please try again.');
+      alert('Follow failed: ' + error.message);
     }
   };
 
-  // Simple auth form if not using NextAuth properly
-  if (!session && !localStorage.getItem('jwt')) {
+  if (!session) {
     return (
       <div className="auth-required">
-        <div className="auth-form">
-          <h2>👥 {authMode === 'login' ? 'Sign In' : 'Sign Up'} for Social Features</h2>
-          <form onSubmit={handleAuth}>
-            {authMode === 'signup' && (
-              <input
-                type="text"
-                placeholder="Full Name"
-                value={authForm.name}
-                onChange={(e) => setAuthForm(prev => ({ ...prev, name: e.target.value }))}
-                className="form-control"
-                required
-              />
-            )}
-            <input
-              type="email"
-              placeholder="Email"
-              value={authForm.email}
-              onChange={(e) => setAuthForm(prev => ({ ...prev, email: e.target.value }))}
-              className="form-control"
-              required
-            />
-            <input
-              type="password"
-              placeholder="Password"
-              value={authForm.password}
-              onChange={(e) => setAuthForm(prev => ({ ...prev, password: e.target.value }))}
-              className="form-control"
-              required
-            />
-            <button type="submit" className="btn btn--primary">
-              {authMode === 'login' ? 'Sign In' : 'Sign Up'}
-            </button>
-          </form>
-          <p>
-            {authMode === 'login' ? "Don't have an account? " : "Already have an account? "}
-            <button 
-              onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
-              className="btn btn--outline btn--sm"
-            >
-              {authMode === 'login' ? 'Sign Up' : 'Sign In'}
-            </button>
-          </p>
+        <div className="auth-prompt">
+          <h2>👥 Sign In to Find Friends</h2>
+          <p>Use the Sign In button at the top to access social features!</p>
         </div>
       </div>
     );
