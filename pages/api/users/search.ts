@@ -8,12 +8,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const request = new Request('http://localhost', {
-      method: req.method,
-      headers: req.headers as any,
-    });
-
-    const me = await getUser(request);
+    // Use NextAuth session
+    const me = await getUser(req, res);
     if (!me) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
@@ -23,11 +19,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Search query required' });
     }
 
-    // Search users by name or email (case insensitive)
+    // Rest stays the same...
     const users = await prisma.user.findMany({
       where: {
         AND: [
-          { id: { not: me.id } }, // Exclude current user
+          { id: { not: me.id } },
           {
             OR: [
               { name: { contains: q, mode: 'insensitive' } },
@@ -42,7 +38,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         email: true,
         avatar: true,
         bio: true,
-        ratings: { select: { id: true } }, // Count ratings
+        ratings: { select: { id: true } },
         followers: { 
           where: { followerId: me.id },
           select: { id: true }
@@ -51,7 +47,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       take: 20
     });
 
-    // Format response with follow status
     const formattedUsers = users.map(user => ({
       id: user.id,
       name: user.name,
