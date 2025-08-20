@@ -11,6 +11,9 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const favs = profile.favourites || [];
+  const rated = profile.ratings || [];
+
   useEffect(() => {
     if (!id) return;
     loadProfile();
@@ -44,13 +47,19 @@ export default function ProfilePage() {
       
       <h3>⭐ Top 5 Favorites</h3>
       {favs.length > 0 ? (
-        <VideoList
-          videos={favs}
-          ratings={{}}
-          showLimit={5}
-        />
+        <VideoList videos={favs} ratings={{}} showLimit={5}/>
       ) : (
         <p>No favorites yet.</p>
+      )}
+      
+      {rated.length > 0 ? (
+        <ul>{rated.map(r=>(
+          <li key={r.videoId}>
+            <a href={`/video/${r.videoId}`}>Video {r.videoId}</a>: {r.score}/10
+          </li>
+        ))}</ul>
+      ) : (
+        <p>No ratings yet.</p>
       )}
       
       <h3>📊 Ratings</h3>
