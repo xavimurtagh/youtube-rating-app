@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { socialAPI } from '../utils/api';
+import { socialAPI, authAPI } from '../utils/api';
 
 export default function FriendsSection() {
   const { data: session } = useSession();
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
-  const [friends, setFriends] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [authMode, setAuthMode] = useState('login');
+  const [authForm, setAuthForm] = useState({ email: '', password: '', name: '' });
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -15,20 +16,36 @@ export default function FriendsSection() {
     
     setLoading(true);
     try {
-      // You'll need to create this API endpoint
       const results = await socialAPI.searchUsers(searchTerm);
       setSearchResults(results);
     } catch (error) {
       console.error('Search failed:', error);
+      alert('Search failed. Make sure you\'re logged in.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAuth = async (e) => {
+    e.preventDefault();
+    try {
+      if (authMode === 'login') {
+        const result = await authAPI.login(authForm.email, authForm.password);
+        localStorage.setItem('jwt', result.token);
+        window.location.reload(); // Simple refresh to update session
+      } else {
+        const result = await authAPI.signup(authForm.email, authForm.password, authForm.name);
+        localStorage.setItem('jwt', result.token);
+        window.location.reload();
+      }
+    } catch (error) {
+      alert('Authentication failed: ' + error.message);
     }
   };
 
   const handleFollow = async (userId) => {
     try {
       await socialAPI.followUser(userId);
-      // Update UI optimistically
       setSearchResults(prev => 
         prev.map(user => 
           user.id === userId ? { ...user, isFollowing: true } : user
@@ -36,15 +53,56 @@ export default function FriendsSection() {
       );
     } catch (error) {
       console.error('Follow failed:', error);
+      alert('Follow failed. Please try again.');
     }
   };
 
-  if (!session) {
+  // Simple auth form if not using NextAuth properly
+  if (!session && !localStorage.getItem('jwt')) {
     return (
       <div className="auth-required">
-        <div className="auth-prompt">
-          <h2>👥 Sign In to Find Friends</h2>
-          <p>Sign in to search for friends and see their video ratings!</p>
+        <div className="auth-form">
+          <h2>👥 {authMode === 'login' ? 'Sign In' : 'Sign Up'} for Social Features</h2>
+          <form onSubmit={handleAuth}>
+            {authMode === 'signup' && (
+              <input
+                type="text"
+                placeholder="Full Name"
+                value={authForm.name}
+                onChange={(e) => setAuthForm(prev => ({ ...prev, name: e.target.value }))}
+                className="form-control"
+                required
+              />
+            )}
+            <input
+              type="email"
+              placeholder="Email"
+              value={authForm.email}
+              onChange={(e) => setAuthForm(prev => ({ ...prev, email: e.target.value }))}
+              className="form-control"
+              required
+            />
+            <input
+              type="password"
+              placeholder="Password"
+              value={authForm.password}
+              onChange={(e) => setAuthForm(prev => ({ ...prev, password: e.target.value }))}
+              className="form-control"
+              required
+            />
+            <button type="submit" className="btn btn--primary">
+              {authMode === 'login' ? 'Sign In' : 'Sign Up'}
+            </button>
+          </form>
+          <p>
+            {authMode === 'login' ? "Don't have an account? " : "Already have an account? "}
+            <button 
+              onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
+              className="btn btn--outline btn--sm"
+            >
+              {authMode === 'login' ? 'Sign Up' : 'Sign In'}
+            </button>
+          </p>
         </div>
       </div>
     );
@@ -55,7 +113,7 @@ export default function FriendsSection() {
       <div className="friends-header">
         <h2>👥 Find & Follow Friends</h2>
         <p className="section-description">
-          Connect with other users to see their ratings and get recommendations
+          Search by name or email to find other users
         </p>
       </div>
 
@@ -63,7 +121,7 @@ export default function FriendsSection() {
         <form onSubmit={handleSearch} className="search-bar">
           <input
             type="text"
-            placeholder="Search for users by name or email..."
+            placeholder="Search by name or email..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="form-control search-input"
@@ -81,7 +139,7 @@ export default function FriendsSection() {
 
       {searchResults.length > 0 && (
         <div className="search-results">
-          <h3>Search Results</h3>
+          <h3>Search Results ({searchResults.length})</h3>
           <div className="users-grid">
             {searchResults.map(user => (
               <div key={user.id} className="user-card">
@@ -92,14 +150,15 @@ export default function FriendsSection() {
                 />
                 <div className="user-info">
                   <h4 className="user-name">{user.name}</h4>
-                  <p className="user-stats">{user.totalRatings || 0} ratings</p>
+                  <p className="user-email">{user.email}</p>
+                  <p className="user-stats">{user.totalRatings} ratings</p>
                 </div>
                 <button 
                   className={`btn btn--sm ${user.isFollowing ? 'btn--outline' : 'btn--primary'}`}
                   onClick={() => handleFollow(user.id)}
                   disabled={user.isFollowing}
                 >
-                  {user.isFollowing ? 'Following' : 'Follow'}
+                  {user.isFollowing ? '✓ Following' : 'Follow'}
                 </button>
               </div>
             ))}
@@ -107,13 +166,11 @@ export default function FriendsSection() {
         </div>
       )}
 
-      <div className="friends-placeholder">
-        <div className="placeholder-content">
-          <div className="friends-icon">👥</div>
-          <h3>Start Building Your Network</h3>
-          <p>Search for friends above to start following other users and see their ratings!</p>
+      {searchTerm && searchResults.length === 0 && !loading && (
+        <div className="no-results">
+          <p>No users found for "{searchTerm}". Try searching by name or email.</p>
         </div>
-      </div>
+      )}
     </div>
   );
 }
