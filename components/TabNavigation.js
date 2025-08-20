@@ -1,13 +1,17 @@
 export default function TabNavigation({ activeTab, onTabChange }) {
   const tabs = [
-    { id: 'search', label: 'Search Videos', icon: '🔍' },
-    { id: 'import', label: 'Import History', icon: '📁' },
-    { id: 'music', label: 'Music & Songs', icon: '🎵' },
-    { id: 'ratings', label: 'My Ratings', icon: '⭐' },
-    { id: 'stats', label: 'Statistics', icon: '📊' },
-    { id: 'privacy', label: 'Privacy', icon: '🛡️' },
-    { id: 'recommendations', label: 'AI Recommendations', icon: '🤖' }
-  ];
+  { id: 'search', label: 'Search Videos', icon: '🔍' },
+  { id: 'import', label: 'Import History', icon: '📁' },
+  { id: 'music', label: 'Music & Songs', icon: '🎵' },
+  { id: 'ratings', label: 'My Ratings', icon: '⭐' },
+  { id: 'friends', label: 'Friends', icon: '👥' },        // ADD THIS
+  { id: 'favorites', label: 'Favorites', icon: '💖' },    // ADD THIS
+  { id: 'feed', label: 'Social Feed', icon: '📱' },       // ADD THIS
+  { id: 'stats', label: 'Statistics', icon: '📊' },
+  { id: 'privacy', label: 'Privacy', icon: '🛡️' },
+  { id: 'ai', label: 'AI Recommendations', icon: '🤖' }
+];
+
 
   return (
     <div className="tab-navigation-enhanced">
