@@ -1,11 +1,12 @@
+import { getSession } from 'next-auth/react';
 export async function api<T = any>(path: string, opts: RequestInit = {}) {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('jwt') : null;
+  const session = await getSession();
   
   const res = await fetch(`/api/${path}`, {
     ...opts,
     headers: { 
       'Content-Type': 'application/json', 
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(session?.user?.email ? { 'X-User-Email': session.user.email } : {}),
       ...(opts.headers || {}) 
     }
   });
@@ -18,14 +19,6 @@ export async function api<T = any>(path: string, opts: RequestInit = {}) {
   return res.json() as Promise<T>;
 }
 
-// Auth API
-export const authAPI = {
-  login: (email: string, password: string) => 
-    api('auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
-  
-  signup: (email: string, password: string, name: string) =>
-    api('auth/signup', { method: 'POST', body: JSON.stringify({ email, password, name }) }),
-};
 
 // Social API
 export const socialAPI = {
