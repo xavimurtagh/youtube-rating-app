@@ -31,22 +31,26 @@ export default function ImportSection({
 
   // Update the handleClearAllUnrated function
   const handleClearAllUnrated = async () => {
-    if (!confirm(`Are you sure you want to ignore all ${videosToRate.length} unrated videos? This will remove them from your to-rate list.`)) {
+    if (!confirm(`Are you sure you want to ignore all ${videosToRate.length} unrated videos?`)) {
       return;
     }
   
     try {
-      // Create an array of all video IDs to ignore
-      const videoIdsToIgnore = videosToRate.map(video => video.id);
+      const videoIds = videosToRate.map(video => video.id);
       
-      // Batch ignore all videos at once
-      await Promise.all(
-        videoIdsToIgnore.map(videoId => onIgnoreVideo(videoId))
-      );
-      
-      // Optionally show success message
-      alert(`Successfully ignored ${videoIdsToIgnore.length} videos!`);
-      
+      const response = await fetch('/api/bulk-ignore', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoIds })
+      });
+  
+      if (response.ok) {
+        alert(`Successfully ignored ${videoIds.length} videos!`);
+        // Refresh the page or update state
+        window.location.reload();
+      } else {
+        throw new Error('Bulk ignore failed');
+      }
     } catch (error) {
       console.error('Failed to clear all unrated:', error);
       alert('Failed to clear all videos. Please try again.');
