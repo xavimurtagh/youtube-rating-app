@@ -12,6 +12,9 @@ import RecommendationsSection from '../components/RecommendationsSection';
 import RatingModal from '../components/RatingModal';
 import SignInModal from '../components/SignInModal';
 import AuthButton from '../components/AuthButton';
+import FriendsSection from '../components/FriendsSection';
+import FavoritesSection from '../components/FavoritesSection';
+import SocialFeedSection from '../components/SocialFeedSection';
 import { useVideos } from '../hooks/useVideos';
 
 export default function Home() {
@@ -75,6 +78,22 @@ export default function Home() {
     switch (activeTab) {
       case 'search':
         return <SearchSection onRateVideo={handleRateVideo} />;
+
+
+      case 'friends':
+        return <FriendsSection />;
+      
+      case 'favorites':
+        return (
+          <FavoritesSection 
+            ratings={ratings}
+            videos={videos}
+            onRateVideo={handleRateVideo}
+          />
+        );
+      
+      case 'feed':
+        return <SocialFeedSection />;
       
       case 'import':
         return (
