@@ -2,33 +2,42 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import VideoList from './VideoList';
 
-export default function FavoritesSection({ ratings, videos, onRateVideo }) {
+export default function FavoritesSection({ ratings, videos, onRateVideo, onToggleFavorite }) {
   const { data: session } = useSession();
-  const [favorites, setFavorites] = useState([]);
+  const [customFavorites, setCustomFavorites] = useState(new Set());
 
-  // Get top 5 highest rated videos as favorites
-  const topFavorites = videos
-    .filter(video => ratings[video.id])
-    .map(video => ({
-      ...video,
-      rating: typeof ratings[video.id] === 'object' 
-        ? ratings[video.id].rating 
-        : ratings[video.id]
-    }))
-    .sort((a, b) => b.rating - a.rating)
-    .slice(0, 5);
-
-  const allFavorites = videos
+  // Get videos rated 9+ as potential favorites
+  const topRatedVideos = videos
     .filter(video => {
       const rating = ratings[video.id];
       const ratingValue = typeof rating === 'object' ? rating.rating : rating;
-      return ratingValue && ratingValue >= 8; // 8+ stars = favorite
+      return ratingValue && ratingValue >= 9;
     })
-    .sort((a, b) => {
-      const aRating = typeof ratings[a.id] === 'object' ? ratings[a.id].rating : ratings[a.id];
-      const bRating = typeof ratings[b.id] === 'object' ? ratings[b.id].rating : ratings[b.id];
-      return bRating - aRating;
+    .map(video => ({
+      ...video,
+      rating: typeof ratings[video.id] === 'object' ? ratings[video.id].rating : ratings[video.id]
+    }))
+    .sort((a, b) => b.rating - a.rating);
+
+  // Get selected favorites (top 5 by default, customizable)
+  const selectedFavorites = topRatedVideos
+    .filter(video => customFavorites.size === 0 || customFavorites.has(video.id))
+    .slice(0, 5);
+
+  const handleToggleFavorite = (videoId) => {
+    setCustomFavorites(prev => {
+      const newFavorites = new Set(prev);
+      if (newFavorites.has(videoId)) {
+        newFavorites.delete(videoId);
+      } else if (newFavorites.size < 5) {
+        newFavorites.add(videoId);
+      } else {
+        alert('You can only have 5 favorites! Remove one first.');
+        return prev;
+      }
+      return newFavorites;
     });
+  };
 
   if (!session) {
     return (
@@ -46,16 +55,16 @@ export default function FavoritesSection({ ratings, videos, onRateVideo }) {
       <div className="favorites-header">
         <h2>💖 Your Favorite Videos</h2>
         <p className="section-description">
-          Videos rated 8+ stars automatically become your favorites
+          Select your top 5 favorites from videos rated 9+ stars
         </p>
       </div>
 
       {/* Top 5 Showcase */}
-      {topFavorites.length > 0 && (
+      {selectedFavorites.length > 0 && (
         <div className="top-favorites-showcase">
-          <h3>⭐ Top 5 Favorites</h3>
+          <h3>⭐ Your Top 5 Favorites</h3>
           <div className="favorites-showcase">
-            {topFavorites.map((video, index) => (
+            {selectedFavorites.map((video, index) => (
               <div key={video.id} className="favorite-showcase-item">
                 {video.thumbnail ? (
                   <img src={video.thumbnail} alt={video.title} />
@@ -76,23 +85,43 @@ export default function FavoritesSection({ ratings, videos, onRateVideo }) {
         </div>
       )}
 
-      {/* All Favorites List */}
-      {allFavorites.length > 0 ? (
-        <div className="all-favorites">
-          <h3>💖 All Your Favorites ({allFavorites.length})</h3>
-          <VideoList
-            videos={allFavorites}
-            ratings={ratings}
-            onRateVideo={onRateVideo}
-            showLimit={null}
-          />
+      {/* Favorite Selection */}
+      {topRatedVideos.length > 0 ? (
+        <div className="favorite-selection">
+          <h3>💖 Select Your Favorites ({customFavorites.size}/5)</h3>
+          <p className="selection-hint">
+            Choose up to 5 videos from your 9+ star ratings to showcase as favorites:
+          </p>
+          <div className="selectable-favorites">
+            {topRatedVideos.map(video => (
+              <div key={video.id} className={`favorite-option ${customFavorites.has(video.id) ? 'selected' : ''}`}>
+                <div className="video-info">
+                  {video.thumbnail && (
+                    <img src={video.thumbnail} alt={video.title} className="video-thumbnail" />
+                  )}
+                  <div className="video-details">
+                    <h4 className="video-title">{video.title}</h4>
+                    <p className="video-channel">{video.channel}</p>
+                    <span className="video-rating">{video.rating}/10 ⭐</span>
+                  </div>
+                </div>
+                <button
+                  className={`btn btn--sm ${customFavorites.has(video.id) ? 'btn--danger' : 'btn--primary'}`}
+                  onClick={() => handleToggleFavorite(video.id)}
+                  disabled={!customFavorites.has(video.id) && customFavorites.size >= 5}
+                >
+                  {customFavorites.has(video.id) ? '💔 Remove' : '💖 Add to Favorites'}
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       ) : (
         <div className="favorites-placeholder">
           <div className="placeholder-content">
             <div className="favorites-icon">💖</div>
             <h3>No Favorites Yet</h3>
-            <p>Rate videos 8 stars or higher to add them to your favorites!</p>
+            <p>Rate videos 9 stars or higher to add them to your potential favorites!</p>
           </div>
         </div>
       )}
