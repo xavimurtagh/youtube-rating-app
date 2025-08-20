@@ -6,7 +6,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { id } = req.query;
+  const rawId = req.query.id;
+  const id = Array.isArray(rawId) ? rawId[0] : rawId;
   
   if (typeof id !== 'string') {
     return res.status(400).json({ error: 'Invalid video ID' });
@@ -31,7 +32,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     res.status(200).json({
       averageRating: videoStats._avg.score ? Math.round(videoStats._avg.score * 10) / 10 : null,
-      totalRatings: videoStats._count.score,
+      totalRatings: videoStats._count.score || 0,
       ratingDistribution
     });
   } catch (error) {
