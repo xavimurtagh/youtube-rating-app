@@ -23,23 +23,29 @@ export default function AIRecommendationsSection({ videos, ratings, onRateVideo 
     setError(null);
     try {
       const response = await fetch('/api/recommendations');
+      
       if (response.status === 400) {
-        const err = await response.json();
-        setError(err.error || 'Need more ratings for recommendations'); 
+        const errorData = await response.json();
+        setError(errorData.error || 'Need at least 10 ratings for recommendations');
+        setRecommendations([]);
         return;
       }
+      
       if (!response.ok) {
-        throw new Error('Failed to load recommendations');
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
+      
       const data = await response.json();
       setRecommendations(data.recommendations || []);
     } catch (error) {
       console.error('Failed to load recommendations:', error);
-      setError(error.message);
+      setError('Failed to load recommendations. Please try again later.');
+      setRecommendations([]);
     } finally {
       setLoading(false);
     }
   };
+
 
 
   const handleRefreshRecommendations = () => {
@@ -89,6 +95,19 @@ export default function AIRecommendationsSection({ videos, ratings, onRateVideo 
               ></div>
             </div>
           </div>
+          {error && (
+            <div className="recommendations-error">
+              <div className="error-content">
+                <h3>🚧 Recommendations Unavailable</h3>
+                <p>{error}</p>
+                {error.includes('10 ratings') && (
+                  <div className="rating-progress">
+                    <p>You have {userRatingCount} ratings. Rate {10 - userRatingCount} more videos to unlock recommendations!</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {userRatingCount < minimumRatingsRequired && (
             <div className="rating-requirement">
