@@ -11,7 +11,6 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const favs = profile.favourites || [];
   const rated = profile.ratings || [];
 
   useEffect(() => {
