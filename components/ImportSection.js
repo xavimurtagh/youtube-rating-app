@@ -34,24 +34,36 @@ export default function ImportSection({ videos, ratings, ignoredIds = [], onImpo
 
   const handleClearAllUnrated = async () => {
     if (clearing) return;
-
+  
     const videosToIgnore = videosToRate.map(v => v.id);
     
-    if (!confirm(`Are you sure you want to ignore all ${videosToIgnore.length} unrated videos? This will remove them from your to-rate list.`)) {
+    if (!confirm(`Are you sure you want to ignore all ${videosToIgnore.length} unrated videos?`)) {
       return;
     }
-
+  
     setClearing(true);
+    
     try {
-      await Promise.all(videosToIgnore.map(videoId => onIgnoreVideo(videoId)));
-      window.location.reload();    
+      // Method 1: Sequential processing (more reliable)
+      for (let i = 0; i < videosToIgnore.length; i++) {
+        await onIgnoreVideo(videosToIgnore[i]);
+        console.log(`Ignored ${i + 1}/${videosToIgnore.length} videos`);
+      }
+      
+      alert(`Successfully ignored ${videosToIgnore.length} videos!`);
+      
+      // Reload after all are processed
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+      
     } catch (error) {
       console.error('Failed to clear all unrated:', error);
-      alert('Failed to clear some videos. Please try again.');
-    } finally {
+      alert('Failed to clear all videos. Please try again.');
       setClearing(false);
     }
   };
+
 
   // Get videos that need rating (not rated and not ignored)
   const importedVideos = videos.filter(video => video.watchedAt);
