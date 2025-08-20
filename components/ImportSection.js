@@ -44,14 +44,10 @@ export default function ImportSection({ videos, ratings, ignoredIds = [], onImpo
     setClearing(true);
     
     try {
-      // Method 1: Sequential processing (more reliable)
-      for (let i = 0; i < videosToIgnore.length; i++) {
-        await onIgnoreVideo(videosToIgnore[i]);
-        console.log(`Ignored ${i + 1}/${videosToIgnore.length} videos`);
+      for (const videoId of videosToIgnore) {
+        await onIgnoreVideo(videoId);
       }
-      
-      alert(`Successfully ignored ${videosToIgnore.length} videos!`);
-      
+            
       // Reload after all are processed
       setTimeout(() => {
         window.location.reload();
