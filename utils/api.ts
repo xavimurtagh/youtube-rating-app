@@ -18,7 +18,7 @@ export async function api<T = any>(path: string, opts: RequestInit = {}) {
   return res.json() as Promise<T>;
 }
 
-// Usage examples:
+// Auth API
 export const authAPI = {
   login: (email: string, password: string) => 
     api('auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
@@ -27,7 +27,12 @@ export const authAPI = {
     api('auth/signup', { method: 'POST', body: JSON.stringify({ email, password, name }) }),
 };
 
+// Social API
 export const socialAPI = {
+  // User search function - searches by name
+  searchUsers: (query: string) =>
+    api(`users/search?q=${encodeURIComponent(query)}`),
+  
   rateVideo: (video: any, score: number) =>
     api('rate', { method: 'POST', body: JSON.stringify({ video, score }) }),
   
