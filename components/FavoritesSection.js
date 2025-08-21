@@ -130,7 +130,7 @@ export default function FavoritesSection({ ratings, videos, onRateVideo, onToggl
                 </div>
                 <button
                   className={`btn btn--sm ${customFavorites.has(video.id) ? 'btn--danger' : 'btn--primary'}`}
-                  onClick={() => handleToggleFavorite(video.id)}
+                  onClick={() => handleToggleFavorite(video)}
                   disabled={!customFavorites.has(video.id) && customFavorites.size >= 5}
                 >
                   {customFavorites.has(video.id) ? '💔 Remove' : '💖 Add to Favorites'}
