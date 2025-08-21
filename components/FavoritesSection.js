@@ -19,7 +19,6 @@ export default function FavoritesSection({ ratings, videos, onRateVideo, onToggl
       rating: typeof ratings[video.id] === 'object' ? ratings[video.id].rating : ratings[video.id]
     }))
     .sort((a, b) => b.rating - a.rating);
-  console.log('Sample topRatedVideos:', topRatedVideos.slice(0, 2))
 
   // Get selected favorites (top 5 by default, customizable)
   const selectedFavorites = topRatedVideos
