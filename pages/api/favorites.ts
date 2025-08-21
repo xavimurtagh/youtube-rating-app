@@ -21,7 +21,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     })
 
     if (req.method === 'POST') {
-      // Add to favorites
+      console.log('Received body:', req.body);
       await prisma.user.update({
         where: { id: me.id },
         data: {
