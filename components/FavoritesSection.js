@@ -36,12 +36,7 @@ export default function FavoritesSection({ ratings, videos, onRateVideo, onToggl
         })
       } else {
         // Send video metadata so backend can upsert
-        await socialAPI.addFavorite({
-          videoId: video.id,
-          title: video.title,
-          channel: video.channel,
-          thumbnail: video.thumbnail
-        })
+        await socialAPI.addFavorite(video)
         setCustomFavorites(prev => new Set(prev).add(video.id))
       }
     } catch (error) {
