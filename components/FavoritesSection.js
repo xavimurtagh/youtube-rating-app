@@ -27,12 +27,6 @@ export default function FavoritesSection({ ratings, videos, onRateVideo, onToggl
     .slice(0, 5);
 
   const handleToggleFavorite = async (video) => {
-    console.log('=== FRONTEND DEBUG ===')
-    console.log('Video object:', video)
-    console.log('Video.id:', video.id)
-    console.log('Video type:', typeof video)
-    console.log('==================')
-    
     try {
       if (customFavorites.has(video.id)) {
         await socialAPI.removeFavorite(video.id)
