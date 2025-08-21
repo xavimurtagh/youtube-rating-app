@@ -1,47 +1,56 @@
-import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import VideoList from './VideoList';
+import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
+import VideoList from './VideoList'
 
 export default function AIRecommendationsSection({ videos, ratings, onRateVideo }) {
-  const { data: session } = useSession();
-  const [recommendations, setRecommendations] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const { data: session } = useSession()
+  const [recommendations, setRecommendations] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [serverRatingCount, setServerRatingCount] = useState(null)
 
-  // Count user's ratings
-  const userRatingCount = Object.keys(ratings).length;
-  const minimumRatingsRequired = 10;
+  // Count user's ratings from props (frontend)
+  const frontendRatingCount = Object.keys(ratings).length
+  const minimumRatingsRequired = 10
 
   useEffect(() => {
-    if (session && userRatingCount >= minimumRatingsRequired) {
-      loadRecommendations();
+    if (session) {
+      loadRecommendations()
     }
-  }, [session, userRatingCount]);
+  }, [session])
 
   const loadRecommendations = async () => {
-    setLoading(true);
-    setError(null);
+    setLoading(true)
+    setError(null)
     try {
-      const res = await fetch('/api/recommendations');
+      const res = await fetch('/api/recommendations')
+      
       if (res.status === 400) {
-        const data = await res.json();
-        setError(data.error || 'Need to rate at least 10 videos to get recommendations');
-        setRecommendations([]);
-        return;
+        const data = await res.json()
+        setServerRatingCount(data.userRatingCount || 0)
+        setError(data.error || 'Need to rate at least 10 videos to get recommendations')
+        setRecommendations([])
+        return
       }
-      if (!res.ok) throw new Error('Failed to load');
-      const data = await res.json();
-      setRecommendations(data.recommendations || []);
-    } catch(e) {
-      setError('Failed to load recommendations');
+      
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`)
+      }
+      
+      const data = await res.json()
+      setRecommendations(data.recommendations || [])
+      setError(null)
+    } catch (e) {
+      console.error('Failed to load recommendations:', e)
+      setError('Failed to load recommendations. Please try again later.')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handleRefreshRecommendations = () => {
-    loadRecommendations();
-  };
+    loadRecommendations()
+  }
 
   if (!session) {
     return (
@@ -51,8 +60,11 @@ export default function AIRecommendationsSection({ videos, ratings, onRateVideo 
           <p>Sign in to get personalized video recommendations based on your ratings!</p>
         </div>
       </div>
-    );
+    )
   }
+
+  // Use server count if available, otherwise frontend count
+  const actualRatingCount = serverRatingCount !== null ? serverRatingCount : frontendRatingCount
 
   return (
     <div className="ai-recommendations-section">
@@ -63,7 +75,17 @@ export default function AIRecommendationsSection({ videos, ratings, onRateVideo 
         </p>
       </div>
 
-      {/* Disclaimer and Progress */}
+      {/* Debug info */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="debug-info" style={{ background: '#f0f0f0', padding: '10px', margin: '10px 0' }}>
+          <p><strong>Debug:</strong></p>
+          <p>Frontend rating count: {frontendRatingCount}</p>
+          <p>Server rating count: {serverRatingCount}</p>
+          <p>Using count: {actualRatingCount}</p>
+        </div>
+      )}
+
+      {/* Progress and disclaimer */}
       <div className="recommendations-disclaimer">
         <div className="disclaimer-card">
           <h3>📊 How It Works</h3>
@@ -75,128 +97,110 @@ export default function AIRecommendationsSection({ videos, ratings, onRateVideo 
           <div className="rating-progress">
             <div className="progress-header">
               <span>Your Rating Progress</span>
-              <span>{userRatingCount}/{minimumRatingsRequired} ratings</span>
+              <span>{actualRatingCount}/{minimumRatingsRequired} ratings</span>
             </div>
             <div className="progress-bar">
               <div 
                 className="progress-fill" 
                 style={{ 
-                  width: `${Math.min((userRatingCount / minimumRatingsRequired) * 100, 100)}%` 
+                  width: `${Math.min((actualRatingCount / minimumRatingsRequired) * 100, 100)}%` 
                 }}
               ></div>
             </div>
           </div>
-          {error && (
-            <div className="recommendations-error">
-              <div className="error-content">
-                <h3>🚧 Recommendations Unavailable</h3>
-                <p>{error}</p>
-                {error.includes('10 ratings') && (
-                  <div className="rating-progress">
-                    <p>You have {userRatingCount} ratings. Rate {10 - userRatingCount} more videos to unlock recommendations!</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
 
-          {userRatingCount < minimumRatingsRequired && (
+          {actualRatingCount < minimumRatingsRequired && (
             <div className="rating-requirement">
               <p className="requirement-text">
                 ⚠️ <strong>Rate at least {minimumRatingsRequired} videos to unlock recommendations!</strong>
               </p>
-              <p>You need {minimumRatingsRequired - userRatingCount} more ratings.</p>
+              <p>You need {minimumRatingsRequired - actualRatingCount} more ratings.</p>
             </div>
           )}
         </div>
       </div>
 
-      {/* Recommendations Content */}
-      {userRatingCount >= minimumRatingsRequired ? (
-        <div className="recommendations-content">
-          <div className="recommendations-controls">
-            <button 
-              className="btn btn--primary"
-              onClick={handleRefreshRecommendations}
-              disabled={loading}
-            >
-              {loading ? '🔄 Generating...' : '🔄 Refresh Recommendations'}
-            </button>
-          </div>
+      {/* Recommendations content */}
+      <div className="recommendations-controls">
+        <button 
+          className="btn btn--primary"
+          onClick={handleRefreshRecommendations}
+          disabled={loading}
+        >
+          {loading ? '🔄 Generating...' : '🔄 Refresh Recommendations'}
+        </button>
+      </div>
 
-          {loading ? (
-            <div className="loading-state">
-              <div className="loading-animation">🤖</div>
-              <p>AI is analyzing your preferences and finding similar users...</p>
-            </div>
-          ) : error ? (
-            <div className="error-state">
-              <h3>❌ Unable  to Load Recommendations</h3>
-              <p>{error}</p>
-              <button className="btn btn--outline" onClick={handleRefreshRecommendations}>
-                Try Again
-              </button>
-            </div>
-          ) : recommendations.length > 0 ? (
-            <div className="recommendations-results">
-              <h3>🎯 Recommended for You</h3>
-              <div className="recommendations-grid">
-                {recommendations.map(rec => (
-                  <div key={rec.video.id} className="recommendation-card">
-                    <div className="recommendation-video">
-                      <VideoList
-                        videos={[rec.video]}
-                        ratings={ratings}
-                        onRateVideo={onRateVideo}
-                        showLimit={null}
-                      />
-                    </div>
-                    <div className="recommendation-meta">
-                      <div className="match-score">
-                        <span className="match-percentage">{rec.matchScore}% match</span>
-                        <div className="match-bar">
-                          <div 
-                            className="match-fill" 
-                            style={{ width: `${rec.matchScore}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                      <div className="recommendation-reason">
-                        <p><strong>Why this recommendation:</strong></p>
-                        <p>{rec.reason}</p>
-                      </div>
+      {loading ? (
+        <div className="loading-state">
+          <div className="loading-animation">🤖</div>
+          <p>AI is analyzing your preferences and finding similar users...</p>
+        </div>
+      ) : error ? (
+        <div className="recommendations-error">
+          <div className="error-content">
+            <h3>🚧 Recommendations Unavailable</h3>
+            <p>{error}</p>
+            {actualRatingCount < minimumRatingsRequired && (
+              <div className="rating-progress">
+                <p>You have {actualRatingCount} ratings. Rate {minimumRatingsRequired - actualRatingCount} more videos to unlock recommendations!</p>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : recommendations.length > 0 ? (
+        <div className="recommendations-results">
+          <h3>🎯 Recommended for You</h3>
+          <div className="recommendations-grid">
+            {recommendations.map(rec => (
+              <div key={rec.video.id} className="recommendation-card">
+                <div className="recommendation-video">
+                  <VideoList
+                    videos={[rec.video]}
+                    ratings={ratings}
+                    onRateVideo={onRateVideo}
+                    showLimit={null}
+                  />
+                </div>
+                <div className="recommendation-meta">
+                  <div className="match-score">
+                    <span className="match-percentage">{rec.matchScore}% match</span>
+                    <div className="match-bar">
+                      <div 
+                        className="match-fill" 
+                        style={{ width: `${rec.matchScore}%` }}
+                      ></div>
                     </div>
                   </div>
-                ))}
+                  <div className="recommendation-reason">
+                    <p><strong>Why this recommendation:</strong></p>
+                    <p>{rec.reason}</p>
+                  </div>
+                </div>
               </div>
-            </div>
-          ) : (
-            <div className="no-recommendations">
-              <div className="placeholder-content">
-                <div className="recommendations-icon">🤖</div>
-                <h3>No Recommendations Yet</h3>
-                <p>
-                  We need more data to generate good recommendations. 
-                  Rate more videos or check back later as our user base grows!
-                </p>
-              </div>
-            </div>
-          )}
+            ))}
+          </div>
+        </div>
+      ) : actualRatingCount >= minimumRatingsRequired ? (
+        <div className="no-recommendations">
+          <div className="placeholder-content">
+            <div className="recommendations-icon">🤖</div>
+            <h3>No Recommendations Yet</h3>
+            <p>
+              We need more data to generate good recommendations. 
+              Rate more videos or check back later as our user base grows!
+            </p>
+          </div>
         </div>
       ) : (
         <div className="recommendations-locked">
           <div className="locked-content">
             <div className="lock-icon">🔒</div>
             <h3>Recommendations Locked</h3>
-            <p>Rate {minimumRatingsRequired - userRatingCount} more videos to unlock AI recommendations!</p>
-            <div className="quick-actions">
-              <a href="#search" className="btn btn--primary">
-                🔍 Rate More Videos
-              </a>
-            </div>
+            <p>Rate {minimumRatingsRequired - actualRatingCount} more videos to unlock AI recommendations!</p>
           </div>
         </div>
       )}
     </div>
-  );
+  )
 }
