@@ -19,6 +19,7 @@ export default function FavoritesSection({ ratings, videos, onRateVideo, onToggl
       rating: typeof ratings[video.id] === 'object' ? ratings[video.id].rating : ratings[video.id]
     }))
     .sort((a, b) => b.rating - a.rating);
+  console.log('Sample topRatedVideos:', topRatedVideos.slice(0, 2))
 
   // Get selected favorites (top 5 by default, customizable)
   const selectedFavorites = topRatedVideos
@@ -26,6 +27,12 @@ export default function FavoritesSection({ ratings, videos, onRateVideo, onToggl
     .slice(0, 5);
 
   const handleToggleFavorite = async (video) => {
+    console.log('=== FRONTEND DEBUG ===')
+    console.log('Video object:', video)
+    console.log('Video.id:', video.id)
+    console.log('Video type:', typeof video)
+    console.log('==================')
+    
     try {
       if (customFavorites.has(video.id)) {
         await socialAPI.removeFavorite(video.id)
@@ -35,15 +42,24 @@ export default function FavoritesSection({ ratings, videos, onRateVideo, onToggl
           return set
         })
       } else {
-        // Send video metadata so backend can upsert
+        // Log the exact payload being sent
+        const payload = {
+          videoId: video.id,
+          title: video.title,
+          channel: video.channel,
+          thumbnail: video.thumbnail,
+        }
+        console.log('Sending payload to addFavorite:', payload)
+        
         await socialAPI.addFavorite(video)
         setCustomFavorites(prev => new Set(prev).add(video.id))
       }
     } catch (error) {
       console.error('Failed to toggle favorite:', error)
-      alert(error.error || 'Error updating favorite')
+      alert(error.message || 'Error updating favorite')
     }
   }
+
   
 
   if (!session) {
