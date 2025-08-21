@@ -43,12 +43,12 @@ export const socialAPI = {
   
   getProfile: (userId: string) => api(`profile/${userId}`),
 
-  addFavorite: (videoId: string) =>
-    api('favorites', { method: 'POST', body: JSON.stringify({ videoId }) }),
+  addFavorite: (videoData: { videoId: string, title: string, channel: string, thumbnail: string }) =>
+    api('favorites', { method: 'POST', body: JSON.stringify(videoData) }),
   
   removeFavorite: (videoId: string) =>
     api('favorites', { method: 'DELETE', body: JSON.stringify({ videoId }) }),
   
   rateVideo: (video: any, score: number) =>
-    api('rate', { method: 'POST', body: JSON.stringify({ video, score }) }),
+    api('rate', { method: 'POST', body: JSON.stringify({ video, score }) })
 };
