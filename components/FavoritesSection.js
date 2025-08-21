@@ -25,31 +25,31 @@ export default function FavoritesSection({ ratings, videos, onRateVideo, onToggl
     .filter(video => customFavorites.size === 0 || customFavorites.has(video.id))
     .slice(0, 5);
 
-  const handleToggleFavorite = async (videoId) => {
+  const handleToggleFavorite = async (video) => {
     try {
-      if (customFavorites.has(videoId)) {
-        await socialAPI.removeFavorite(videoId);
+      if (customFavorites.has(video.id)) {
+        await socialAPI.removeFavorite(video.id)
         setCustomFavorites(prev => {
-          const newFavorites = new Set(prev);
-          newFavorites.delete(videoId);
-          return newFavorites;
-        });
-      } else if (customFavorites.size < 5) {
-        await socialAPI.addFavorite(videoId);
-        setCustomFavorites(prev => {
-          const newFavorites = new Set(prev);
-          newFavorites.add(videoId);
-          return newFavorites;
-        });
+          const set = new Set(prev)
+          set.delete(video.id)
+          return set
+        })
       } else {
-        alert('You can only have 5 favorites! Remove one first.');
+        // Send video metadata so backend can upsert
+        await socialAPI.addFavorite({
+          videoId: video.id,
+          title: video.title,
+          channel: video.channel,
+          thumbnail: video.thumbnail
+        })
+        setCustomFavorites(prev => new Set(prev).add(video.id))
       }
     } catch (error) {
-      console.error('Failed to toggle favorite:', error);
-      alert('Failed to update favorite. Please try again.');
+      console.error('Failed to toggle favorite:', error)
+      alert(error.error || 'Error updating favorite')
     }
-  };
-
+  }
+  
 
   if (!session) {
     return (
