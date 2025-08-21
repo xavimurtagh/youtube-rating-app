@@ -30,7 +30,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(200).json({ recommendations: [] });
   }
 
-  try:
+  try {
 
     // Get recommendations from similar users
     const recommendations = await generateRecommendations(me.id, similarUsers, myRatings);
