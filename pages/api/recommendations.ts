@@ -1,46 +1,47 @@
-import { NextApiRequest, NextApiResponse } from 'next';
-import { prisma } from '../../lib/prisma';
-import { getUser } from '../../lib/auth';
+import { NextApiRequest, NextApiResponse } from 'next'
+import { prisma } from '../../lib/prisma'
+import { getUser } from '../../lib/auth'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  try {
-    const me = await getUser(req, res);
-    if (!me) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
+  const me = await getUser(req, res)
+  if (!me) return res.status(401).json({ error: 'Unauthorized' })
 
-    // Get user's ratings
-    const myRatings = await prisma.rating.findMany({
-      where: { userId: me.id },
-      select: { videoId: true, score: true }
-    });
+  // Fetch user ratings
+  const myRatings = await prisma.rating.findMany({
+    where: { userId: me.id }
+  })
 
-    if (myRatings.length < 10) {
-      return res.status(400).json({ 
-        error: 'Need at least 10 ratings for recommendations' 
-      });
-    }
+  // Log count for debugging
+  console.log(`User ${me.id} has ${myRatings.length} ratings`)
 
-    // Find similar users using collaborative filtering
-    const similarUsers = await findSimilarUsers(me.id, myRatings);
-    
-    if (similarUsers.length === 0) {
-      return res.status(200).json({ recommendations: [] });
-    }
+  // Require at least 10 ratings
+  if (myRatings.length < 10) {
+    return res.status(400).json({ error: `Need at least 10 ratings (you have ${myRatings.length})` })
+  }
+
+  // Find similar users using collaborative filtering
+  const similarUsers = await findSimilarUsers(me.id, myRatings);
+  
+  if (similarUsers.length === 0) {
+    return res.status(200).json({ recommendations: [] });
+  }
+
+  try:
 
     // Get recommendations from similar users
     const recommendations = await generateRecommendations(me.id, similarUsers, myRatings);
-
-    res.status(200).json({ recommendations });
+  
+    return res.status(200).json({ recommendations });
   } catch (error) {
-    console.error('Recommendations error:', error);
+    console.error('Recommendations API error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 }
+
 
 async function findSimilarUsers(userId: string, myRatings: any[]) {
   // Get all users who have rated videos in common with me
