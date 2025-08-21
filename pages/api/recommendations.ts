@@ -7,41 +7,59 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const me = await getUser(req, res)
-  if (!me) return res.status(401).json({ error: 'Unauthorized' })
-
-  // Fetch user ratings
-  const myRatings = await prisma.rating.findMany({
-    where: { userId: me.id }
-  })
-
-  // Log count for debugging
-  console.log(`User ${me.id} has ${myRatings.length} ratings`)
-
-  // Require at least 10 ratings
-  if (myRatings.length < 10) {
-    return res.status(400).json({ error: `Need at least 10 ratings (you have ${myRatings.length})` })
-  }
-
-  // Find similar users using collaborative filtering
-  const similarUsers = await findSimilarUsers(me.id, myRatings);
-  
-  if (similarUsers.length === 0) {
-    return res.status(200).json({ recommendations: [] });
-  }
-
   try {
+    const me = await getUser(req, res)
+    if (!me) {
+      console.log('No authenticated user found')
+      return res.status(401).json({ error: 'Unauthorized' })
+    }
+
+    console.log('Authenticated user:', me.id, me.email)
+
+    // Fetch user ratings with more detailed logging
+    const myRatings = await prisma.rating.findMany({
+      where: { userId: me.id },
+      include: {
+        video: { select: { title: true } }
+      }
+    })
+
+    console.log(`User ${me.id} (${me.email}) has ${myRatings.length} ratings`)
+    console.log('Sample ratings:', myRatings.slice(0, 3).map(r => ({ 
+      videoId: r.videoId, 
+      score: r.score, 
+      title: r.video?.title 
+    })))
+
+    // Require at least 10 ratings
+    if (myRatings.length < 10) {
+      return res.status(400).json({ 
+        error: `Need at least 10 ratings (you have ${myRatings.length})`,
+        userRatingCount: myRatings.length 
+      })
+    }
+
+    // Find similar users using collaborative filtering
+    const similarUsers = await findSimilarUsers(me.id, myRatings)
+    
+    if (similarUsers.length === 0) {
+      console.log('No similar users found')
+      return res.status(200).json({ recommendations: [] })
+    }
+
+    console.log(`Found ${similarUsers.length} similar users`)
 
     // Get recommendations from similar users
-    const recommendations = await generateRecommendations(me.id, similarUsers, myRatings);
-  
-    return res.status(200).json({ recommendations });
+    const recommendations = await generateRecommendations(me.id, similarUsers, myRatings)
+    
+    console.log(`Generated ${recommendations.length} recommendations`)
+    
+    return res.status(200).json({ recommendations })
   } catch (error) {
-    console.error('Recommendations API error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Recommendations API error:', error)
+    return res.status(500).json({ error: 'Internal server error' })
   }
 }
-
 
 async function findSimilarUsers(userId: string, myRatings: any[]) {
   // Get all users who have rated videos in common with me
