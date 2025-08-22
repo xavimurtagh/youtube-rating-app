@@ -35,17 +35,40 @@ export function useVideos() {
 
   const setRatingsFromDatabase = (dbRatings) => {
     const ratingsObj = {};
+    const missingVideos = [];
+    
     dbRatings.forEach(rating => {
       ratingsObj[rating.videoId] = {
         rating: rating.score,
         ratedAt: rating.ratedAt
       };
+      
+      // If this video isn't in our videos array, create a minimal entry
+      const existingVideo = videos.find(v => v.id === rating.videoId);
+      if (!existingVideo) {
+        missingVideos.push({
+          id: rating.videoId,
+          title: 'Previously Rated Video',
+          channel: 'Unknown Channel',
+          thumbnail: null,
+          isMusic: false,
+          // Add any other required fields
+        });
+      }
     });
+    
     setRatings(ratingsObj);
+    
+    // Add missing videos to the videos array
+    if (missingVideos.length > 0) {
+      setVideos(prev => [...prev, ...missingVideos]);
+      saveVideos([...videos, ...missingVideos]);
+    }
     
     // Also update localStorage for offline access
     localStorage.setItem('youtube_rating_ratings', JSON.stringify(ratingsObj));
   };
+
 
   // Add new videos (from import)
   const addVideos = (newVideos) => {
