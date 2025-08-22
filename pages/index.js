@@ -42,7 +42,7 @@ export default function Home() {
     getRegularVideos,
     clearUnrated,
     updateLocalRating,
-    remoteRating,
+    removeRating,
     setRatingsFromDatabase,
     ignoredIds
   } = useVideos();
