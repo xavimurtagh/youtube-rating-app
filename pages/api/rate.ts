@@ -15,46 +15,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const { video, score } = req.body;
 
-    if (!video || !video.id || !score || score < 1 || score > 10) {
+    if (!video || !video.id || score === undefined || score < 1 || score > 10) {
       return res.status(400).json({ error: 'Invalid video or score data' });
     }
 
     console.log(`Saving rating: User ${me.id} rating video ${video.id} with score ${score}`);
 
-    // Ensure video exists in database
-    await prisma.rating.upsert({
-      where: {
-        userId_videoId: {
-          userId: userId,
-          videoId: videoId,
-        },
-      },
-      create: {
-        userId: userId,
-        videoId: videoId,
-        score: score, // must be a number, not NaN
-      },
-      update: {
-        score: score, // must be a number
-        ratedAt: new Date(),
-      },
-    });
-
-    // Save/update rating
+    // Save/update rating (remove the duplicate upsert call)
     const savedRating = await prisma.rating.upsert({
       where: {
         userId_videoId: {
-          userId: me.id,
-          videoId: video.id
+          userId: me.id,        // Use me.id instead of userId
+          videoId: video.id     // Use video.id instead of videoId
         }
       },
       create: {
-        userId: me.id,
-        videoId: video.id,
-        score: parseInt(score)
+        userId: me.id,          // Use me.id instead of userId
+        videoId: video.id,      // Use video.id instead of videoId
+        score: parseInt(score)  // Ensure it's a number
       },
       update: {
-        score: parseInt(score),
+        score: parseInt(score), // Ensure it's a number
         ratedAt: new Date()
       }
     });
