@@ -172,6 +172,16 @@ export function useVideos() {
       ? Math.round((ratingValues.reduce((sum, r) => sum + Number(r), 0) / ratingValues.length) * 10) / 10 
       : 0;
 
+    const updateLocalRating = (videoId, score) => {
+    const updated = {
+      ...ratings,
+      [videoId]: { rating: Number(score), ratedAt: new Date().toISOString() }
+    };
+    setRatings(updated);
+    saveRatings(updated);
+  };
+    
+
     return {
       totalVideos: total,
       ratedVideos: ratedCount,
@@ -194,6 +204,7 @@ export function useVideos() {
     ignoreVideo,
     clearAllData,
     clearUnrated,
+    updateLocalRating,
     getImportList,
     getMusicVideos,
     getRegularVideos,
