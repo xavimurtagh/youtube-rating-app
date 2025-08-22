@@ -7,7 +7,7 @@ export default function VideoDetailsModal({ video, videoStats, onClose, onRate }
   if (!video) return null;
 
   const handleRate = () => {
-    onRate(video);
+    onRate(video, newRating);
     onClose();
   };
 
