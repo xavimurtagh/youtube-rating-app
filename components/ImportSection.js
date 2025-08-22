@@ -2,7 +2,7 @@ import { useState } from 'react';
 import FileUpload from './FileUpload';
 import VideoList from './VideoList';
 
-export default function ImportSection({ videos, ratings, ignoredIds = [], onImportComplete, onRateVideo, onIgnoreVideo }) {
+export default function ImportSection({ videos, ratings, ignoredIds = [], onImportComplete, onRateVideo, onIgnoreVideo, clearUnrated }) {
   const [importStatus, setImportStatus] = useState(null);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
