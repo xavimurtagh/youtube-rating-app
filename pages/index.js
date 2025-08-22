@@ -40,6 +40,7 @@ export default function Home() {
     getVideoStats,
     getMusicVideos,
     getRegularVideos,
+    setRatingsFromDatabase,
     ignoredIds
   } = useVideos();
 
@@ -64,17 +65,7 @@ export default function Home() {
       const response = await fetch('/api/my-ratings');
       if (response.ok) {
         const dbRatings = await response.json();
-        
-        // Convert array to object format for compatibility
-        const ratingsObj = {};
-        dbRatings.forEach(rating => {
-          ratingsObj[rating.videoId] = rating.score;
-        });
-        
-        setRatings(ratingsObj);
-        // Also update localStorage for offline access
-        localStorage.setItem('youtube_rating_ratings', JSON.stringify(ratingsObj));
-        
+        setRatingsFromDatabase(dbRatings);  // Use the hook method
         console.log(`Loaded ${dbRatings.length} ratings from database`);
       }
     } catch (error) {
