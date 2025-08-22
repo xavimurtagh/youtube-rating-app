@@ -124,7 +124,7 @@ export default function Home() {
     let successCount = 0;
     let errorCount = 0;
   
-    for (const [videoId, rating] of entries) {
+    for (const [videoId, ratingObj] of entries) {
       try {
         // Find video in your videos array to get full video data
         const video = videos.find(v => v.id === videoId) || {
@@ -133,7 +133,9 @@ export default function Home() {
           channel: 'Unknown Channel'
         };
   
-        await handleRateVideo(video, rating);
+        await handleRateVideo(video, ratingObj);
+        
+        await handleRateVideo(video, ratingObj.rating);
         successCount++;
         
         // Small delay to prevent overwhelming the API
