@@ -85,25 +85,32 @@ export default function Home() {
 
 
   const handleRateVideo = async (video, rating) => {
+    const score = typeof rating === 'object' && rating.rating != null
+      ? rating.rating
+      : rating;
+  
     try {
       const response = await fetch('/api/rate', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ video, score: rating }),
+        body: JSON.stringify({ video, score }),
       });
   
       if (!response.ok) {
-        // `response.text()` contains the server’s JSON error string
         const errorText = await response.text();
         throw new Error(errorText);
       }
   
-      // update local ratings
-      const newRatings = { ...ratings, [video.id]: rating };
+      // Update local state/storage
+      const newRatings = {
+        ...ratings,
+        [video.id]: { rating: Number(score), ratedAt: new Date().toISOString() },
+      };
       setRatings(newRatings);
       localStorage.setItem('youtube_rating_ratings', JSON.stringify(newRatings));
-      console.log('Rating saved successfully:', video.id, rating);
+  
+      console.log('Rating saved successfully:', video.id, score);
     } catch (error) {
       console.error('Failed to save rating:', error);
       alert('Failed to save rating. Please try again.');
