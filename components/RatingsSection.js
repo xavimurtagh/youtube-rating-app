@@ -336,10 +336,12 @@ export default function RatingsSection({ videos, ratings, onRateVideo, stats }) 
                   {groupName} ({groupVideos.length} videos)
                 </h3>
                 <VideoList
-                  videos={groupVideos}
+                  videos={sortedVideos}
                   ratings={ratings}
                   onRateVideo={onRateVideo}
-                  showLimit={null}
+                  onRemoveRating={removeRating}
+                  onIgnoreVideo={onIgnoreVideo}
+                  showIgnoreButton={false}
                 />
               </div>
             ))
