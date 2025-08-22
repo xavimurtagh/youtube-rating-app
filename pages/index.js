@@ -133,25 +133,23 @@ export default function Home() {
   
     for (const [videoId, ratingObj] of entries) {
       try {
-        // Find video in your videos array to get full video data
         const video = videos.find(v => v.id === videoId) || {
           id: videoId,
           title: 'Migrated Video',
           channel: 'Unknown Channel'
         };
-  
-        await handleRateVideo(video, ratingObj);
         
+        // Remove this line: await handleRateVideo(video, ratingObj);
         await handleRateVideo(video, ratingObj.rating);
         successCount++;
         
-        // Small delay to prevent overwhelming the API
         await new Promise(resolve => setTimeout(resolve, 100));
       } catch (error) {
         console.error(`Failed to migrate rating for video ${videoId}:`, error);
         errorCount++;
       }
     }
+
   
     alert(`Migration completed! ${successCount} ratings saved, ${errorCount} failed.`);
   };
@@ -212,6 +210,7 @@ export default function Home() {
             onImportComplete={handleImportComplete}
             onRateVideo={handleRateVideo}
             onIgnoreVideo={handleIgnoreVideo}
+            clearUnrated={clearUnrated}
           />
         );
       
