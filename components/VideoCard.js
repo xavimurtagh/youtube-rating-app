@@ -6,6 +6,7 @@ export default function VideoCard({
   rating, 
   onRate, 
   onIgnore, 
+  onRemoveRating,
   showIgnoreButton = false, 
   ignoreButtonText = 'Ignore'
 }) {
@@ -50,6 +51,13 @@ export default function VideoCard({
     e.stopPropagation();
     if (onIgnore) {
       onIgnore(video.id);
+    }
+  };
+
+  const handleRemoveRating = (e) => {
+    e.stopPropagation();
+    if (onRemoveRating && confirm('Are you sure you want to remove this rating?')) {
+      onRemoveRating(video.id);
     }
   };
 
@@ -126,29 +134,43 @@ export default function VideoCard({
       </div>
 
       <div className="video-actions">
-        <button onClick={handleRate} className="btn btn--primary btn--sm">
-          Rate Video
+        <button 
+          className="btn btn--primary" 
+          onClick={handleRate}
+        >
+          {ratingValue ? `Update Rating (${ratingValue}/10)` : 'Rate Video'}
         </button>
         
-        <a 
-          href={`https://www.youtube.com/watch?v=${video.id}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="btn btn--outline btn--sm"
-          onClick={(e) => e.stopPropagation()}
-        >
-          Watch on YouTube
-        </a>
+        {ratingValue && (
+          <button 
+            className="btn btn--outline btn--danger" 
+            onClick={handleRemoveRating}
+          >
+            Remove Rating
+          </button>
+        )}
         
         {showIgnoreButton && (
           <button 
-            onClick={handleIgnore} 
-            className="btn btn--outline btn--sm ignore-btn"
-            title="Ignore this video and remove from import list"
+            className="btn btn--outline ignore-btn" 
+            onClick={handleIgnore}
           >
             {ignoreButtonText}
           </button>
         )}
+
+        <button 
+          className="btn btn--outline" 
+          onClick={(e) => e.stopPropagation()}
+        >
+          <a 
+            href={`https://www.youtube.com/watch?v=${video.id}`} 
+            target="_blank" 
+            rel="noopener noreferrer"
+          >
+            Watch on YouTube
+          </a>
+        </button>
       </div>
     </div>
   );
