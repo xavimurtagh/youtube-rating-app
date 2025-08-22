@@ -41,6 +41,7 @@ export default function Home() {
     getMusicVideos,
     getRegularVideos,
     clearUnrated,
+    updateLocalRating,
     setRatingsFromDatabase,
     ignoredIds
   } = useVideos();
@@ -102,13 +103,7 @@ export default function Home() {
         throw new Error(errorText);
       }
   
-      // Update local state/storage
-      const newRatings = {
-        ...ratings,
-        [video.id]: { rating: Number(score), ratedAt: new Date().toISOString() },
-      };
-      setRatings(newRatings);
-      localStorage.setItem('youtube_rating_ratings', JSON.stringify(newRatings));
+      updateLocalRating(video.id, score);
   
       console.log('Rating saved successfully:', video.id, score);
     } catch (error) {
