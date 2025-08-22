@@ -26,20 +26,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Invalid video or score data' });
     }
 
-    // 1) Upsert the Video record (only allowed fields)
     await prisma.video.upsert({
       where: { id: video.id },
       create: {
         id: video.id,
-        title: video.title,
-        channel: video.channel,
-        thumbnail: video.thumbnail ?? null,
+        title: video.title || 'Unknown Video',
+        channel: video.channel || 'Unknown Channel', 
+        thumbnail: video.thumbnail || null,
         isMusic: Boolean(video.isMusic),
       },
       update: {
-        // Optionally sync title/channel if they change
-        title: video.title,
-        channel: video.channel,
+        // Always update with latest info if available
+        title: video.title || 'Unknown Video',
+        channel: video.channel || 'Unknown Channel',
+        thumbnail: video.thumbnail || null,
       },
     });
 
