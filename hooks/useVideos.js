@@ -179,15 +179,21 @@ export function useVideos() {
 
   const getVideoStats = () => {
     const total = videos.length - ignoredIds.length;
-    const ratedCount = Object.keys(ratings).length;
-
+    const ratedVideos = videos.filter(v => 
+      ratings[v.id] && !ignoredIds.includes(v.id)
+    );
+    const ratedCount = ratedVideos.length;
+  
     // Calculate average from actual rating values
-    const ratingValues = Object.values(ratings).map(r => r.rating || r);
+    const ratingValues = ratedVideos.map(v => {
+      const rating = ratings[v.id];
+      return typeof rating === 'object' ? rating.rating : rating;
+    }).filter(r => r != null);
+    
     const avg = ratingValues.length > 0 
       ? Math.round((ratingValues.reduce((sum, r) => sum + Number(r), 0) / ratingValues.length) * 10) / 10 
       : 0;
-    
-
+  
     return {
       totalVideos: total,
       ratedVideos: ratedCount,
@@ -198,6 +204,7 @@ export function useVideos() {
       ignoredVideos: ignoredIds.length
     };
   };
+
 
   const updateLocalRating = (videoId, score) => {
     const updated = {
