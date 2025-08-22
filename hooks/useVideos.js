@@ -33,9 +33,9 @@ export function useVideos() {
     }
   }, []);
 
-  const setRatingsFromDatabase = (dbRatings) => {
+  const setRatingsFromDatabase = async (dbRatings) => {
     const ratingsObj = {};
-    const missingVideos = [];
+    const missingVideoIds = [];
     
     dbRatings.forEach(rating => {
       ratingsObj[rating.videoId] = {
@@ -43,31 +43,23 @@ export function useVideos() {
         ratedAt: rating.ratedAt
       };
       
-      // If this video isn't in our videos array, create a minimal entry
       const existingVideo = videos.find(v => v.id === rating.videoId);
       if (!existingVideo) {
-        missingVideos.push({
-          id: rating.videoId,
-          title: 'Previously Rated Video',
-          channel: 'Unknown Channel',
-          thumbnail: null,
-          isMusic: false,
-          // Add any other required fields
-        });
+        missingVideoIds.push(rating.videoId);
       }
     });
     
-    setRatings(ratingsObj);
-    
-    // Add missing videos to the videos array
-    if (missingVideos.length > 0) {
-      setVideos(prev => [...prev, ...missingVideos]);
-      saveVideos([...videos, ...missingVideos]);
+    // Fetch missing video details
+    if (missingVideoIds.length > 0) {
+      const videoDetails = await fetchVideoDetails(missingVideoIds);
+      setVideos(prev => [...prev, ...videoDetails]);
+      saveVideos([...videos, ...videoDetails]);
     }
     
-    // Also update localStorage for offline access
+    setRatings(ratingsObj);
     localStorage.setItem('youtube_rating_ratings', JSON.stringify(ratingsObj));
   };
+
 
 
   // Add new videos (from import)
