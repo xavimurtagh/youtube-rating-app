@@ -33,6 +33,20 @@ export function useVideos() {
     }
   }, []);
 
+  const setRatingsFromDatabase = (dbRatings) => {
+    const ratingsObj = {};
+    dbRatings.forEach(rating => {
+      ratingsObj[rating.videoId] = {
+        rating: rating.score,
+        ratedAt: rating.ratedAt
+      };
+    });
+    setRatings(ratingsObj);
+    
+    // Also update localStorage for offline access
+    localStorage.setItem('youtube_rating_ratings', JSON.stringify(ratingsObj));
+  };
+
   // Add new videos (from import)
   const addVideos = (newVideos) => {
     try {
@@ -175,6 +189,7 @@ export function useVideos() {
     getImportList,
     getMusicVideos,
     getRegularVideos,
+    setRatingsFromDatabase,
     getVideoStats
   };
 }
