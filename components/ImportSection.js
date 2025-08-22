@@ -162,7 +162,7 @@ export default function ImportSection({ videos, ratings, ignoredIds = [], onImpo
           {/* Clear All Button */}
           <div className="bulk-actions">
             <button 
-              onClick={handleClearAllUnrated}
+              onClick={clearUnrated}
               className="btn btn--outline btn--warning"
               disabled={clearing}
               title="Ignore all unrated videos and remove them from this list"
