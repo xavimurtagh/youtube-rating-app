@@ -42,6 +42,7 @@ export default function Home() {
     getRegularVideos,
     clearUnrated,
     updateLocalRating,
+    remoteRating,
     setRatingsFromDatabase,
     ignoredIds
   } = useVideos();
@@ -225,6 +226,7 @@ export default function Home() {
             videos={videos}
             ratings={ratings}
             onRateVideo={video => setRatingModalVideo(video)}
+            onRemoveRating={removeRating}
             onVideoClick={handleVideoClick}
           />
         );
