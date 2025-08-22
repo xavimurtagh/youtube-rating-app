@@ -314,13 +314,16 @@ export default function Home() {
           {renderActiveTab()}
         </div>
 
-        {/* Modals */}
-        <RatingModal
-          video={ratingModalVideo}
-          isOpen={!!ratingModalVideo}
-          onClose={() => setRatingModalVideo(null)}
-          onSave={handleSaveRating}
-        />
+        {ratingModalVideo && (
+          <RatingModal
+            video={ratingModalVideo}
+            onSave={(video, score) => {
+              handleRateVideo(video, score);    
+              setRatingModalVideo(null);        
+            }}
+            onClose={() => setRatingModalVideo(null)}
+          />
+        )}
 
         <SignInModal
           isOpen={showSignInModal}
@@ -332,7 +335,7 @@ export default function Home() {
             video={videoDetailsModal.video}
             videoStats={videoDetailsModal.videoStats}
             onClose={() => setVideoDetailsModal(null)}
-            onRate={handleRateVideo}
+            onRate={(video) => setRatingModalVideo(video)}
           />
         )}
         
