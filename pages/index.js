@@ -60,18 +60,31 @@ export default function Home() {
 
   const loadRatingsFromDatabase = async () => {
     if (!session) return;
-  
+    
     try {
       const response = await fetch('/api/my-ratings');
       if (response.ok) {
         const dbRatings = await response.json();
-        setRatingsFromDatabase(dbRatings);  // Use the hook method
+        
+        // Convert to the format expected by useVideos hook
+        const ratingsObj = {};
+        dbRatings.forEach(rating => {
+          ratingsObj[rating.videoId] = {
+            rating: rating.score,
+            ratedAt: rating.ratedAt
+          };
+        });
+        
+        // You'll need to access setRatings through a ref or context
+        // This is why Option 1 is better
+        
         console.log(`Loaded ${dbRatings.length} ratings from database`);
       }
     } catch (error) {
       console.error('Failed to load ratings from database:', error);
     }
   };
+
   
   // Call this on app load
   useEffect(() => {
