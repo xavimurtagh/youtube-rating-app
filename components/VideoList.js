@@ -5,13 +5,14 @@ export default function VideoList({
   ratings,
   onRateVideo,
   onIgnoreVideo,
+  onRemoveRating,
   showIgnoreButton = false,
   ignoreButtonText = 'Ignore',
   showLimit = 100
 }) {
   if (!videos || videos.length === 0) {
     return (
-      <div className="empty-state">
+      <div>
         <h3>Start rating videos to see your history here</h3>
       </div>
     );
@@ -32,13 +33,14 @@ export default function VideoList({
           rating={ratings[video.id]}
           onRate={onRateVideo}
           onIgnore={onIgnoreVideo}
+          onRemoveRating={onRemoveRating}  // Add this line
           showIgnoreButton={showIgnoreButton}
           ignoreButtonText={ignoreButtonText}
         />
       ))}
       {showLimit &&
         videos.length > showLimit && (
-          <div className="more-videos-info">
+          <div className="load-more-section">
             {videos.length - showLimit} more videos available
           </div>
         )}
