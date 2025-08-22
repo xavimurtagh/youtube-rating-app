@@ -34,129 +34,87 @@ export default function RatingModal({ video, isOpen, onClose, onSave }) {
 
   return (
     <div 
-      className="modal-overlay" 
+      className="modal-overlay modal" 
       onClick={handleOverlayClick}
-      style={{ 
-        position: 'fixed', 
-        top: 0, 
-        left: 0, 
-        right: 0, 
-        bottom: 0, 
-        backgroundColor: 'rgba(0,0,0,0.5)', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        zIndex: 1000 
-      }}
     >
-      <div 
-        className="modal-content" 
-        style={{ 
-          backgroundColor: 'white', 
-          borderRadius: '12px', 
-          padding: '24px', 
-          maxWidth: '500px', 
-          width: '90%', 
-          position: 'relative' 
-        }}
-      >
+      <div className="modal-content" style={{ position: 'relative' }}>
         {/* Close Button */}
         <button
+          className="modal-close-top"
           onClick={onClose}
-          style={{
-            position: 'absolute',
-            top: '12px',
-            right: '12px',
-            background: 'none',
-            border: 'none',
-            fontSize: '24px',
-            cursor: 'pointer',
-            color: '#666',
-            width: '32px',
-            height: '32px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: '50%',
-          }}
-          onMouseEnter={(e) => e.target.style.backgroundColor = '#f0f0f0'}
-          onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
         >
           ×
         </button>
-
+  
         <div className="modal-header">
           <h3>Rate Video</h3>
         </div>
-
-        <div className="modal-body">
-          <div className="video-info-modal">
-            {video.thumbnail && (
-              <img 
-                src={video.thumbnail} 
-                alt={video.title}
-                className="video-thumbnail"
-              />
+  
+        <div className="video-info-modal">
+          {video.thumbnail && (
+            <img 
+              src={video.thumbnail} 
+              alt={video.title}
+              className="video-thumbnail"
+            />
+          )}
+          
+          <div className="video-content">
+            <h4>{escapeHtml(video.title)}</h4>
+            <p className="video-channel">{escapeHtml(video.channel)}</p>
+            
+            {video.watchedAt && (
+              <p className="video-date">
+                Watched: {new Date(video.watchedAt).toLocaleDateString()}
+              </p>
             )}
-            <div className="video-details">
-              <h4 dangerouslySetInnerHTML={{ __html: escapeHtml(video.title) }} />
-              <p dangerouslySetInnerHTML={{ __html: escapeHtml(video.channel) }} />
-              {video.watchedAt && (
-                <p>Watched: {new Date(video.watchedAt).toLocaleDateString()}</p>
-              )}
-            </div>
-          </div>
-
-          <div className="rating-section">
-            <label htmlFor="rating-slider">How would you rate this video?</label>
-            <div className="rating-input">
-              <input
-                type="range"
-                id="rating-slider"
-                min="1"
-                max="10"
-                value={rating}
-                onChange={(e) => setRating(parseInt(e.target.value))}
-                className="rating-slider"
-                style={{ 
-                  background: `linear-gradient(to right, ${getRatingColor(rating)} 0%, ${getRatingColor(rating)} ${rating * 10}%, #ddd ${rating * 10}%, #ddd 100%)`
-                }}
-              />
-              <div className="rating-display">
-                <div className="rating-value-container">
-                  <span 
-                    className="rating-value" 
-                    style={{ color: getRatingColor(rating) }}
-                  >
-                    {rating}
-                  </span>
-                  <span className="rating-max">/10</span>
-                </div>
-                <span 
-                  className="rating-label"
-                  style={{ color: getRatingColor(rating) }}
-                >
-                  {getRatingLabel(rating)}
-                </span>
-              </div>
-            </div>
-
-            <div className="rating-scale">
-              <span>1-2: Terrible</span>
-              <span>3-4: Bad</span>
-              <span>5-6: Okay</span>
-              <span>7-8: Good</span>
-              <span>9-10: Excellent</span>
-            </div>
           </div>
         </div>
-
-        <div className="modal-actions">
-          <button onClick={handleSave} className="btn btn--primary">
-            Save Rating
-          </button>
+  
+        <div className="rating-section">
+          <p>How would you rate this video?</p>
+          
+          <div className="rating-input">
+            <input
+              type="range"
+              min="1"
+              max="10"
+              value={rating}
+              onChange={(e) => setRating(parseInt(e.target.value))}
+              className="rating-slider"
+              style={{ 
+                background: `linear-gradient(to right, ${getRatingColor(rating)} 0%, ${getRatingColor(rating)} ${rating * 10}%, var(--color-secondary) ${rating * 10}%, var(--color-secondary) 100%)`
+              }}
+            />
+            
+            <div className="rating-display">
+              <div className="rating-value-container">
+                <span className="rating-value" style={{ color: getRatingColor(rating) }}>
+                  {rating}
+                </span>
+                <span className="rating-max">/10</span>
+              </div>
+              <span className="rating-label" style={{ color: getRatingColor(rating) }}>
+                {getRatingLabel(rating)}
+              </span>
+            </div>
+          </div>
+  
+          <div className="rating-scale">
+            <span>1-2: Terrible</span>
+            <span>3-4: Bad</span>
+            <span>5-6: Okay</span>
+            <span>7-8: Good</span>
+            <span>9-10: Excellent</span>
+          </div>
+        </div>
+  
+        <div className="modal-actions" style={{ display: 'flex', gap: 'var(--space-8)', justifyContent: 'flex-end', marginTop: 'var(--space-24)' }}>
           <button onClick={onClose} className="btn btn--outline">
             Cancel
+          </button>
+          <button onClick={handleSave} className="btn btn--primary">
+            Save Rating
           </button>
         </div>
       </div>
