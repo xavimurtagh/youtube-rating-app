@@ -42,7 +42,7 @@ export default function VideoCard({
   const handleRate = (e) => {
     e.stopPropagation();
     if (onRate) {
-      onRate(video, 5);
+      onRate(video);
     }
   };
 
