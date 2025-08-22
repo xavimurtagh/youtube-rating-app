@@ -171,15 +171,6 @@ export function useVideos() {
     const avg = ratingValues.length > 0 
       ? Math.round((ratingValues.reduce((sum, r) => sum + Number(r), 0) / ratingValues.length) * 10) / 10 
       : 0;
-
-    const updateLocalRating = (videoId, score) => {
-    const updated = {
-      ...ratings,
-      [videoId]: { rating: Number(score), ratedAt: new Date().toISOString() }
-    };
-    setRatings(updated);
-    saveRatings(updated);
-  };
     
 
     return {
@@ -191,6 +182,15 @@ export function useVideos() {
       regularVideos: getRegularVideos().length,
       ignoredVideos: ignoredIds.length
     };
+  };
+
+  const updateLocalRating = (videoId, score) => {
+    const updated = {
+      ...ratings,
+      [videoId]: { rating: Number(score), ratedAt: new Date().toISOString() }
+    };
+    setRatings(updated);
+    saveRatings(updated);
   };
 
   return {
