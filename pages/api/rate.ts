@@ -22,21 +22,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log(`Saving rating: User ${me.id} rating video ${video.id} with score ${score}`);
 
     // Ensure video exists in database
-    await prisma.video.upsert({
-      where: { id: video.id },
+    await prisma.rating.upsert({
+      where: {
+        userId_videoId: {
+          userId: userId,
+          videoId: videoId,
+        },
+      },
       create: {
-        id: video.id,
-        title: video.title || 'Unknown Title',
-        channel: video.channel || 'Unknown Channel',
-        thumbnail: video.thumbnail,
-        isMusic: video.isMusic || false
+        userId: userId,
+        videoId: videoId,
+        score: score, // must be a number, not NaN
       },
       update: {
-        title: video.title || 'Unknown Title',
-        channel: video.channel || 'Unknown Channel',
-        thumbnail: video.thumbnail,
-        isMusic: video.isMusic || false
-      }
+        score: score, // must be a number
+        ratedAt: new Date(),
+      },
     });
 
     // Save/update rating
