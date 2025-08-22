@@ -7,9 +7,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  console.log('Request body:', req.body);
-
-
   try {
     const me = await getUser(req, res);
     if (!me) {
@@ -17,17 +14,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const { video, score } = req.body;
+    const scoreNum = typeof score === 'string' ? parseInt(score, 5) : Number(score);
 
-    // coerce score to a number up front
-    const scoreNum = typeof score === 'string' ? parseInt(score, 10) : Number(score);
-
-    console.log('video:', video);
-    console.log('video.id:', video?.id);
-    console.log('score:', score);
-    console.log('scoreNum:', scoreNum);
-
-
-    // validate video.id and scoreNum
     if (
       !video ||
       typeof video.id !== 'string' ||
@@ -38,12 +26,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Invalid video or score data' });
     }
 
-    console.log(`Saving rating: User ${me.id} rating video ${video.id} with score ${scoreNum}`);
+    console.log(`Request body:`, req.body);
+    console.log(`Saving rating: User ${me.id} video ${video.id} score ${scoreNum}`);
 
-    const savedRating = await prisma.rating.upsert({
-      where: {
-        userId_videoId: { userId: me.id, videoId: video.id },
+    // 1) Upsert the Video record so the FK exists
+    await prisma.video.upsert({
+      where: { id: video.id },
+      create: {
+        id: video.id,
+        title: video.title,
+        channel: video.channel,
+        description: video.description ?? '',
+        thumbnail: video.thumbnail ?? '',
+        publishedAt: video.publishedAt ? new Date(video.publishedAt) : undefined,
+        url: video.url,
+        channelId: video.channelId ?? '',
       },
+      update: {
+        // Optionally keep title/channel in sync
+        title: video.title,
+        channel: video.channel,
+      },
+    });
+
+    // 2) Now upsert the Rating
+    const savedRating = await prisma.rating.upsert({
+      where: { userId_videoId: { userId: me.id, videoId: video.id } },
       create: {
         userId: me.id,
         videoId: video.id,
@@ -55,6 +63,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
     });
 
+    // 3) Create activity log
     await prisma.activity.create({
       data: {
         userId: me.id,
@@ -66,6 +75,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     console.log('Rating saved successfully:', savedRating);
     res.status(200).json({ ok: true, rating: savedRating });
+
   } catch (error) {
     console.error('Rating API error:', error);
     res.status(500).json({ error: 'Internal server error' });
