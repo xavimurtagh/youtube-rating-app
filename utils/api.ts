@@ -40,6 +40,9 @@ export const socialAPI = {
     api(`follow/${userId}`, { method: 'DELETE' }),
   
   getFeed: () => api('feed'),
+
+  removeRating: (videoId: string) =>
+    api('rate', { method: 'DELETE', body: JSON.stringify({ videoId }) }),
   
   getProfile: (userId: string) => api(`profile/${userId}`),
 
