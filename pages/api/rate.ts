@@ -15,43 +15,47 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const { video, score } = req.body;
 
-    if (!video || !video.id || score === undefined || score < 1 || score > 10) {
+    // coerce score to a number up front
+    const scoreNum = typeof score === 'string' ? parseInt(score, 10) : Number(score);
+
+    // validate video.id and scoreNum
+    if (
+      !video ||
+      typeof video.id !== 'string' ||
+      isNaN(scoreNum) ||
+      scoreNum < 1 ||
+      scoreNum > 10
+    ) {
       return res.status(400).json({ error: 'Invalid video or score data' });
     }
 
-    console.log(`Saving rating: User ${me.id} rating video ${video.id} with score ${score}`);
+    console.log(`Saving rating: User ${me.id} rating video ${video.id} with score ${scoreNum}`);
 
-    // Save/update rating (remove the duplicate upsert call)
     const savedRating = await prisma.rating.upsert({
       where: {
-        userId_videoId: {
-          userId: me.id,        // Use me.id instead of userId
-          videoId: video.id     // Use video.id instead of videoId
-        }
+        userId_videoId: { userId: me.id, videoId: video.id },
       },
       create: {
-        userId: me.id,          // Use me.id instead of userId
-        videoId: video.id,      // Use video.id instead of videoId
-        score: parseInt(score)  // Ensure it's a number
+        userId: me.id,
+        videoId: video.id,
+        score: scoreNum,
       },
       update: {
-        score: parseInt(score), // Ensure it's a number
-        ratedAt: new Date()
-      }
+        score: scoreNum,
+        ratedAt: new Date(),
+      },
     });
 
-    // Create activity log
     await prisma.activity.create({
       data: {
         userId: me.id,
         type: 'rating',
         videoId: video.id,
-        data: { score: parseInt(score) }
-      }
+        data: { score: scoreNum },
+      },
     });
 
     console.log('Rating saved successfully:', savedRating);
-
     res.status(200).json({ ok: true, rating: savedRating });
   } catch (error) {
     console.error('Rating API error:', error);
