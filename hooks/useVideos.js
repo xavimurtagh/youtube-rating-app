@@ -83,6 +83,13 @@ export function useVideos() {
     }
   };
 
+  const clearUnrated = () => {
+    const remaining = videos.filter(v => ratings[v.id]);
+    setVideos(remaining);
+    saveVideos(remaining);
+  };
+
+
   // Rate a video - store rating as number, not object
   const rateVideo = (videoId, rating) => {
     try {
