@@ -332,14 +332,17 @@ export default function Home() {
           onClose={() => setShowSignInModal(false)}
         />
 
-        <VideoDetailsModal
-          video={video}
-          videoStats={videoStats}
-          onRate={(video, score) => {
-            handleRateVideo(video, score);
-          }}
-          onClose={() => setVideoDetailsModal(null)}
-        />
+        {videoDetailsModal && (
+          <VideoDetailsModal
+            video={videoDetailsModal.video}
+            videoStats={videoDetailsModal.videoStats}
+            onRate={(video, score) => {
+              handleRateVideo(video, score);
+              setVideoDetailsModal(null);
+            }}
+            onClose={() => setVideoDetailsModal(null)}
+          />
+        )}
 
         
         {process.env.NODE_ENV === 'development' && (
