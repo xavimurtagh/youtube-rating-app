@@ -317,13 +317,15 @@ export default function Home() {
         {ratingModalVideo && (
           <RatingModal
             video={ratingModalVideo}
+            isOpen={true}
             onSave={(video, score) => {
-              handleRateVideo(video, score);    
-              setRatingModalVideo(null);        
+              handleRateVideo(video, score);
+              setRatingModalVideo(null);
             }}
             onClose={() => setRatingModalVideo(null)}
           />
         )}
+
 
         <SignInModal
           isOpen={showSignInModal}
