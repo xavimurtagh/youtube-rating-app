@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import VideoList from './VideoList';
 
-export default function RatingsSection({ videos, ratings, onRateVideo, stats, removeRatings }) {
+export default function RatingsSection({ videos, ratings, onRateVideo, onRemoveRating, stats }) {
   const { data: session } = useSession();
   const [filterType, setFilterType] = useState('rated');
   const [ratingFilter, setRatingFilter] = useState('all');
@@ -325,40 +325,27 @@ export default function RatingsSection({ videos, ratings, onRateVideo, stats, re
             .sort(([a], [b]) => {
               if (groupBy === 'rating' && a.includes('/10') && b.includes('/10')) {
                 const aRating = parseInt(a.split('/')[0]);
-                const bRating = parseInt(b.split('/')[0]);
+                const bRating = parseInt(b.split('/'));
                 return sortOrder === 'desc' ? bRating - aRating : aRating - bRating;
               }
               return a.localeCompare(b);
             })
             .map(([groupName, groupVideos]) => (
               <div key={groupName} className="video-group">
-                <h3 className="group-header">
-                  {groupName} ({groupVideos.length} videos)
-                </h3>
+                <h3 className="group-header">{groupName} ({groupVideos.length} videos)</h3>
                 <VideoList
-                  videos={sortedVideos}
+                  videos={groupVideos}
                   ratings={ratings}
                   onRateVideo={onRateVideo}
-                  onRemoveRating={removeRating}
-                  onIgnoreVideo={onIgnoreVideo}
+                  onRemoveRating={onRemoveRating}  // Add this line
                   showIgnoreButton={false}
                 />
               </div>
             ))
         ) : (
-          <div className="empty-state">
-            <h3>No videos found</h3>
+          <div className="video-group">
+            <h3 className="group-header">No videos found</h3>
             <p>No videos match your current filters. Try adjusting your search criteria.</p>
-            <button 
-              className="btn btn--outline"
-              onClick={() => {
-                setFilterType('all');
-                setRatingFilter('all');
-                setGenreFilter('all');
-              }}
-            >
-              Clear All Filters
-            </button>
           </div>
         )}
       </div>
