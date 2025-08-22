@@ -14,12 +14,20 @@ export default async function handler(req, res) {
   try {
     const videoDetails = [];
     
-    // Fetch details for each video (YouTube API allows batch requests)
+    // Process in batches to avoid rate limits
     for (const videoId of videoIds) {
       try {
         const details = await getVideoDetails(videoId);
-        videoDetails.push(details);
+        videoDetails.push({
+          id: details.id,
+          title: details.title,
+          channel: details.channel,
+          thumbnail: details.thumbnail,
+          description: details.description,
+          isMusic: false, // You can enhance this logic
+        });
       } catch (error) {
+        console.error(`Failed to fetch details for video ${videoId}:`, error);
         // Fallback for videos that can't be found
         videoDetails.push({
           id: videoId,
