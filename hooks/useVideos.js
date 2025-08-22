@@ -142,6 +142,33 @@ export function useVideos() {
     }
   };
 
+  const removeRating = async (videoId) => {
+    try {
+      const response = await fetch('/api/rate', {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoId }),
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText);
+      }
+      
+      // Remove from local state
+      const updated = { ...ratings };
+      delete updated[videoId];
+      setRatings(updated);
+      saveRatings(updated);
+      
+      console.log('Rating removed successfully:', videoId);
+    } catch (error) {
+      console.error('Failed to remove rating:', error);
+      alert('Failed to remove rating. Please try again.');
+    }
+  };
+
   // Ignore a video
   const ignoreVideo = (videoId) => {
     try {
@@ -237,6 +264,7 @@ export function useVideos() {
     error,
     addVideos,
     rateVideo,
+    removeRating,
     ignoreVideo,
     clearAllData,
     clearUnrated,
