@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Head from 'next/head';
 import { useSession } from 'next-auth/react';
 import TabNavigation from '../components/TabNavigation';
