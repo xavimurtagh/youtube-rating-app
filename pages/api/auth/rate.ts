@@ -40,21 +40,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Upsert rating
     await prisma.rating.upsert({
-      where: { 
-        userId_videoId: { 
-          userId: me.id, 
-          videoId: video.id 
-        } 
+      where: {
+        userId_videoId: {
+          userId: userId,
+          videoId: videoId,
+        },
       },
-      create: { 
-        userId: me.id, 
-        videoId: video.id, 
-        score: parseInt(score) 
+      create: {
+        userId: userId,
+        videoId: videoId,
+        score: score, // must be a number, not NaN
       },
-      update: { 
-        score: parseInt(score), 
-        ratedAt: new Date() 
-      }
+      update: {
+        score: score, // must be a number
+        ratedAt: new Date(),
+      },
     });
 
     // Log activity
