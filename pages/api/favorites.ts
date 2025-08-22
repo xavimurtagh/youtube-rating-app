@@ -3,48 +3,33 @@ import { prisma } from '../../lib/prisma'
 import { getUser } from '../../lib/auth'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // Log everything for debugging
-  console.log('=== FAVORITES API DEBUG ===')
-  console.log('Method:', req.method)
-  console.log('Content-Type:', req.headers['content-type'])
-  console.log('Raw body:', req.body)
-  console.log('Body type:', typeof req.body)
-  console.log('Body stringified:', JSON.stringify(req.body, null, 2))
-
   const me = await getUser(req, res)
   if (!me) {
-    console.log('User not authenticated')
     return res.status(401).json({ error: 'Unauthorized' })
-  }
-
-  console.log('User authenticated:', me.id)
-
-  // Check if body exists and is an object
-  if (!req.body || typeof req.body !== 'object') {
-    console.log('Invalid or missing request body')
-    return res.status(400).json({ error: 'Invalid request body' })
   }
 
   const { videoId, title, channel, thumbnail } = req.body
   
-  console.log('Extracted values:')
-  console.log('- videoId:', videoId, typeof videoId)
-  console.log('- title:', title, typeof title)
-  console.log('- channel:', channel, typeof channel)
-  console.log('- thumbnail:', thumbnail, typeof thumbnail)
-
   if (!videoId) {
-    console.log('Missing videoId - returning 400')
     return res.status(400).json({ error: 'Missing videoId' })
   }
 
   try {
-    // Ensure video exists
-    console.log('Upserting video with id:', videoId)
+    // Ensure video exists with fallback values for missing fields
     await prisma.video.upsert({
       where: { id: videoId },
-      create: { id: videoId, title, channel, thumbnail },
-      update: {}
+      create: { 
+        id: videoId, 
+        title: title || 'Previously Rated Video',  // Fallback
+        channel: channel || 'Unknown Channel',      // Fallback
+        thumbnail: thumbnail || null 
+      },
+      update: {
+        // Only update if we have better data
+        ...(title && { title }),
+        ...(channel && { channel }),
+        ...(thumbnail && { thumbnail })
+      }
     })
 
     if (req.method === 'POST') {
