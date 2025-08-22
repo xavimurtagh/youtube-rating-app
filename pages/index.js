@@ -62,7 +62,9 @@ export default function Home() {
     if (!session) return;
   
     try {
-      const response = await fetch('/api/my-ratings');
+      const response = await fetch('/api/my-ratings', {
+        credentials: 'include',
+      });
       if (response.ok) {
         const dbRatings = await response.json();
         setRatingsFromDatabase(dbRatings);  // Use the hook method
@@ -86,6 +88,7 @@ export default function Home() {
       // Save to database via API
       const response = await fetch('/api/rate', {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
