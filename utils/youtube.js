@@ -78,3 +78,38 @@ export function formatDuration(isoDuration) {
 
   return formatted;
 }
+
+
+export const fetchVideoDetails = async (videoIds) => {
+  if (!Array.isArray(videoIds) || videoIds.length === 0) return [];
+  
+  try {
+    const API_KEY = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY;
+    if (!API_KEY) throw new Error('YouTube API key not configured');
+    
+    const response = await fetch(
+      `https://www.googleapis.com/youtube/v3/videos?id=${videoIds.join(',')}&part=snippet&key=${API_KEY}`
+    );
+    
+    if (!response.ok) throw new Error('Failed to fetch from YouTube API');
+    
+    const data = await response.json();
+    
+    return data.items.map(item => ({
+      id: item.id,
+      title: item.snippet.title,
+      channel: item.snippet.channelTitle,
+      thumbnail: item.snippet.thumbnails.medium?.url,
+      isMusic: false, 
+    }));
+  } catch (error) {
+    console.error('Error fetching video details:', error);
+    return videoIds.map(id => ({
+      id,
+      title: 'Previously Rated Video',
+      channel: 'Unknown Channel', 
+      thumbnail: null,
+      isMusic: false,
+    }));
+  }
+};
