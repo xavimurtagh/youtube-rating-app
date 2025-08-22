@@ -194,7 +194,7 @@ export default function Home() {
   const renderActiveTab = () => {
     switch (activeTab) {
       case 'search':
-        return <SearchSection onRateVideo={handleRateVideo} />;
+        return <SearchSection onRateVideo={video => setRatingModalVideo(video)} />;
       
       case 'import':
         return (
@@ -203,7 +203,7 @@ export default function Home() {
             ratings={ratings}
             ignoredIds={ignoredIds}
             onImportComplete={handleImportComplete}
-            onRateVideo={handleRateVideo}
+            onRateVideo={video => setRatingModalVideo(video)}
             onIgnoreVideo={handleIgnoreVideo}
             clearUnrated={clearUnrated}
           />
@@ -212,7 +212,7 @@ export default function Home() {
       case 'music':
         return (
           <MusicSection
-            onRateVideo={handleRateVideo}
+            onRateVideo={video => setRatingModalVideo(video)}
             musicVideos={musicVideos}
             ratings={ratings}
             onIgnoreVideo={ignoreVideo}
@@ -224,7 +224,7 @@ export default function Home() {
           <RatingsSection
             videos={videos}
             ratings={ratings}
-            onRateVideo={handleRateVideo}
+            onRateVideo={video => setRatingModalVideo(video)}
             onVideoClick={handleVideoClick}
           />
         );
@@ -237,7 +237,7 @@ export default function Home() {
           <FavoritesSection 
             ratings={ratings}
             videos={videos}
-            onRateVideo={handleRateVideo}
+            onRateVideo={video => setRatingModalVideo(video)}
           />
         );
       
@@ -255,12 +255,12 @@ export default function Home() {
           <AIRecommendationsSection
             videos={videos}
             ratings={ratings}
-            onRateVideo={handleRateVideo}
+            onRateVideo={video => setRatingModalVideo(video)}
           />
         );
       
       default:
-        return <SearchSection onRateVideo={handleRateVideo} />;
+        return <SearchSection onRateVideo={video => setRatingModalVideo(video)} />;
     }
   };
   return (
