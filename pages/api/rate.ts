@@ -7,6 +7,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  console.log('Request body:', req.body);
+
+
   try {
     const me = await getUser(req, res);
     if (!me) {
