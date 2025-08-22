@@ -84,6 +84,7 @@ export default function Home() {
 
 
   const handleRateVideo = async (video, rating) => {
+    console.log('Request body:', req.body);
     try {
       // Save to database via API
       const response = await fetch('/api/rate', {
@@ -97,6 +98,12 @@ export default function Home() {
           score: rating
         })
       });
+
+      console.log('video:', video);
+      console.log('video.id:', video?.id);
+      console.log('score:', score);
+      console.log('scoreNum:', scoreNum);
+
   
       if (!response.ok) {
         const error = await response.text();
