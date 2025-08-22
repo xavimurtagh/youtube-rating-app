@@ -7,6 +7,46 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  if (req.method === 'DELETE') {
+    try {
+      const me = await getUser(req, res);
+      if (!me) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      const { videoId } = req.body;
+      
+      if (!videoId) {
+        return res.status(400).json({ error: 'Missing videoId' });
+      }
+
+      // Delete the rating
+      await prisma.rating.delete({
+        where: {
+          userId_videoId: {
+            userId: me.id,
+            videoId: videoId
+          }
+        }
+      });
+
+      // Log the activity
+      await prisma.activity.create({
+        data: {
+          userId: me.id,
+          type: 'rating_removed',
+          videoId: videoId,
+          data: {}
+        }
+      });
+
+      return res.status(200).json({ ok: true });
+    } catch (error) {
+      console.error('Remove rating error:', error);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+
   try {
     const me = await getUser(req, res);
     if (!me) {
