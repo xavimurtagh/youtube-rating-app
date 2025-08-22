@@ -49,16 +49,30 @@ export function useVideos() {
       }
     });
     
-    // Fetch missing video details
+    // Fetch missing video details from YouTube API
     if (missingVideoIds.length > 0) {
-      const videoDetails = await fetchVideoDetails(missingVideoIds);
-      setVideos(prev => [...prev, ...videoDetails]);
-      saveVideos([...videos, ...videoDetails]);
+      try {
+        const response = await fetch('/api/video-details', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ videoIds: missingVideoIds }),
+        });
+        
+        if (response.ok) {
+          const { videos: fetchedVideos } = await response.json();
+          setVideos(prev => [...prev, ...fetchedVideos]);
+          saveVideos([...videos, ...fetchedVideos]);
+          console.log(`Fetched details for ${fetchedVideos.length} videos`);
+        }
+      } catch (error) {
+        console.error('Failed to fetch video details:', error);
+      }
     }
     
     setRatings(ratingsObj);
     localStorage.setItem('youtube_rating_ratings', JSON.stringify(ratingsObj));
   };
+
 
 
 
