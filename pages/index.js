@@ -226,7 +226,7 @@ export default function Home() {
             videos={videos}
             ratings={ratings}
             onRateVideo={video => setRatingModalVideo(video)}
-            onRemoveRating={removeRating}
+            onRemoveRating={removeRating}  // Add this line
             onVideoClick={handleVideoClick}
           />
         );
@@ -240,6 +240,7 @@ export default function Home() {
             ratings={ratings}
             videos={videos}
             onRateVideo={video => setRatingModalVideo(video)}
+            onRemoveRating={removeRating}  // Add this if FavoritesSection needs it too
           />
         );
       
@@ -265,6 +266,7 @@ export default function Home() {
         return <SearchSection onRateVideo={video => setRatingModalVideo(video)} />;
     }
   };
+
   return (
     <>
       <Head>
