@@ -21,6 +21,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // coerce score to a number up front
     const scoreNum = typeof score === 'string' ? parseInt(score, 10) : Number(score);
 
+    console.log('video:', video);
+    console.log('video.id:', video?.id);
+    console.log('score:', score);
+    console.log('scoreNum:', scoreNum);
+
+
     // validate video.id and scoreNum
     if (
       !video ||
