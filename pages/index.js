@@ -57,6 +57,39 @@ export default function Home() {
     setActiveTab('import');
   };
 
+  const loadRatingsFromDatabase = async () => {
+    if (!session) return;
+  
+    try {
+      const response = await fetch('/api/my-ratings');
+      if (response.ok) {
+        const dbRatings = await response.json();
+        
+        // Convert array to object format for compatibility
+        const ratingsObj = {};
+        dbRatings.forEach(rating => {
+          ratingsObj[rating.videoId] = rating.score;
+        });
+        
+        setRatings(ratingsObj);
+        // Also update localStorage for offline access
+        localStorage.setItem('youtube_rating_ratings', JSON.stringify(ratingsObj));
+        
+        console.log(`Loaded ${dbRatings.length} ratings from database`);
+      }
+    } catch (error) {
+      console.error('Failed to load ratings from database:', error);
+    }
+  };
+  
+  // Call this on app load
+  useEffect(() => {
+    if (session) {
+      loadRatingsFromDatabase();
+    }
+  }, [session]);
+
+
   const handleRateVideo = async (video, rating) => {
     try {
       // Save to database via API
@@ -87,6 +120,61 @@ export default function Home() {
       alert('Failed to save rating. Please try again.');
     }
   };
+
+  const migrateLocalRatingsToDatabase = async () => {
+    const localRatings = localStorage.getItem('youtube_rating_ratings');
+    if (!localRatings) return;
+  
+    const ratings = JSON.parse(localRatings);
+    const entries = Object.entries(ratings);
+    
+    if (entries.length === 0) return;
+  
+    console.log(`Migrating ${entries.length} ratings from localStorage to database...`);
+    
+    let successCount = 0;
+    let errorCount = 0;
+  
+    for (const [videoId, rating] of entries) {
+      try {
+        // Find video in your videos array to get full video data
+        const video = videos.find(v => v.id === videoId) || {
+          id: videoId,
+          title: 'Migrated Video',
+          channel: 'Unknown Channel'
+        };
+  
+        await handleRateVideo(video, rating);
+        successCount++;
+        
+        // Small delay to prevent overwhelming the API
+        await new Promise(resolve => setTimeout(resolve, 100));
+      } catch (error) {
+        console.error(`Failed to migrate rating for video ${videoId}:`, error);
+        errorCount++;
+      }
+    }
+  
+    alert(`Migration completed! ${successCount} ratings saved, ${errorCount} failed.`);
+  };
+  
+  // Add this useEffect to trigger migration on load (run once)
+  useEffect(() => {
+    const hasRunMigration = localStorage.getItem('ratings_migrated');
+    if (session && !hasRunMigration) {
+      const shouldMigrate = confirm(
+        'We found existing ratings in your browser storage. Would you like to sync them to your account? (This only needs to be done once)'
+      );
+      if (shouldMigrate) {
+        migrateLocalRatingsToDatabase().then(() => {
+          localStorage.setItem('ratings_migrated', 'true');
+        });
+      } else {
+        localStorage.setItem('ratings_migrated', 'skipped');
+      }
+    }
+  }, [session, videos]);
+
 
 
   const handleVideoClick = async (video, videoStats) => {
