@@ -330,16 +330,16 @@ export default function Home() {
           onClose={() => setShowSignInModal(false)}
         />
 
-        {videoDetailsModal && (
-          <VideoDetailsModal
-            video={videoDetailsModal.video}
-            videoStats={videoDetailsModal.videoStats}
-            onClose={() => setVideoDetailsModal(null)}
-            onRate={(video) => setRatingModalVideo(video)}
-          />
-        )}
+        <VideoDetailsModal
+          video={video}
+          videoStats={videoStats}
+          onRate={(video, score) => {
+            handleRateVideo(video, score);
+          }}
+          onClose={() => setVideoDetailsModal(null)}
+        />
+
         
-        {/* Dev Tools */}
         {process.env.NODE_ENV === 'development' && (
           <div className="dev-tools">
             <button onClick={clearAllData} className="btn btn--outline btn--sm">
