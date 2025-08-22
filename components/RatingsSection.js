@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import VideoList from './VideoList';
 
-export default function RatingsSection({ videos, ratings, onRateVideo, stats }) {
+export default function RatingsSection({ videos, ratings, onRateVideo, stats, removeRatings }) {
   const { data: session } = useSession();
   const [filterType, setFilterType] = useState('rated');
   const [ratingFilter, setRatingFilter] = useState('all');
