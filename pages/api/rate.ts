@@ -14,7 +14,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const { video, score } = req.body;
-    const scoreNum = typeof score === 'string' ? parseInt(score, 5) : Number(score);
+    const scoreNum = typeof score === 'string' ? parseInt(score, 10) : Number(score);
 
     if (
       !video ||
@@ -26,30 +26,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Invalid video or score data' });
     }
 
-    console.log(`Request body:`, req.body);
-    console.log(`Saving rating: User ${me.id} video ${video.id} score ${scoreNum}`);
-
-    // 1) Upsert the Video record so the FK exists
+    // 1) Upsert the Video record (only allowed fields)
     await prisma.video.upsert({
       where: { id: video.id },
       create: {
         id: video.id,
         title: video.title,
         channel: video.channel,
-        description: video.description ?? '',
-        thumbnail: video.thumbnail ?? '',
-        publishedAt: video.publishedAt ? new Date(video.publishedAt) : undefined,
-        url: video.url,
-        channelId: video.channelId ?? '',
+        thumbnail: video.thumbnail ?? null,
+        isMusic: Boolean(video.isMusic),
       },
       update: {
-        // Optionally keep title/channel in sync
+        // Optionally sync title/channel if they change
         title: video.title,
         channel: video.channel,
       },
     });
 
-    // 2) Now upsert the Rating
+    // 2) Upsert the Rating
     const savedRating = await prisma.rating.upsert({
       where: { userId_videoId: { userId: me.id, videoId: video.id } },
       create: {
@@ -63,7 +57,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
     });
 
-    // 3) Create activity log
+    // 3) Log the activity
     await prisma.activity.create({
       data: {
         userId: me.id,
@@ -73,11 +67,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
     });
 
-    console.log('Rating saved successfully:', savedRating);
-    res.status(200).json({ ok: true, rating: savedRating });
-
+    return res.status(200).json({ ok: true, rating: savedRating });
   } catch (error) {
     console.error('Rating API error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
