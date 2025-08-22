@@ -40,6 +40,7 @@ export default function Home() {
     getVideoStats,
     getMusicVideos,
     getRegularVideos,
+    clearUnrated,
     setRatingsFromDatabase,
     ignoredIds
   } = useVideos();
