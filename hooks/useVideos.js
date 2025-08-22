@@ -52,6 +52,7 @@ export function useVideos() {
     // Fetch missing video details from YouTube API
     if (missingVideoIds.length > 0) {
       try {
+        console.log(`Fetching details for ${missingVideoIds.length} missing videos...`);
         const response = await fetch('/api/video-details', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -60,17 +61,48 @@ export function useVideos() {
         
         if (response.ok) {
           const { videos: fetchedVideos } = await response.json();
-          setVideos(prev => [...prev, ...fetchedVideos]);
-          saveVideos([...videos, ...fetchedVideos]);
-          console.log(`Fetched details for ${fetchedVideos.length} videos`);
+          const updatedVideos = [...videos, ...fetchedVideos];
+          setVideos(updatedVideos);
+          saveVideos(updatedVideos);
+          console.log(`Successfully fetched details for ${fetchedVideos.length} videos`);
+        } else {
+          console.error('Failed to fetch video details:', response.status);
         }
       } catch (error) {
-        console.error('Failed to fetch video details:', error);
+        console.error('Error fetching video details:', error);
       }
     }
     
     setRatings(ratingsObj);
     localStorage.setItem('youtube_rating_ratings', JSON.stringify(ratingsObj));
+  };
+  
+  // Also add the remove rating function
+  const removeRating = async (videoId) => {
+    try {
+      const response = await fetch('/api/rate', {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoId }),
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText);
+      }
+      
+      // Remove from local state
+      const updated = { ...ratings };
+      delete updated[videoId];
+      setRatings(updated);
+      saveRatings(updated);
+      
+      console.log('Rating removed successfully:', videoId);
+    } catch (error) {
+      console.error('Failed to remove rating:', error);
+      alert('Failed to remove rating. Please try again.');
+    }
   };
 
 
