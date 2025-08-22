@@ -57,13 +57,37 @@ export default function Home() {
     setActiveTab('import');
   };
 
-  const handleRateVideo = (video) => {
-    if (!session) {
-      setShowSignInModal(true);
-      return;
+  const handleRateVideo = async (video, rating) => {
+    try {
+      // Save to database via API
+      const response = await fetch('/api/rate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          video: video,
+          score: rating
+        })
+      });
+  
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error);
+      }
+  
+      // Also save to localStorage (for backwards compatibility)
+      const newRatings = { ...ratings, [video.id]: rating };
+      setRatings(newRatings);
+      localStorage.setItem('youtube_rating_ratings', JSON.stringify(newRatings));
+  
+      console.log('Rating saved successfully:', video.id, rating);
+    } catch (error) {
+      console.error('Failed to save rating:', error);
+      alert('Failed to save rating. Please try again.');
     }
-    setRatingModalVideo(video);
   };
+
 
   const handleVideoClick = async (video, videoStats) => {
     setVideoDetailsModal({ video, videoStats });
