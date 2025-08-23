@@ -39,7 +39,6 @@ export default function VideoCard({
     }
   };
 
-
   const handleRate = (e) => {
     e.stopPropagation();
     if (onRate) {
@@ -79,15 +78,22 @@ export default function VideoCard({
 
   return (
     <div className="video-card">
-      <div className="video-thumbnail">
+      {/* Improved thumbnail container */}
+      <div className="video-thumbnail-container">
         {video.thumbnail ? (
-          <img src={video.thumbnail} alt={video.title} />
+          <img 
+            src={video.thumbnail} 
+            alt={video.title}
+            className="video-thumbnail"
+          />
         ) : (
-          <div className="no-thumbnail">📺</div>
+          <div className="video-thumbnail-placeholder">
+            📺
+          </div>
         )}
         {isMusic && <div className="music-badge">🎵</div>}
       </div>
-      
+
       <div className="video-content">
         <h3 className="video-title">{decodeHtmlEntities(video.title)}</h3>
         <p className="video-channel">{decodeHtmlEntities(video.channel)}</p>
@@ -97,16 +103,12 @@ export default function VideoCard({
             Watched: {new Date(video.watchedAt).toLocaleDateString()}
           </p>
         )}
-        
-        {video.description && (
-          <p className="video-description">
-            {decodeHtmlEntities(video.description).substring(0, 100)}...
-          </p>
-        )}
+
+        {/* Removed description section */}
 
         <div className="video-stats">
           {loadingStats ? (
-            <span className="stats-loading">Loading stats...</span>
+            <span>Loading stats...</span>
           ) : videoStats ? (
             videoStats.totalRatings > 0 ? (
               <div className="stats-display">
@@ -128,49 +130,50 @@ export default function VideoCard({
         {/* Personal Rating */}
         {ratingValue && (
           <div className="personal-rating">
-            Your rating: <span className="rating-badge">{ratingValue}/10</span>
+            Your rating: {ratingValue}/10
           </div>
         )}
-      </div>
 
-      <div className="video-actions">
-        <button 
-          className="btn btn--primary" 
-          onClick={handleRate}
-        >
-          {ratingValue ? `Update Rating (${ratingValue}/10)` : 'Rate Video'}
-        </button>
-        
-        {ratingValue && (
+        <div className="video-actions">
           <button 
-            className="btn btn--outline btn--danger" 
-            onClick={handleRemoveRating}
+            className="btn btn--primary" 
+            onClick={handleRate}
           >
-            Remove Rating
+            {ratingValue ? `Update Rating (${ratingValue}/10)` : 'Rate Video'}
           </button>
-        )}
-        
-        {showIgnoreButton && (
-          <button 
-            className="btn btn--outline ignore-btn" 
-            onClick={handleIgnore}
-          >
-            {ignoreButtonText}
-          </button>
-        )}
+          
+          {ratingValue && (
+            <button 
+              className="btn btn--outline btn--danger" 
+              onClick={handleRemoveRating}
+            >
+              Remove Rating
+            </button>
+          )}
+          
+          {showIgnoreButton && (
+            <button 
+              className="btn btn--outline ignore-btn" 
+              onClick={handleIgnore}
+            >
+              {ignoreButtonText}
+            </button>
+          )}
 
-        <button 
-          className="btn btn--outline" 
-          onClick={(e) => e.stopPropagation()}
-        >
-          <a 
-            href={`https://www.youtube.com/watch?v=${video.id}`} 
-            target="_blank" 
-            rel="noopener noreferrer"
+          <button 
+            className="btn btn--outline" 
+            onClick={(e) => e.stopPropagation()}
           >
-            Watch on YouTube
-          </a>
-        </button>
+            <a 
+              href={`https://www.youtube.com/watch?v=${video.id}`} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              style={{ textDecoration: 'none', color: 'inherit' }}
+            >
+              Watch on YouTube
+            </a>
+          </button>
+        </div>
       </div>
     </div>
   );
