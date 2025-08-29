@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import VideoList from './VideoList';
 
-export default function MusicSection({ onRateVideo, musicVideos, ratings, onIgnoreVideo }) {
+export default function MusicSection({ onRateVideo, musicVideos, ratings, onIgnoreVideo, onRemoveRating }) {
   const [searchResults, setSearchResults] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
@@ -211,6 +211,7 @@ export default function MusicSection({ onRateVideo, musicVideos, ratings, onIgno
                 onRateVideo={onRateVideo}
                 onIgnoreVideo={onIgnoreVideo}     
                 showIgnoreButton={true}
+                onRemoveRating={onRemoveRating}
                 ignoreButtonText="Ignore"
                 showLimit={100}
               />
