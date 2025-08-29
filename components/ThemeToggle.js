@@ -1,5 +1,7 @@
 import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
+import { ThemeProvider } from 'next-themes';
+import { SessionProvider } from 'next-auth/react';
 
 export default function ThemeToggle() {
   const [mounted, setMounted] = useState(false);
