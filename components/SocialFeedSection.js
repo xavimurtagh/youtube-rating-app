@@ -1,87 +1,86 @@
-import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { socialAPI } from '../utils/api';
+import React, { useState, useEffect } from 'react';
 
 export default function SocialFeedSection() {
-  const { data: session } = useSession();
-  const [feed, setFeed] = useState([]);
+  const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (session) {
-      loadFeed();
-    }
-  }, [session]);
+    loadSocialFeed();
+  }, []);
 
-  const loadFeed = async () => {
+  const loadSocialFeed = async () => {
     try {
-      const feedData = await socialAPI.getFeed();
-      setFeed(feedData);
+      setLoading(true);
+      const response = await fetch('/api/feed?limit=50'); // Limit to 50 activities
+      if (response.ok) {
+        const data = await response.json();
+        setActivities(data);
+      }
     } catch (error) {
-      console.error('Failed to load feed:', error);
+      console.error('Failed to load social feed:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  if (!session) {
-    return (
-      <div className="auth-required">
-        <div className="auth-prompt">
-          <h2>📱 Sign In for Social Feed</h2>
-          <p>Sign in to see what your friends are rating and discover new videos!</p>
-        </div>
-      </div>
-    );
-  }
+  const getVideoTitle = (activity) => {
+    // Try to get video title from activity data
+    return activity.videoTitle || activity.video?.title || `Video ${activity.videoId.substring(0, 8)}...`;
+  };
+
+  const getVideoUrl = (videoId) => {
+    return `https://www.youtube.com/watch?v=${videoId}`;
+  };
 
   if (loading) {
-    return (
-      <div className="loading-state">
-        <p>📱 Loading your social feed...</p>
-      </div>
-    );
+    return <div className="loading">Loading social feed...</div>;
   }
 
   return (
     <div className="social-feed-section">
-      <div className="feed-header">
-        <h2>📱 Friend Activity</h2>
-        <p className="section-description">
-          See what videos your friends are rating
-        </p>
-      </div>
-
-      {feed.length > 0 ? (
-        <div className="activity-feed">
-          {feed.map(activity => (
-            <div key={activity.id} className="activity-item">
-              <img 
-                src={activity.user.avatar || '/default-avatar.png'} 
-                alt={activity.user.name}
-                className="activity-avatar" 
-              />
-              <div className="activity-content">
-                <p className="activity-text">
-                  <strong>{activity.user.name}</strong> rated a video
-                  <span className="activity-rating">{activity.data.score}/10</span>
-                </p>
-                <span className="activity-time">
-                  {new Date(activity.createdAt).toLocaleDateString()}
-                </span>
+      <h2>🌐 Recent Activity</h2>
+      
+      <div className="activity-feed">
+        {activities.length > 0 ? (
+          activities.map((activity, index) => (
+            <div key={activity.id || index} className="activity-item">
+              <div className="activity-header">
+                <div className="user-info">
+                  <strong>{activity.userName || 'Anonymous User'}</strong>
+                  <span className="activity-time">
+                    {new Date(activity.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+                <div className="rating-badge">
+                  ⭐ {activity.rating}/10
+                </div>
               </div>
+              
+              <div className="activity-content">
+                <span>Rated: </span>
+                <a 
+                  href={getVideoUrl(activity.videoId)} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="video-link"
+                >
+                  {getVideoTitle(activity)}
+                </a>
+              </div>
+              
+              {activity.comment && (
+                <div className="activity-comment">
+                  "{activity.comment}"
+                </div>
+              )}
             </div>
-          ))}
-        </div>
-      ) : (
-        <div className="feed-placeholder">
-          <div className="placeholder-content">
-            <div className="feed-icon">📱</div>
-            <h3>Your Feed is Empty</h3>
-            <p>Follow friends to see their rating activity here!</p>
+          ))
+        ) : (
+          <div className="no-activity">
+            <p>No recent activity to show.</p>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
