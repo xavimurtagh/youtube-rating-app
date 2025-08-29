@@ -2194,19 +2194,34 @@ select.form-control:focus {
   align-items: end;
 }
 
+.social-feed-section {
+  padding: 20px;
+}
+
 .activity-feed {
   display: flex;
   flex-direction: column;
-  gap: var(--space-12);
+  gap: 16px;
+  margin-top: 20px;
 }
 
 .activity-item {
+  border: 1px solid #e1e5e9;
+  border-radius: 8px;
+  padding: 16px;
+  background: white;
+  transition: box-shadow 0.2s ease;
+}
+
+.activity-item:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.activity-header {
   display: flex;
-  gap: var(--space-12);
-  padding: var(--space-16);
-  background: var(--color-surface);
-  border-radius: var(--radius-base);
-  border: 1px solid var(--color-card-border);
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
 }
 
 .activity-avatar {
@@ -2452,12 +2467,41 @@ select.form-control:focus {
 }
 
 
+.activity-time {
+  font-size: 12px;
+  color: #666;
+}
+
 .rating-badge {
-  background: var(--color-primary);
+  background: #ff6b6b;
   color: white;
-  padding: var(--space-2) var(--space-6);
-  border-radius: var(--radius-sm);
-  font-weight: var(--font-weight-semibold);
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.activity-content {
+  margin-bottom: 8px;
+}
+
+.video-link {
+  color: #1976d2;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.video-link:hover {
+  text-decoration: underline;
+}
+
+.activity-comment {
+  font-style: italic;
+  color: #555;
+  background: #f8f9fa;
+  padding: 8px 12px;
+  border-radius: 4px;
+  border-left: 3px solid #1976d2;
 }
 
 
@@ -2493,8 +2537,9 @@ select.form-control:focus {
 
 
 .user-info {
-  flex: 1;
-  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .user-name {
