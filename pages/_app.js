@@ -1,15 +1,33 @@
 import '../styles/globals.css'
 import { SessionProvider } from 'next-auth/react'
+import React, { useEffect, useState } from 'react';
 
 export default function App({
   Component,
   pageProps: { session, ...pageProps }
 }) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return null; 
+  }
+
   return (
     <SessionProvider session={session}>
-      <Component {...pageProps} />
+      <ThemeProvider
+        attribute="data-theme"
+        themes={['light', 'dark']}
+        defaultTheme="system"
+        enableSystem
+      >
+        <Component {...pageProps} />
+      </ThemeProvider>
     </SessionProvider>
-  )
+  );
 }
 
 import { signIn, signOut, useSession } from 'next-auth/react';
