@@ -17,6 +17,7 @@ import FavoritesSection from '../components/FavoritesSection';
 import SocialFeedSection from '../components/SocialFeedSection';
 import VideoDetailsModal from '../components/VideoDetailsModal';
 import AIRecommendationsSection from '../components/AIRecommendationsSection';
+import ThemeToggle from '../components/ThemeToggle';
 import { useVideos } from '../hooks/useVideos';
 
 export default function Home() {
@@ -286,6 +287,7 @@ export default function Home() {
             </p>
           </div>
           <div className="header-right">
+            <ThemeToggle />
             <AuthButton />
           </div>
         </header>
