@@ -46,13 +46,13 @@ export default function SocialFeedSection() {
             <div key={activity.id || index} className="activity-item">
               <div className="activity-header">
                 <div className="user-info">
-                  <strong>{activity.userName || 'Anonymous User'}</strong>
+                  <strong>{activity.userName || 'Other User'}</strong>
                   <span className="activity-time">
-                    {new Date(activity.createdAt).toLocaleDateString()}
+                    {new Date(activity.ratedAt).toLocaleDateString()}
                   </span>
                 </div>
                 <div className="rating-badge">
-                  ⭐ {activity.rating}/10
+                  ⭐ {activity.score}/10
                 </div>
               </div>
               
