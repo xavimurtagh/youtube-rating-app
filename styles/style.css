@@ -2282,7 +2282,7 @@ select.form-control:focus {
   border: 1px solid #e1e5e9;
   border-radius: 8px;
   padding: 16px;
-  background: white;
+  background: var(--color-secondary);
   transition: box-shadow 0.2s ease;
 }
 
