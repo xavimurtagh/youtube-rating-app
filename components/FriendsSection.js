@@ -111,13 +111,13 @@ export default function FriendsSection() {
         ) : following.length > 0 ? (
           <div className="users-grid">
             {following.map(user => (
-              <div key={user.id} className="user-card following-card">
+              <div key={user.id} className="user-card-fixed">
                 <img 
                   src={user.avatar || '/default-avatar.png'} 
                   alt={user.name}
                   className="user-avatar" 
                 />
-                <div className="user-info">
+                <div className="user-info-flex">
                   <h4 className="user-name">{user.name}</h4>
                   <p className="user-email">{user.email}</p>
                   <p className="user-stats">{user.totalRatings} ratings</p>
