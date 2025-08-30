@@ -3,6 +3,8 @@ import { useState } from 'react';
 
 export default function UserProfile({ user, isOwnProfile }) {
   const [favorites, setFavorites] = useState(user?.favorites || []);
+  const ratingDistribution = calculateRatingDistribution(user.ratings);
+  const averageScore = calculateAverageScore(user.ratings);
   
   return (
     <div className="user-profile">
@@ -22,9 +24,9 @@ export default function UserProfile({ user, isOwnProfile }) {
       <div className="profile-sections">
         <div className="favorites-section">
           <h3>⭐ Top 5 Favorites</h3>
-          <div className="favorites-showcase">
+          <div className="favorites-horizontal">
             {favorites.slice(0, 5).map((video, index) => (
-              <div key={video.id} className="favorite-showcase-item">
+              <div key={video.id} className="favorite-letterboxd-style">
                 <img src={video.thumbnail} alt={video.title} />
                 <div className="favorite-overlay">
                   <span className="favorite-rank">#{index + 1}</span>
@@ -32,6 +34,19 @@ export default function UserProfile({ user, isOwnProfile }) {
                 </div>
               </div>
             ))}
+          </div>
+          <div className="rating-distribution">
+            <h3>Rating Distribution</h3>
+            <div className="distribution-chart">
+              {ratingDistribution.map(([rating, count]) => (
+                <div key={rating} className="distribution-bar">
+                  <span>{rating}★</span>
+                  <div className="bar-fill" style={{width: `${(count/total)*100}%`}}></div>
+                  <span>{count}</span>
+                </div>
+              ))}
+            </div>
+            <p>Average Score: {averageScore}/10</p>
           </div>
         </div>
       </div>
