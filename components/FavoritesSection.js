@@ -108,26 +108,28 @@ export default function FavoritesSection({ ratings, videos, onRateVideo, onToggl
           <p className="selection-hint">
             Choose up to 5 videos from your 9+ star ratings to showcase as favorites:
           </p>
-          <div className="selectable-favorites">
-            {topRatedVideos.map(video => (
-              <div key={video.id} className={`favorite-option ${customFavorites.has(video.id) ? 'selected' : ''}`}>
-                <div className="video-info">
-                  {video.thumbnail && (
-                    <img src={video.thumbnail} alt={video.title} className="video-thumbnail" />
-                  )}
-                  <div className="video-details">
-                    <h4 className="video-title">{video.title}</h4>
-                    <p className="video-channel">{video.channel}</p>
+          <div className="favorites-grid-small">
+            {selectedFavorites.map((video, index) => (
+              <div key={video.id} className="favorite-item-small">
+                <img src={video.thumbnail} alt={video.title} className="favorite-thumbnail-small" />
+                <div className="favorite-details-small">
+                  <h4>{video.title}</h4>
+                  <p>{video.channel}</p>
+                  <div className="favorite-actions">
                     <span className="video-rating">{video.rating}/10 ⭐</span>
+                    <a href={`https://www.youtube.com/watch?v=${video.id}`} target="_blank" rel="noopener noreferrer">
+                      Watch on YouTube
+                    </a>
+                  </div>
+                  <button
+                    className={`btn btn--sm ${customFavorites.has(video.id) ? 'btn--danger' : 'btn--primary'}`}
+                    onClick={() => handleToggleFavorite(video)}
+                    disabled={!customFavorites.has(video.id) && customFavorites.size >= 5}
+                  >
+                    {customFavorites.has(video.id) ? '💔 Remove' : '💖 Add to Favorites'}
+                  </button>
                   </div>
                 </div>
-                <button
-                  className={`btn btn--sm ${customFavorites.has(video.id) ? 'btn--danger' : 'btn--primary'}`}
-                  onClick={() => handleToggleFavorite(video)}
-                  disabled={!customFavorites.has(video.id) && customFavorites.size >= 5}
-                >
-                  {customFavorites.has(video.id) ? '💔 Remove' : '💖 Add to Favorites'}
-                </button>
               </div>
             ))}
           </div>
