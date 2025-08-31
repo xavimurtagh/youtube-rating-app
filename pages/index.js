@@ -358,6 +358,30 @@ export default function Home() {
             </button>
           </div>
         )}
+
+        {(process.env.NODE_ENV === 'development' || session) && (
+          <div className="bookmarklet-section">
+            <h3>📌 Rate Videos While Watching</h3>
+            <p>Drag this bookmarklet to your bookmarks bar to rate YouTube videos while watching:</p>
+            <a 
+              href={`javascript:(function(){
+                var videoId = new URLSearchParams(window.location.search).get('v');
+                if(videoId && window.location.hostname === 'www.youtube.com'){
+                  var title = document.querySelector('h1.ytd-video-primary-info-renderer')?.textContent || 'Unknown Video';
+                  var channel = document.querySelector('.ytd-channel-name a')?.textContent || 'Unknown Channel';
+                  window.open('${typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'}/rate?videoId=' + videoId + '&title=' + encodeURIComponent(title) + '&channel=' + encodeURIComponent(channel), 'rate-video', 'width=500,height=600');
+                } else {
+                  alert('This only works on YouTube video pages!');
+                }
+              })();`}
+              className="bookmarklet-link"
+              onClick={(e) => e.preventDefault()}
+            >
+              🎬 Rate This Video
+            </a>
+            <p><small>Drag the link above to your bookmarks bar, then click it while watching any YouTube video!</small></p>
+          </div>
+        )}
       </main>
     </>
   );
