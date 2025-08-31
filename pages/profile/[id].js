@@ -11,6 +11,8 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [ratingFilter, setRatingFilter] = useState('all')
+  const [ratingsPage, setRatingsPage] = useState(1);
+  const ratingsPerPage = 20;
 
   useEffect(() => {
     if (!id) return
@@ -126,15 +128,32 @@ export default function ProfilePage() {
         <div className="profile-sections">
           {/* Favorites - Horizontal Layout */}
           <div className="profile-section">
-            <h3>⭐ Top 5 Favorites</h3>
+            <h3>⭐ Favorites ({favs.length})</h3>
             {favs.length > 0 ? (
-              <div className="favorites-horizontal">
-                {favs.slice(0, 5).map((video, index) => (
-                  <div key={video.id} className="favorite-letterboxd-style">
-                    <img src={video.thumbnail} alt={video.title} />
-                    <div className="favorite-overlay">
-                      <span className="favorite-rank">#{index + 1}</span>
-                      <span className="favorite-rating">{video.rating}/10</span>
+              <div className="favorites-profile-grid">
+                {favs.map((video, index) => (
+                  <div key={video.id} className="favorite-profile-card">
+                    <div className="favorite-thumbnail-container">
+                      <img src={video.thumbnail} alt={video.title} />
+                      <div className="favorite-rank">#{index + 1}</div>
+                    </div>
+                    <div className="favorite-info">
+                      <h4 className="favorite-title">{video.title}</h4>
+                      <p className="favorite-channel">{video.channel}</p>
+                      <div className="favorite-ratings">
+                        <span className="personal-rating">Your Rating: {video.rating}/10</span>
+                        {video.averageRating && (
+                          <span className="average-rating">Avg: {video.averageRating}/10</span>
+                        )}
+                      </div>
+                      <a 
+                        href={`https://www.youtube.com/watch?v=${video.id}`}
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="watch-youtube-link"
+                      >
+                        🎬 Watch on YouTube
+                      </a>
                     </div>
                   </div>
                 ))}
@@ -178,7 +197,10 @@ export default function ProfilePage() {
                 <label>Filter by rating:</label>
                 <select 
                   value={ratingFilter} 
-                  onChange={(e) => setRatingFilter(e.target.value)}
+                  onChange={(e) => {
+                    setRatingFilter(e.target.value);
+                    setRatingsPage(1); // Reset to page 1 when filtering
+                  }}
                   className="form-control filter-select"
                 >
                   <option value="all">All Ratings</option>
@@ -192,29 +214,53 @@ export default function ProfilePage() {
             </div>
             
             {filteredRatings.length > 0 ? (
-              <div className="ratings-list">
-                {filteredRatings.slice(0, 20).map((r) => (
-                  <div key={r.id} className="rating-item">
-                    <span className="rating-score">{r.score}/10</span>
-                    <div className="rating-video">
-                      <strong>{r.videoTitle}</strong>
-                      <br />
-                      <span className="channel-name">{r.videoChannel}</span>
-                    </div>
-                    <a 
-                      href={getVideoUrl(r.videoId)} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="video-link"
+              <>
+                <div className="ratings-list">
+                  {filteredRatings
+                    .slice((ratingsPage - 1) * ratingsPerPage, ratingsPage * ratingsPerPage)
+                    .map((r) => (
+                      <div key={r.id} className="rating-item">
+                        <span className="rating-score">{r.score}/10</span>
+                        <div className="rating-video">
+                          <strong>{r.videoTitle}</strong>
+                          <br />
+                          <span className="channel-name">{r.videoChannel}</span>
+                        </div>
+                        <a 
+                          href={getVideoUrl(r.videoId)} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="video-link"
+                        >
+                          🎬 Watch Video
+                        </a>
+                      </div>
+                    ))}
+                </div>
+                
+                {/* Pagination Controls */}
+                {filteredRatings.length > ratingsPerPage && (
+                  <div className="pagination-controls">
+                    <button 
+                      onClick={() => setRatingsPage(ratingsPage - 1)}
+                      disabled={ratingsPage === 1}
+                      className="btn btn--outline btn--sm"
                     >
-                      Watch Video
-                    </a>
+                      ← Previous
+                    </button>
+                    <span className="pagination-info">
+                      Page {ratingsPage} of {Math.ceil(filteredRatings.length / ratingsPerPage)}
+                    </span>
+                    <button 
+                      onClick={() => setRatingsPage(ratingsPage + 1)}
+                      disabled={ratingsPage >= Math.ceil(filteredRatings.length / ratingsPerPage)}
+                      className="btn btn--outline btn--sm"
+                    >
+                      Next →
+                    </button>
                   </div>
-                ))}
-                {filteredRatings.length > 20 && (
-                  <p className="more-ratings">...and {filteredRatings.length - 20} more ratings</p>
                 )}
-              </div>
+              </>
             ) : (
               <p className="empty-message">No ratings match the selected filter.</p>
             )}
