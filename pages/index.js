@@ -279,18 +279,18 @@ export default function Home() {
 
       <main className="app-container">
         {/* Top Header with Sign In/Out */}
-        <header className="app-header">
-          <div className="header-left">
-            <h1 className="app-title">YouTube Video Rating</h1>
-            <p className="app-subtitle">
-              Rate and manage your YouTube watch history securely
-            </p>
+        <div className="app-header">
+          <div className="header-content">
+            <div className="header-left">
+              <h1>YouTube Video Rating</h1>
+              <p>Rate and manage your YouTube watch history securely</p>
+            </div>
+            <div className="header-right">
+              <ThemeToggle />
+              <AuthButton />
+            </div>
           </div>
-          <div className="header-right">
-            <ThemeToggle />
-            <AuthButton />
-          </div>
-        </header>
+        </div>
 
         {/* Navigation Tabs */}
         <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
