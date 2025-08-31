@@ -136,16 +136,26 @@ export default function VideoCard({
 
         <div className="video-actions">
           <button 
-            className="btn btn--primary" 
-            onClick={handleRate}
+            onClick={handleRate} 
+            className="btn btn--primary btn--sm"
           >
-            {ratingValue ? `Update Rating (${ratingValue}/10)` : 'Rate Video'}
+            {ratingValue ? 'Update Rating' : 'Rate'}
           </button>
+          
+          <a 
+            href={`https://www.youtube.com/watch?v=${video.id}`}
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="btn btn--outline btn--sm"
+            onClick={(e) => e.stopPropagation()}
+          >
+            Watch on YouTube
+          </a>
           
           {ratingValue && (
             <button 
-              className="btn btn--outline btn--danger" 
               onClick={handleRemoveRating}
+              className="btn btn--sm btn--danger"
             >
               Remove Rating
             </button>
@@ -153,26 +163,12 @@ export default function VideoCard({
           
           {showIgnoreButton && (
             <button 
-              className="btn btn--outline ignore-btn" 
               onClick={handleIgnore}
+              className="btn btn--sm ignore-btn"
             >
               {ignoreButtonText}
             </button>
           )}
-
-          <button 
-            className="btn btn--outline" 
-            onClick={(e) => e.stopPropagation()}
-          >
-            <a 
-              href={`https://www.youtube.com/watch?v=${video.id}`} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              style={{ textDecoration: 'none', color: 'inherit' }}
-            >
-              Watch on YouTube
-            </a>
-          </button>
         </div>
       </div>
     </div>
