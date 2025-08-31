@@ -112,7 +112,7 @@ export default function FriendsSection() {
           <div className="users-grid">
             {following.map(user => (
               <div key={user.id} className="user-card following-card">
-                <img src={user.image} alt={user.name} className="user-avatar" />
+                <img src={user.avatar} alt={user.name} className="user-avatar" />
                 <div className="user-info">
                   <h4 className="user-name">{user.name}</h4>
                   <p className="user-email">{user.email}</p>
