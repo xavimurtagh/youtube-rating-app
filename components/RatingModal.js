@@ -17,6 +17,20 @@ export default function RatingModal({ video, isOpen, onClose, onSave }) {
     }
   };
 
+  const cleanVideoTitle = (title) => {
+    if (!title) return 'Unknown Video';
+    
+    return title
+      .replace(/&amp;/g, '&')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/[^\x20-\x7E\u00A0-\u024F\u1E00-\u1EFF]/g, '') // Remove non-standard characters
+      .trim();
+  };
+
   const getRatingColor = (value) => {
     if (value <= 3) return '#ff4444'; // Red for bad
     if (value <= 6) return '#ffaa00'; // Orange for okay
@@ -38,36 +52,30 @@ export default function RatingModal({ video, isOpen, onClose, onSave }) {
       onClick={handleOverlayClick}
     >
       <div className="modal-content" style={{ position: 'relative' }}>
-        {/* Close Button */}
-        <button
-          className="modal-close-top"
-          onClick={onClose}
-        >
-          ×
-        </button>
   
-        <div className="modal-header">
-          <h3>Rate Video</h3>
+        <div className="modal-header-clean">
+          <div className="modal-title-section">
+            <h3 className="modal-title">Rate Video</h3>
+          </div>
+          <button
+            onClick={onClose}
+            className="modal-close-btn"
+            aria-label="Close"
+          >
+            ×
+          </button>
         </div>
-  
-        <div className="video-info-modal">
-          {video.thumbnail && (
-            <img 
-              src={video.thumbnail} 
-              alt={video.title}
-              className="video-thumbnail"
-            />
-          )}
-          
-          <div className="video-content">
-            <h4>{escapeHtml(video.title)}</h4>
-            <p className="video-channel">{escapeHtml(video.channel)}</p>
-            
-            {video.watchedAt && (
-              <p className="video-date">
-                Watched: {new Date(video.watchedAt).toLocaleDateString()}
-              </p>
+        
+        {/* Video Info Section - Better Spacing */}
+        <div className="video-info-section">
+          <div className="video-thumbnail-modal">
+            {video.thumbnail && (
+              <img src={video.thumbnail} alt={video.title} />
             )}
+          </div>
+          <div className="video-details-modal">
+            <h4 className="video-title-clean">{cleanVideoTitle(video.title)}</h4>
+            <p className="video-channel-clean">{video.channel}</p>
           </div>
         </div>
   
