@@ -1455,7 +1455,6 @@ p {
 
 .header-right {
   flex-shrink: 0;
-  margin-left: var(--space-24);
 }
 
 /* ===== ENHANCED AUTH BUTTON ===== */
