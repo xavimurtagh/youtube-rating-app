@@ -1,7 +1,5 @@
 import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
-import { ThemeProvider } from 'next-themes';
-import { SessionProvider } from 'next-auth/react';
 
 export default function ThemeToggle() {
   const [mounted, setMounted] = useState(false);
@@ -17,10 +15,11 @@ export default function ThemeToggle() {
 
   return (
     <button
-      onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+      onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
       className="theme-toggle-btn"
+      title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
     >
-      {theme === 'dark' ? '☀️' : '🌙'}
+      {theme === 'light' ? '🌙' : '☀️'}
     </button>
   );
 }
