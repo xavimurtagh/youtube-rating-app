@@ -1,16 +1,16 @@
 import { useRouter } from 'next/router'
 import { useEffect, useState } from 'react'
 import { socialAPI } from '../../utils/api'
-import VideoList from '../../components/VideoList'
 
 export default function ProfilePage() {
   const router = useRouter()
   const { id: rawId } = router.query
-  const id = Array.isArray(rawId) ? rawId[0] : rawId
+  const id = Array.isArray(rawId) ? rawId : rawId
 
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [ratingFilter, setRatingFilter] = useState('all')
 
   useEffect(() => {
     if (!id) return
@@ -32,14 +32,14 @@ export default function ProfilePage() {
   }
 
   const handleGoBack = () => {
-    router.back() // Go back to previous page
+    router.back()
   }
 
   if (loading) {
     return (
       <div className="profile-page-container">
-        <div className="profile-page-content">
-          <div>Loading profile…</div>
+        <div className="loading-state">
+          <p>Loading profile…</p>
         </div>
       </div>
     )
@@ -49,10 +49,7 @@ export default function ProfilePage() {
     return (
       <div className="profile-page-container">
         <div className="profile-page-content">
-          <button onClick={handleGoBack} className="btn btn--outline back-button">
-            ← Back
-          </button>
-          <div className="error-message">{error}</div>
+          <p className="error-message">{error}</p>
         </div>
       </div>
     )
@@ -62,9 +59,35 @@ export default function ProfilePage() {
     return null
   }
 
-  // Only now is profile non-null
   const favs = profile.favourites || []
   const rated = profile.ratings || []
+  
+  // Filter ratings based on selected filter
+  const filteredRatings = ratingFilter === 'all' 
+    ? rated 
+    : rated.filter(r => {
+        switch (ratingFilter) {
+          case '9-10': return r.score >= 9 && r.score <= 10;
+          case '7-8': return r.score >= 7 && r.score <= 8;
+          case '5-6': return r.score >= 5 && r.score <= 6;
+          case '3-4': return r.score >= 3 && r.score <= 4;
+          case '1-2': return r.score >= 1 && r.score <= 2;
+          default: return true;
+        }
+      });
+
+  // Calculate user stats
+  const totalRatings = rated.length;
+  const averageRating = totalRatings > 0 
+    ? (rated.reduce((sum, r) => sum + r.score, 0) / totalRatings).toFixed(1)
+    : 0;
+
+  // Calculate rating distribution
+  const ratingDistribution = {};
+  for (let i = 1; i <= 10; i++) {
+    ratingDistribution[i] = rated.filter(r => Math.floor(r.score) === i).length;
+  }
+
   const getVideoUrl = (videoId) => {
     return `https://www.youtube.com/watch?v=${videoId}`;
   };
@@ -79,48 +102,121 @@ export default function ProfilePage() {
         <div className="profile-header">
           <h2>{profile.name}'s Profile</h2>
           {profile.avatar && (
-            <img
-              src={profile.avatar}
-              alt={profile.name}
-              className="profile-avatar"
-            />
+            <img src={profile.avatar} alt={profile.name} className="profile-avatar" />
           )}
           {profile.bio && <p className="profile-bio">{profile.bio}</p>}
+          
+          {/* User Stats */}
+          <div className="profile-stats">
+            <div className="stat-item">
+              <span className="stat-number">{totalRatings}</span>
+              <span className="stat-label">Total Ratings</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-number">{averageRating}</span>
+              <span className="stat-label">Average Score</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-number">{favs.length}</span>
+              <span className="stat-label">Favorites</span>
+            </div>
+          </div>
         </div>
 
         <div className="profile-sections">
+          {/* Favorites - Horizontal Layout */}
           <div className="profile-section">
             <h3>⭐ Top 5 Favorites</h3>
             {favs.length > 0 ? (
-              <VideoList videos={favs} ratings={{}} showLimit={5} />
+              <div className="favorites-horizontal">
+                {favs.slice(0, 5).map((video, index) => (
+                  <div key={video.id} className="favorite-letterboxd-style">
+                    <img src={video.thumbnail} alt={video.title} />
+                    <div className="favorite-overlay">
+                      <span className="favorite-rank">#{index + 1}</span>
+                      <span className="favorite-rating">{video.rating}/10</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : (
               <p className="empty-message">No favorites yet.</p>
             )}
           </div>
 
+          {/* Rating Distribution */}
+          {totalRatings > 0 && (
+            <div className="profile-section">
+              <h3>📊 Rating Distribution</h3>
+              <div className="rating-distribution">
+                <p><strong>Average Score: {averageRating}/10</strong></p>
+                <div className="distribution-chart">
+                  {Object.entries(ratingDistribution)
+                    .reverse()
+                    .map(([rating, count]) => (
+                      <div key={rating} className="distribution-bar">
+                        <span className="rating-label">{rating}★</span>
+                        <div className="bar-container">
+                          <div 
+                            className="bar-fill" 
+                            style={{width: `${totalRatings > 0 ? (count/totalRatings)*100 : 0}%`}}
+                          ></div>
+                        </div>
+                        <span className="rating-count">{count}</span>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Ratings with Filter */}
           <div className="profile-section">
-            <h3>📊 Ratings ({rated.length})</h3>
-            {rated.length > 0 ? (
+            <div className="section-header">
+              <h3>📊 Ratings ({filteredRatings.length})</h3>
+              <div className="filter-controls">
+                <label>Filter by rating:</label>
+                <select 
+                  value={ratingFilter} 
+                  onChange={(e) => setRatingFilter(e.target.value)}
+                  className="form-control filter-select"
+                >
+                  <option value="all">All Ratings</option>
+                  <option value="9-10">9-10 (Excellent)</option>
+                  <option value="7-8">7-8 (Good)</option>
+                  <option value="5-6">5-6 (Okay)</option>
+                  <option value="3-4">3-4 (Poor)</option>
+                  <option value="1-2">1-2 (Terrible)</option>
+                </select>
+              </div>
+            </div>
+            
+            {filteredRatings.length > 0 ? (
               <div className="ratings-list">
-                {rated.slice(0, 10).map((r) => (
-                  <div key={r.videoId} className="rating-item">
+                {filteredRatings.slice(0, 20).map((r) => (
+                  <div key={r.id} className="rating-item">
                     <span className="rating-score">{r.score}/10</span>
-                    <a
-                      href={getVideoUrl(r.videoId)}
+                    <div className="rating-video">
+                      <strong>{r.videoTitle}</strong>
+                      <br />
+                      <span className="channel-name">{r.videoChannel}</span>
+                    </div>
+                    <a 
+                      href={getVideoUrl(r.videoId)} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="rating-video"
+                      className="video-link"
                     >
                       Watch Video
                     </a>
                   </div>
                 ))}
-                {rated.length > 10 && (
-                  <p className="more-ratings">...and {rated.length - 10} more ratings</p>
+                {filteredRatings.length > 20 && (
+                  <p className="more-ratings">...and {filteredRatings.length - 20} more ratings</p>
                 )}
               </div>
             ) : (
-              <p className="empty-message">No ratings yet.</p>
+              <p className="empty-message">No ratings match the selected filter.</p>
             )}
           </div>
         </div>
