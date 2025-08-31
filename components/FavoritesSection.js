@@ -128,9 +128,8 @@ export default function FavoritesSection({ ratings, videos, onRateVideo, onToggl
                   >
                     {customFavorites.has(video.id) ? '💔 Remove' : '💖 Add to Favorites'}
                   </button>
-                  </div>
                 </div>
-              </div>
+            </div>
             ))}
           </div>
         </div>
