@@ -103,14 +103,14 @@ export default function FavoritesSection({ ratings, videos, onRateVideo, onToggl
 
       {/* Favorite Selection */}
       {topRatedVideos.length > 0 ? (
-        <div className="favorite-selection">
+        <div className="favorites-section">
           <h3>💖 Select Your Favorites ({customFavorites.size}/5)</h3>
           <p className="selection-hint">
             Choose up to 5 videos from your 9+ star ratings to showcase as favorites:
           </p>
-          <div className="favorites-grid-small">
+          <div className="videos-grid">
             {selectedFavorites.map((video, index) => (
-              <div key={video.id} className="favorite-item-small">
+              <div key={video.id} className="video-card">
                 <img src={video.thumbnail} alt={video.title} className="favorite-thumbnail-small" />
                 <div className="favorite-details-small">
                   <h4>{video.title}</h4>
