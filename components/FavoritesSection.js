@@ -28,30 +28,38 @@ export default function FavoritesSection({ ratings, videos, onRateVideo, onToggl
   const handleToggleFavorite = async (video) => {
     try {
       if (customFavorites.has(video.id)) {
-        await socialAPI.removeFavorite(video.id)
+        await socialAPI.removeFavorite(video.id);
         setCustomFavorites(prev => {
-          const set = new Set(prev)
-          set.delete(video.id)
-          return set
-        })
+          const newSet = new Set(prev);
+          newSet.delete(video.id);
+          return newSet;
+        });
       } else {
-        // Log the exact payload being sent
+        if (customFavorites.size >= 5) {
+          alert('You can only have 5 favorites maximum. Remove one first.');
+          return;
+        }
+        
         const payload = {
           videoId: video.id,
           title: video.title,
           channel: video.channel,
           thumbnail: video.thumbnail,
-        }
-        console.log('Sending payload to addFavorite:', payload)
+          rating: typeof ratings[video.id] === 'object' 
+            ? ratings[video.id].rating 
+            : ratings[video.id]
+        };
         
-        await socialAPI.addFavorite(video)
-        setCustomFavorites(prev => new Set(prev).add(video.id))
+        console.log('Adding to favorites:', payload);
+        await socialAPI.addFavorite(payload);
+        
+        setCustomFavorites(prev => new Set([...prev, video.id]));
       }
     } catch (error) {
-      console.error('Failed to toggle favorite:', error)
-      alert(error.message || 'Error updating favorite')
+      console.error('Failed to toggle favorite:', error);
+      alert(error.message || 'Error updating favorite');
     }
-  }
+  };
 
   
 
@@ -103,43 +111,39 @@ export default function FavoritesSection({ ratings, videos, onRateVideo, onToggl
 
       {/* Favorite Selection */}
       {topRatedVideos.length > 0 ? (
-        <div className="favorites-section">
+        <div className="favorite-selection-section">
           <h3>💖 Select Your Favorites ({customFavorites.size}/5)</h3>
-          <p className="selection-hint">
-            Choose up to 5 videos from your 9+ star ratings to showcase as favorites:
-          </p>
-          <div className="videos-grid">
-            {selectedFavorites.map((video, index) => (
-              <div key={video.id} className="video-card">
-                <img src={video.thumbnail} alt={video.title} className="favorite-thumbnail-small" />
-                <div className="favorite-details-small">
+          <p>Choose up to 5 videos from your 9+ star ratings:</p>
+          
+          <div className="favorite-options-grid">
+            {topRatedVideos.map(video => (
+              <div 
+                key={video.id}
+                className={`favorite-option ${customFavorites.has(video.id) ? 'selected' : ''}`}
+              >
+                {video.thumbnail && (
+                  <img src={video.thumbnail} alt={video.title} className="option-thumbnail" />
+                )}
+                <div className="option-details">
                   <h4>{video.title}</h4>
                   <p>{video.channel}</p>
-                  <div className="favorite-actions">
-                    <span className="video-rating">{video.rating}/10 ⭐</span>
-                    <a href={`https://www.youtube.com/watch?v=${video.id}`} target="_blank" rel="noopener noreferrer">
-                      Watch on YouTube
-                    </a>
-                  </div>
-                  <button
-                    className={`btn btn--sm ${customFavorites.has(video.id) ? 'btn--danger' : 'btn--primary'}`}
-                    onClick={() => handleToggleFavorite(video)}
-                    disabled={!customFavorites.has(video.id) && customFavorites.size >= 5}
-                  >
-                    {customFavorites.has(video.id) ? '💔 Remove' : '💖 Add to Favorites'}
-                  </button>
+                  <span className="option-rating">{video.rating}/10 ⭐</span>
                 </div>
-            </div>
+                <button 
+                  onClick={() => handleToggleFavorite(video)}
+                  className={`btn btn--sm ${customFavorites.has(video.id) ? 'btn--danger' : 'btn--primary'}`}
+                  disabled={!customFavorites.has(video.id) && customFavorites.size >= 5}
+                >
+                  {customFavorites.has(video.id) ? 'Remove' : 'Add to Favorites'}
+                </button>
+              </div>
             ))}
           </div>
         </div>
       ) : (
-        <div className="favorites-placeholder">
-          <div className="placeholder-content">
-            <div className="favorites-icon">💖</div>
-            <h3>No Favorites Yet</h3>
-            <p>Rate videos 9 stars or higher to add them to your potential favorites!</p>
-          </div>
+        <div className="no-favorites-available">
+          <p>💖 No Favorites Yet</p>
+          <p>Rate videos 9 stars or higher to add them to your potential favorites!</p>
         </div>
       )}
     </div>
