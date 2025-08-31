@@ -65,6 +65,9 @@ export default function ProfilePage() {
   // Only now is profile non-null
   const favs = profile.favourites || []
   const rated = profile.ratings || []
+  const getVideoUrl = (videoId) => {
+    return `https://www.youtube.com/watch?v=${videoId}`;
+  };
 
   return (
     <div className="profile-page-container">
@@ -102,7 +105,14 @@ export default function ProfilePage() {
                 {rated.slice(0, 10).map((r) => (
                   <div key={r.videoId} className="rating-item">
                     <span className="rating-score">{r.score}/10</span>
-                    <span className="rating-video">Video {r.videoId}</span>
+                    <a
+                      href={getVideoUrl(r.videoId)}
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="rating-video"
+                    >
+                      Watch Video
+                    </a>
                   </div>
                 ))}
                 {rated.length > 10 && (
