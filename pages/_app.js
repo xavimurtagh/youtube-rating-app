@@ -18,16 +18,16 @@ export default function App({
   }
 
   return (
-    <SessionProvider session={session}>
-      <ThemeProvider
-        attribute="data-theme"
-        themes={['light', 'dark']}
-        defaultTheme="system"
-        enableSystem
-      >
+    <ThemeProvider 
+      attribute="data-theme" 
+      defaultTheme="light" 
+      enableSystem={false}
+      themes={['light', 'dark']}
+    >
+      <SessionProvider session={session}>
         <Component {...pageProps} />
-      </ThemeProvider>
-    </SessionProvider>
+      </SessionProvider>
+    </ThemeProvider>
   );
 }
 
