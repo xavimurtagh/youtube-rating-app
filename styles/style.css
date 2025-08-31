@@ -355,7 +355,7 @@ p {
 .video-card {
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--color-card-border)
+  border: var(--color-card-border);
   border-radius: 8px;
   overflow: hidden;
   background: var(--color-surface);
@@ -427,7 +427,7 @@ p {
 .privacy-card {
   background: var(--color-surface);
   border-radius: var(--radius-lg);
-  border: 1px solid var(--color-card-border);
+  border: var(--color-card-border);
   padding: var(--space-24);
   margin-bottom: var(--space-24);
 }
@@ -809,7 +809,7 @@ p {
 .stat-card {
   background: var(--color-surface);
   border-radius: var(--radius-lg);
-  border: 1px solid var(--color-card-border);
+  border: var(--color-card-border);
   padding: var(--space-20);
   text-align: center;
   transition: transform var(--duration-fast) var(--ease-standard);
@@ -839,7 +839,7 @@ p {
 .stats-card {
   background: var(--color-surface);
   border-radius: var(--radius-lg);
-  border: 1px solid var(--color-card-border);
+  border: var(--color-card-border);
   padding: var(--space-24);
 }
 
@@ -973,7 +973,7 @@ p {
 .music-search {
   background: var(--color-surface);
   border-radius: var(--radius-lg);
-  border: 1px solid var(--color-card-border);
+  border: var(--color-card-border);
   padding: var(--space-24);
 }
 
@@ -1074,7 +1074,7 @@ p {
 .music-recommendations {
   background: var(--color-surface);
   border-radius: var(--radius-lg);
-  border: 1px solid var(--color-card-border);
+  border: var(--color-card-border);
   padding: var(--space-24);
 }
 
@@ -1296,7 +1296,7 @@ p {
   padding: var(--space-16);
   background: var(--color-surface);
   border-radius: var(--radius-base);
-  border: 1px solid var(--color-card-border);
+  border: var(--color-card-border);
 }
 
 .pagination-info {
@@ -1467,7 +1467,7 @@ p {
 
 .auth-button.signed-in {
   background: var(--color-surface);
-  border: 1px solid var(--color-card-border);
+  border: var(--color-card-border);
   border-radius: var(--radius-lg);
   padding: var(--space-16);
   box-shadow: var(--shadow-sm);
@@ -1556,7 +1556,7 @@ p {
 .music-stats-and-filters, .ratings-controls {
   background: var(--color-surface);
   border-radius: var(--radius-lg);
-  border: 1px solid var(--color-card-border);
+  border: var(--color-card-border);
   padding: var(--space-24);
   margin: var(--space-24) 0;
   box-shadow: var(--shadow-sm);
@@ -1697,7 +1697,7 @@ p {
   background: var(--color-surface);
   border-radius: var(--radius-lg);
   padding: var(--space-24);
-  border: 1px solid var(--color-card-border);
+  border: var(--color-card-border);
   margin-bottom: var(--space-24);
 }
 
@@ -2209,7 +2209,7 @@ select.form-control:focus {
   display: flex;
   gap: var(--space-12);
   padding: var(--space-16);
-  border: 1px solid var(--color-card-border);
+  border: var(--color-card-border);
 }
 
 .activity-rating {
@@ -2229,7 +2229,7 @@ select.form-control:focus {
   padding: var(--space-16);
   background: var(--color-surface);
   border-radius: var(--radius-lg);
-  border: 1px solid var(--color-card-border);
+  border: var(--color-card-border);
 }
 
 
@@ -2316,7 +2316,7 @@ select.form-control:focus {
   padding: var(--space-16);
   background: var(--color-surface);
   border-radius: var(--radius-lg);
-  border: 1px solid var(--color-card-border);
+  border: var(--color-card-border);
   min-height: 80px; /* Ensure consistent height */
 }
 
@@ -2446,7 +2446,7 @@ select.form-control:focus {
   background: var(--color-surface);
   border-radius: var(--radius-lg);
   padding: var(--space-16);
-  border: 1px solid var(--color-card-border);
+  border: var(--color-card-border);
 }
 
 .match-score {
@@ -2598,7 +2598,7 @@ select.form-control:focus {
   padding: var(--space-16);
   background: var(--color-surface);
   border-radius: var(--radius-lg);
-  border: 1px solid var(--color-card-border);
+  border: var(--color-card-border);
   min-height: 80px;
 }
 
