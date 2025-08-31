@@ -111,40 +111,36 @@ export default function FriendsSection() {
         ) : following.length > 0 ? (
           <div className="users-grid">
             {following.map(user => (
-              <div key={user.id} className="user-card-fixed">
-                <img 
-                  src={user.avatar || '/default-avatar.png'} 
-                  alt={user.name}
-                  className="user-avatar" 
-                />
-                <div className="user-info-flex">
+              <div key={user.id} className="user-card following-card">
+                <img src={user.image} alt={user.name} className="user-avatar" />
+                <div className="user-info">
                   <h4 className="user-name">{user.name}</h4>
                   <p className="user-email">{user.email}</p>
-                  <p className="user-stats">{user.totalRatings} ratings</p>
+                  <span className="user-stats">{user.totalRatings} ratings</span>
                 </div>
                 <div className="user-actions">
                   <button 
-                    className="btn btn--sm btn--outline"
                     onClick={() => handleViewProfile(user.id)}
+                    className="btn btn--sm btn--outline"
                   >
-                    👁️ Profile
+                    Profile
                   </button>
                   <button 
-                    className="btn btn--sm btn--danger"
                     onClick={() => handleUnfollow(user.id)}
+                    className="btn btn--sm btn--danger"
                   >
-                    ❌ Unfollow
+                    Unfollow
                   </button>
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="empty-following">
-            <p>You're not following anyone yet. Search below to find users!</p>
-          </div>
+          <p className="empty-message">You're not following anyone yet. Search below to find users!</p>
         )}
       </div>
+
+      <div className="section-separator"></div>
 
       {/* Search Section */}
       <div className="search-section">
