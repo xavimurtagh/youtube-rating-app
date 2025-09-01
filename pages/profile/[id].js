@@ -130,27 +130,27 @@ export default function ProfilePage() {
           <div className="profile-section">
             <h3>⭐ Favorites ({favs.length})</h3>
             {favs.length > 0 ? (
-              <div className="favorites-profile-grid">
+              <div className="favorites-profile-grid-centered">
                 {favs.map((video, index) => (
-                  <div key={video.id} className="favorite-profile-card">
-                    <div className="favorite-thumbnail-container">
+                  <div key={video.id} className="favorite-profile-card-centered">
+                    <div className="favorite-thumbnail-container-centered">
                       <img src={video.thumbnail} alt={video.title} />
-                      <div className="favorite-rank">#{index + 1}</div>
+                      <div className="favorite-rank-centered">#{index + 1}</div>
                     </div>
-                    <div className="favorite-info">
-                      <h4 className="favorite-title">{video.title}</h4>
-                      <p className="favorite-channel">{video.channel}</p>
-                      <div className="favorite-ratings">
-                        <span className="personal-rating">Your Rating: {video.rating}/10</span>
+                    <div className="favorite-info-centered">
+                      <h4 className="favorite-title-centered">{video.title}</h4>
+                      <p className="favorite-channel-centered">{video.channel}</p>
+                      <div className="favorite-ratings-centered">
+                        <span className="personal-rating-centered">Your Rating: {video.rating}/10</span>
                         {video.averageRating && (
-                          <span className="average-rating">Avg: {video.averageRating}/10</span>
+                          <span className="average-rating-centered">Avg: {video.averageRating}/10</span>
                         )}
                       </div>
                       <a 
                         href={`https://www.youtube.com/watch?v=${video.id}`}
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="watch-youtube-link"
+                        className="watch-youtube-link-centered"
                       >
                         🎬 Watch on YouTube
                       </a>
