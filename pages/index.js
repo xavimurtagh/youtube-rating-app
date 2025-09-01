@@ -370,8 +370,7 @@ export default function Home() {
             
             <div className="bookmarklet-demo">
               <div className="bookmarklet-step">
-                <span className="step-number">1</span>
-                <p>Drag this button to your bookmarks bar:</p>
+                <p>1. Drag this button to your bookmarks bar:</p>
                 <a 
                   href={`javascript:(function(){
                     try {
@@ -446,8 +445,7 @@ export default function Home() {
               </div>
               
               <div className="bookmarklet-step">
-                <span className="step-number">2</span>
-                <p>While watching any YouTube video, click the bookmark to rate it instantly!</p>
+                <p>2. While watching any YouTube video, click the bookmark to rate it instantly!</p>
               </div>
             </div>
             
