@@ -6,24 +6,51 @@ import VideoList from './VideoList';
 export default function FavoritesSection({ ratings, videos, onRateVideo, onToggleFavorite }) {
   const { data: session } = useSession();
   const [customFavorites, setCustomFavorites] = useState(new Set());
+  const [loadingFavorites, setLoadingFavorites] = useState(true);
 
-  // Get videos rated 9+ as potential favorites
-  const topRatedVideos = videos
-    .filter(video => {
-      const rating = ratings[video.id];
-      const ratingValue = typeof rating === 'object' ? rating.rating : rating;
-      return ratingValue && ratingValue >= 9;
-    })
-    .map(video => ({
-      ...video,
-      rating: typeof ratings[video.id] === 'object' ? ratings[video.id].rating : ratings[video.id]
-    }))
-    .sort((a, b) => b.rating - a.rating);
+  useEffect(() => {
+    if (session) {
+      loadExistingFavorites();
+    }
+  }, [session]);
+
+  const loadExistingFavorites = async () => {
+    try {
+      setLoadingFavorites(true);
+      const response = await fetch('/api/favorites', {
+        credentials: 'include'
+      });
+      
+      if (response.ok) {
+        const favorites = await response.json();
+        const favoriteIds = new Set(favorites.map(fav => fav.videoId));
+        setCustomFavorites(favoriteIds);
+        console.log('Loaded existing favorites:', favoriteIds);
+      }
+    } catch (error) {
+      console.error('Failed to load existing favorites:', error);
+    } finally {
+      setLoadingFavorites(false);
+    }
+  };
+
+// Get videos rated 9+ as potential favorites
+const topRatedVideos = videos
+  .filter(video => {
+    const rating = ratings[video.id];
+    const ratingValue = typeof rating === 'object' ? rating.rating : rating;
+    return ratingValue && ratingValue >= 9;
+  })
+  .map(video => ({
+    ...video,
+    rating: typeof ratings[video.id] === 'object' ? ratings[video.id].rating : ratings[video.id]
+  }))
+  .sort((a, b) => b.rating - a.rating);
 
   // Get selected favorites (top 5 by default, customizable)
-  const selectedFavorites = topRatedVideos
-    .filter(video => customFavorites.size === 0 || customFavorites.has(video.id))
-    .slice(0, 5);
+  const selectedFavorites = customFavorites.size > 0
+  ? topRatedVideos.filter(video => customFavorites.has(video.id))
+  : topRatedVideos.slice(0, 5);
 
   const handleToggleFavorite = async (video) => {
     try {
