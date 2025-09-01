@@ -53,34 +53,36 @@ export default function RatingModal({ video, isOpen, onClose, onSave }) {
     >
       <div className="modal-content" style={{ position: 'relative' }}>
   
-        <div className="modal-header-clean">
-          <div className="modal-title-section">
-            <h3 className="modal-title">Rate Video</h3>
+        <div className="modal-header-fixed">
+          <div className="modal-title-left">
+            <h3 className="modal-main-title">Rate Video</h3>
           </div>
           <button
             onClick={onClose}
-            className="modal-close-btn"
-            aria-label="Close"
+            className="modal-close-btn-fixed"
+            aria-label="Close modal"
           >
             ×
           </button>
         </div>
         
-        {/* Video Info Section - Better Spacing */}
-        <div className="video-info-section">
-          <div className="video-thumbnail-modal">
+        {/* Video Info - Below Header */}
+        <div className="video-info-section-fixed">
+          <div className="video-thumbnail-section">
             {video.thumbnail && (
-              <img src={video.thumbnail} alt={video.title} />
+              <img src={video.thumbnail} alt={video.title} className="video-thumbnail-modal" />
             )}
           </div>
-          <div className="video-details-modal">
-            <h4 className="video-title-clean">{cleanVideoTitle(video.title)}</h4>
-            <p className="video-channel-clean">{video.channel}</p>
+          <div className="video-details-section">
+            <h4 className="video-title-modal">{cleanVideoTitle(video.title)}</h4>
+            <p className="video-channel-modal">{video.channel}</p>
           </div>
         </div>
-  
-        <div className="rating-section">
-          <p>How would you rate this video?</p>
+        
+        <div className="rating-section-fixed">
+          <div className="rating-question">
+            <p>How would you rate this video?</p>
+
           
           <div className="rating-input">
             <input
