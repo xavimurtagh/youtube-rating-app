@@ -140,7 +140,6 @@ export default function ProfilePage() {
                     <div className="favorite-info">
                       <h4 className="favorite-title">{video.title}</h4>
                       <p className="favorite-channel">{video.channel}</p>
-                      </div>
                       <a 
                         href={`https://www.youtube.com/watch?v=${video.id}`}
                         target="_blank" 
@@ -263,6 +262,5 @@ export default function ProfilePage() {
         </div>
       </div>
     </div>
-  </div> 
   )
 }
