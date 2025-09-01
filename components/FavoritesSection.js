@@ -28,36 +28,55 @@ export default function FavoritesSection({ ratings, videos, onRateVideo, onToggl
   const handleToggleFavorite = async (video) => {
     try {
       if (customFavorites.has(video.id)) {
-        await socialAPI.removeFavorite(video.id);
+        // Remove favorite
+        const response = await fetch(`/api/favorites/${video.id}`, {
+          method: 'DELETE',
+          credentials: 'include',
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to remove favorite');
+        }
+        
         setCustomFavorites(prev => {
           const newSet = new Set(prev);
           newSet.delete(video.id);
           return newSet;
         });
       } else {
-        if (customFavorites.size >= 5) {
-          alert('You can only have 5 favorites maximum. Remove one first.');
-          return;
-        }
-        
+        // Add favorite - Fix payload structure
         const payload = {
-          videoId: video.id,
-          title: video.title,
-          channel: video.channel,
-          thumbnail: video.thumbnail,
+          videoId: video.id,  // Make sure this matches the API expectation
+          videoTitle: video.title,
+          videoChannel: video.channel,
+          videoThumbnail: video.thumbnail,
           rating: typeof ratings[video.id] === 'object' 
             ? ratings[video.id].rating 
             : ratings[video.id]
         };
         
-        console.log('Adding to favorites:', payload);
-        await socialAPI.addFavorite(payload);
+        console.log('Adding favorite with payload:', payload);
+        
+        const response = await fetch('/api/favorites', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload)
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to add favorite');
+        }
         
         setCustomFavorites(prev => new Set([...prev, video.id]));
       }
     } catch (error) {
       console.error('Failed to toggle favorite:', error);
-      alert(error.message || 'Error updating favorite');
+      alert(`Error: ${error.message}`);
     }
   };
 
