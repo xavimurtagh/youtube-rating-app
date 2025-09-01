@@ -130,35 +130,31 @@ export default function ProfilePage() {
           <div className="profile-section">
             <h3>⭐ Favorites ({favs.length})</h3>
             {favs.length > 0 ? (
-              <div className="favorites-profile-container">
-                <div className="favorites-profile-grid-centered">
-                  {favs.map((video, index) => (
-                    <div key={video.id} className="favorite-profile-card-fixed">
-                      <div className="favorite-thumbnail-container-fixed">
-                        <img src={video.thumbnail} alt={video.title} />
-                        <div className="favorite-rank-overlay">#{index + 1}</div>
-                      </div>
-                      <div className="favorite-info-fixed">
-                        <h4 className="favorite-title-fixed">{video.title}</h4>
-                        <p className="favorite-channel-fixed">{video.channel}</p>
-                        <div className="favorite-rating-display">{video.rating}/10 ⭐</div>
-                        <a 
-                          href={`https://www.youtube.com/watch?v=${video.id}`}
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="watch-youtube-prominent"
-                        >
-                          🎬 Watch on YouTube
-                        </a>
-                      </div>
+              <div className="favorites-profile-grid">
+                {favs.map((video, index) => (
+                  <div key={video.id} className="favorite-profile-card">
+                    <div className="favorite-thumbnail-container">
+                      <img src={video.thumbnail} alt={video.title} />
+                      <div className="favorite-rank">#{index + 1}</div>
                     </div>
-                  ))}
-                </div>
+                    <div className="favorite-info">
+                      <h4 className="favorite-title">{video.title}</h4>
+                      <p className="favorite-channel">{video.channel}</p>
+                      </div>
+                      <a 
+                        href={`https://www.youtube.com/watch?v=${video.id}`}
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="watch-youtube-link"
+                      >
+                        🎬 Watch on YouTube
+                      </a>
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : (
-              <div className="empty-favorites">
-                <p>No favorites yet.</p>
-              </div>
+              <p className="empty-message">No favorites yet.</p>
             )}
           </div>
 
