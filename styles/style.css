@@ -3440,7 +3440,10 @@ select.form-control:focus {
   align-items: center;
   gap: var(--space-12);
   padding: var(--space-16) var(--space-32);
-  background: var(--color-primary);
+  background: linear-gradient(45deg, var(--color-primary), var(--color-primary-hover));
+  color: white;
+  box-shadow: var(--shadow-lg);
+  text-decoration: none;
   border-radius: var(--radius-full);
   font-weight: var(--font-weight-bold);
   font-size: var(--font-size-lg);
