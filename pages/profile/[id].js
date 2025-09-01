@@ -130,36 +130,35 @@ export default function ProfilePage() {
           <div className="profile-section">
             <h3>⭐ Favorites ({favs.length})</h3>
             {favs.length > 0 ? (
-              <div className="favorites-profile-grid-centered">
-                {favs.map((video, index) => (
-                  <div key={video.id} className="favorite-profile-card-centered">
-                    <div className="favorite-thumbnail-container-centered">
-                      <img src={video.thumbnail} alt={video.title} />
-                      <div className="favorite-rank-centered">#{index + 1}</div>
-                    </div>
-                    <div className="favorite-info-centered">
-                      <h4 className="favorite-title-centered">{video.title}</h4>
-                      <p className="favorite-channel-centered">{video.channel}</p>
-                      <div className="favorite-ratings-centered">
-                        <span className="personal-rating-centered">Your Rating: {video.rating}/10</span>
-                        {video.averageRating && (
-                          <span className="average-rating-centered">Avg: {video.averageRating}/10</span>
-                        )}
+              <div className="favorites-profile-container">
+                <div className="favorites-profile-grid-centered">
+                  {favs.map((video, index) => (
+                    <div key={video.id} className="favorite-profile-card-fixed">
+                      <div className="favorite-thumbnail-container-fixed">
+                        <img src={video.thumbnail} alt={video.title} />
+                        <div className="favorite-rank-overlay">#{index + 1}</div>
                       </div>
-                      <a 
-                        href={`https://www.youtube.com/watch?v=${video.id}`}
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="watch-youtube-link-centered"
-                      >
-                        🎬 Watch on YouTube
-                      </a>
+                      <div className="favorite-info-fixed">
+                        <h4 className="favorite-title-fixed">{video.title}</h4>
+                        <p className="favorite-channel-fixed">{video.channel}</p>
+                        <div className="favorite-rating-display">{video.rating}/10 ⭐</div>
+                        <a 
+                          href={`https://www.youtube.com/watch?v=${video.id}`}
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="watch-youtube-prominent"
+                        >
+                          🎬 Watch on YouTube
+                        </a>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             ) : (
-              <p className="empty-message">No favorites yet.</p>
+              <div className="empty-favorites">
+                <p>No favorites yet.</p>
+              </div>
             )}
           </div>
 
