@@ -278,7 +278,7 @@ export default function UserStatsSection({ videos, ratings }) {
           <div className="favorites-grid">
             {stats.topFavorites.map((video, index) => (
               <div key={video.id} className="favorite-item">
-                /*<div className="favorite-rank">#{index + 1}</div>*/
+                <div className="favorite-rank">#{index + 1}</div>
                 <div className="favorite-content">
                   {video.thumbnail && (
                     <img src={video.thumbnail} alt={video.title} className="favorite-thumbnail" />
