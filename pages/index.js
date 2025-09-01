@@ -360,6 +360,7 @@ export default function Home() {
         )}
 
         {(session) && (
+          <div className="section-separator"></div>
           <div className="bookmarklet-section-prominent">
             <div className="bookmarklet-header">
               <h2>📌 Rate Videos While Watching YouTube</h2>
@@ -370,7 +371,8 @@ export default function Home() {
             
             <div className="bookmarklet-demo">
               <div className="bookmarklet-step">
-                <p>1. Drag this button to your bookmarks bar:</p>
+                <span className="step-number">1</span>
+                <p>Drag this button to your bookmarks bar:</p>
                 <a 
                   href={`javascript:(function(){
                     try {
@@ -445,7 +447,8 @@ export default function Home() {
               </div>
               
               <div className="bookmarklet-step">
-                <p>2. While watching any YouTube video, click the bookmark to rate it instantly!</p>
+                <span className="step-number">2</span>
+                <p>While watching any YouTube video, click the bookmark to rate it instantly!</p>
               </div>
             </div>
             
