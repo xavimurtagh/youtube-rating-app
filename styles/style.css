@@ -522,13 +522,14 @@ p {
   line-height: 1.5;
   cursor: pointer;
   transition: all var(--duration-normal) var(--ease-standard);
-  border: none;
+  border: 2px solid transparent;
   text-decoration: none;
   position: relative;
 }
 
 .btn--primary {
   background: var(--color-primary);
+  border-color: var(--color-primary-active);
   color: var(--color-btn-primary-text);
 }
 
@@ -544,6 +545,7 @@ p {
 .btn--outline {
   background: transparent;
   border: 1px solid var(--color-border);
+  border-color: var(--color-border);
   color: var(--color-text);
 }
 
@@ -555,6 +557,11 @@ p {
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.btn:focus {
+  outline: 3px solid var(--color-focus-ring);
+  outline-offset: 2px;
 }
 
 /* Form elements */
@@ -2795,12 +2802,15 @@ select.form-control:focus {
 .video-link {
   color: #1976d2;
   text-decoration: none;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
   font-weight: var(--font-weight-medium);
   font-size: var(--font-size-sm);
 }
 
 .video-link:hover {
   text-decoration: underline;
+  text-decoration-thickness: 3px;
   color: var(--color-primary-hover);
 }
 
@@ -2983,6 +2993,8 @@ select.form-control:focus {
   background: var(--color-red-500);
   color: white;
   text-decoration: none;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
   border-radius: var(--radius-base);
   font-weight: var(--font-weight-medium);
   font-size: var(--font-size-sm);
@@ -2992,6 +3004,7 @@ select.form-control:focus {
 .watch-youtube-link:hover {
   background: var(--color-red-400);
   transform: scale(1.02);
+  text-decoration-thickness: 3px;
 }
 
 /* Pagination Controls */
@@ -3490,4 +3503,109 @@ select.form-control:focus {
   color: var(--color-text-secondary);
 }
 
+.watch-youtube-prominent {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-8);
+  padding: var(--space-12) var(--space-16);
+  background: #ff0000;
+  color: white;
+  text-decoration: none;
+  border-radius: var(--radius-base);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-sm);
+  transition: all var(--duration-fast) var(--ease-standard);
+  border: 2px solid #cc0000;
+  text-align: center;
+}
 
+.watch-youtube-prominent:hover {
+  background: #cc0000;
+  transform: scale(1.05);
+  box-shadow: var(--shadow-md);
+  text-decoration: none;
+}
+
+.watch-youtube-prominent:focus {
+  outline: 3px solid rgba(255, 0, 0, 0.4);
+  outline-offset: 2px;
+}
+
+.empty-favorites {
+  text-align: center;
+  padding: var(--space-32);
+  color: var(--color-text-secondary);
+  background: var(--color-bg-1);
+  border-radius: var(--radius-base);
+}
+
+.rating-slider-colored {
+  width: 100%;
+  height: 8px;
+  border-radius: var(--radius-full);
+  outline: none;
+  -webkit-appearance: none;
+  margin: var(--space-16) 0;
+  cursor: pointer;
+  border: 2px solid var(--color-border);
+}
+
+.rating-slider-colored::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: white;
+  cursor: pointer;
+  border: 3px solid var(--color-primary);
+  box-shadow: var(--shadow-md);
+  transition: all var(--duration-fast) var(--ease-standard);
+}
+
+.rating-slider-colored::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: var(--shadow-lg);
+}
+
+.rating-display-colored {
+  text-align: center;
+  margin: var(--space-16) 0;
+}
+
+.rating-value-colored {
+  font-size: var(--font-size-4xl);
+  font-weight: var(--font-weight-bold);
+  line-height: 1;
+}
+
+.rating-max-colored {
+  font-size: var(--font-size-2xl);
+  color: var(--color-text-secondary);
+  margin-left: var(--space-4);
+}
+
+.rating-label-colored {
+  display: block;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  margin-top: var(--space-8);
+}
+
+.rating-scale-colored {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  margin-top: var(--space-16);
+  flex-wrap: wrap;
+  gap: var(--space-8);
+}
+
+@media print {
+  .bookmarklet-section-prominent,
+  .watch-youtube-prominent {
+    display: none;
+  }
+}
