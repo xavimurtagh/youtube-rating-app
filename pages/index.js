@@ -374,14 +374,66 @@ export default function Home() {
                 <p>Drag this button to your bookmarks bar:</p>
                 <a 
                   href={`javascript:(function(){
-                    var videoId = new URLSearchParams(window.location.search).get('v');
-                    if(videoId && window.location.hostname === 'www.youtube.com'){
-                      var title = document.querySelector('h1.ytd-video-primary-info-renderer yt-formatted-string, h1.title')?.textContent || document.title.replace(' - YouTube', '') || 'Unknown Video';
-                      var channel = document.querySelector('ytd-video-owner-renderer .ytd-channel-name a, #owner-text a')?.textContent || 'Unknown Channel';
+                    try {
+                      var videoId = new URLSearchParams(window.location.search).get('v');
+                      if (!videoId || window.location.hostname !== 'www.youtube.com') {
+                        alert('This bookmarklet only works on YouTube video pages!\\n\\nMake sure you are on a page like: youtube.com/watch?v=...');
+                        return;
+                      }
+                      
+                      // Better title extraction with fallbacks
+                      var title = '';
+                      var titleSelectors = [
+                        'h1.ytd-video-primary-info-renderer yt-formatted-string',
+                        'h1.title.style-scope.ytd-video-primary-info-renderer',
+                        '#container h1',
+                        '.title'
+                      ];
+                      
+                      for (var i = 0; i < titleSelectors.length; i++) {
+                        var titleElement = document.querySelector(titleSelectors[i]);
+                        if (titleElement && titleElement.textContent) {
+                          title = titleElement.textContent.trim();
+                          break;
+                        }
+                      }
+                      
+                      if (!title) {
+                        title = document.title.replace(' - YouTube', '') || 'Unknown Video';
+                      }
+                      
+                      // Better channel extraction
+                      var channel = '';
+                      var channelSelectors = [
+                        'ytd-video-owner-renderer .ytd-channel-name a',
+                        '#owner-text a',
+                        '.ytd-channel-name a'
+                      ];
+                      
+                      for (var i = 0; i < channelSelectors.length; i++) {
+                        var channelElement = document.querySelector(channelSelectors[i]);
+                        if (channelElement && channelElement.textContent) {
+                          channel = channelElement.textContent.trim();
+                          break;
+                        }
+                      }
+                      
+                      if (!channel) {
+                        channel = 'Unknown Channel';
+                      }
+                      
                       var thumbnail = 'https://img.youtube.com/vi/' + videoId + '/maxresdefault.jpg';
-                      window.open('${typeof window !== 'undefined' ? window.location.origin : ''}/rate?videoId=' + videoId + '&title=' + encodeURIComponent(title) + '&channel=' + encodeURIComponent(channel) + '&thumbnail=' + encodeURIComponent(thumbnail), 'rate-video', 'width=600,height=700,scrollbars=yes,resizable=yes');
-                    } else {
-                      alert('This bookmarklet only works on YouTube video pages!\\n\\nMake sure you are on a page like: youtube.com/watch?v=...');
+                      var rateUrl = '${typeof window !== 'undefined' ? window.location.origin : 'https://youtube-rating-app.vercel.app'}/rate?videoId=' + 
+                                    encodeURIComponent(videoId) + 
+                                    '&title=' + encodeURIComponent(title) + 
+                                    '&channel=' + encodeURIComponent(channel) + 
+                                    '&thumbnail=' + encodeURIComponent(thumbnail);
+                      
+                      window.open(rateUrl, 'rate-video', 'width=600,height=700,scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no');
+                      
+                    } catch (error) {
+                      console.error('Bookmarklet error:', error);
+                      alert('Error: ' + error.message);
                     }
                   })();`}
                   className="bookmarklet-button-prominent"
