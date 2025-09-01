@@ -112,14 +112,27 @@ export default function QuickRate() {
                 max="10"
                 value={rating}
                 onChange={(e) => setRating(parseInt(e.target.value))}
-                className="rating-slider-quick"
+                className="rating-slider-colored"
+                style={{
+                  background: `linear-gradient(to right, 
+                    #ff4444 0%, #ff4444 ${(rating-1) * 11.11}%, 
+                    #ffaa00 ${(rating-1) * 11.11}%, #ffaa00 ${(rating-1) * 11.11 + 11.11}%,
+                    #ffdd00 ${(rating-1) * 11.11 + 11.11}%, #ffdd00 ${(rating-1) * 11.11 + 22.22}%,
+                    #88dd00 ${(rating-1) * 11.11 + 22.22}%, #88dd00 ${(rating-1) * 11.11 + 33.33}%,
+                    #00dd00 ${(rating-1) * 11.11 + 33.33}%, #00dd00 100%)`
+                }}
               />
-              <div className="rating-display-quick">
-                <span className="rating-value-quick">{rating}</span>
-                <span>/10</span>
+              <div className="rating-display-colored" style={{
+                color: rating <= 3 ? '#ff4444' : rating <= 5 ? '#ffaa00' : rating <= 7 ? '#ffdd00' : rating <= 8 ? '#88dd00' : '#00dd00'
+              }}>
+                <span className="rating-value-colored">{rating}</span>
+                <span className="rating-max-colored">/10</span>
+                <span className="rating-label-colored">
+                  {rating <= 2 ? 'Terrible' : rating <= 4 ? 'Poor' : rating <= 6 ? 'Okay' : rating <= 8 ? 'Good' : 'Excellent'}
+                </span>
               </div>
             </div>
-            <div className="rating-labels-quick">
+            <div className="rating-scale-colored">
               <span>1-2: Terrible</span>
               <span>3-4: Poor</span>
               <span>5-6: Okay</span>
@@ -148,14 +161,12 @@ export default function QuickRate() {
         </form>
         
         <div className="quick-actions">
-          <a 
-            href={`https://www.youtube.com/watch?v=${video.id}`}
-            target="_blank"
-            rel="noopener noreferrer"
+          <button 
+            onClick={() => window.close()}
             className="btn btn--outline btn--sm"
           >
-            🔗 Back to YouTube
-          </a>
+            🔗 Close & Back to YouTube
+          </button>
         </div>
       </div>
     </div>
