@@ -129,5 +129,6 @@ export default function RatingModal({ video, isOpen, onClose, onSave }) {
         </div>
       </div>
     </div>
+  </div>
   );
 }
