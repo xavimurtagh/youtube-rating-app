@@ -359,27 +359,55 @@ export default function Home() {
           </div>
         )}
 
-        {(process.env.NODE_ENV === 'development' || session) && (
-          <div className="bookmarklet-section">
-            <h3>📌 Rate Videos While Watching</h3>
-            <p>Drag this bookmarklet to your bookmarks bar to rate YouTube videos while watching:</p>
-            <a 
-              href={`javascript:(function(){
-                var videoId = new URLSearchParams(window.location.search).get('v');
-                if(videoId && window.location.hostname === 'www.youtube.com'){
-                  var title = document.querySelector('h1.ytd-video-primary-info-renderer')?.textContent || 'Unknown Video';
-                  var channel = document.querySelector('.ytd-channel-name a')?.textContent || 'Unknown Channel';
-                  window.open('${typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'}/rate?videoId=' + videoId + '&title=' + encodeURIComponent(title) + '&channel=' + encodeURIComponent(channel), 'rate-video', 'width=500,height=600');
-                } else {
-                  alert('This only works on YouTube video pages!');
-                }
-              })();`}
-              className="bookmarklet-link"
-              onClick={(e) => e.preventDefault()}
-            >
-              🎬 Rate This Video
-            </a>
-            <p><small>Drag the link above to your bookmarks bar, then click it while watching any YouTube video!</small></p>
+        {(session) && (
+          <div className="bookmarklet-section-prominent">
+            <div className="bookmarklet-header">
+              <h2>📌 Rate Videos While Watching YouTube</h2>
+              <p className="bookmarklet-description">
+                Never forget to rate a video again! Drag the button below to your bookmarks bar.
+              </p>
+            </div>
+            
+            <div className="bookmarklet-demo">
+              <div className="bookmarklet-step">
+                <span className="step-number">1</span>
+                <p>Drag this button to your bookmarks bar:</p>
+                <a 
+                  href={`javascript:(function(){
+                    var videoId = new URLSearchParams(window.location.search).get('v');
+                    if(videoId && window.location.hostname === 'www.youtube.com'){
+                      var title = document.querySelector('h1.ytd-video-primary-info-renderer yt-formatted-string, h1.title')?.textContent || document.title.replace(' - YouTube', '') || 'Unknown Video';
+                      var channel = document.querySelector('ytd-video-owner-renderer .ytd-channel-name a, #owner-text a')?.textContent || 'Unknown Channel';
+                      var thumbnail = 'https://img.youtube.com/vi/' + videoId + '/maxresdefault.jpg';
+                      window.open('${typeof window !== 'undefined' ? window.location.origin : ''}/rate?videoId=' + videoId + '&title=' + encodeURIComponent(title) + '&channel=' + encodeURIComponent(channel) + '&thumbnail=' + encodeURIComponent(thumbnail), 'rate-video', 'width=600,height=700,scrollbars=yes,resizable=yes');
+                    } else {
+                      alert('This bookmarklet only works on YouTube video pages!\\n\\nMake sure you are on a page like: youtube.com/watch?v=...');
+                    }
+                  })();`}
+                  className="bookmarklet-button-prominent"
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData("text/plain", e.target.href);
+                  }}
+                >
+                  🎬 Rate This YouTube Video
+                </a>
+              </div>
+              
+              <div className="bookmarklet-step">
+                <span className="step-number">2</span>
+                <p>While watching any YouTube video, click the bookmark to rate it instantly!</p>
+              </div>
+            </div>
+            
+            <div className="bookmarklet-benefits">
+              <h4>Why use this?</h4>
+              <ul>
+                <li>✅ Rate videos without leaving YouTube</li>
+                <li>✅ Works on any YouTube video page</li>
+                <li>✅ Automatically captures video info</li>
+                <li>✅ Quick and convenient</li>
+              </ul>
+            </div>
           </div>
         )}
       </main>
