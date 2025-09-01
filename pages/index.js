@@ -359,8 +359,9 @@ export default function Home() {
           </div>
         )}
 
+
+        <div className="section-separator"></div>
         {(session) && (
-          <div className="section-separator"></div>
           <div className="bookmarklet-section-prominent">
             <div className="bookmarklet-header">
               <h2>📌 Rate Videos While Watching YouTube</h2>
