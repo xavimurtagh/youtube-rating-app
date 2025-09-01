@@ -391,6 +391,48 @@ p {
   .filter-select {
     width: 100%;
   }
+
+  .favorites-profile-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .favorite-options-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .video-info-section {
+    flex-direction: column;
+  }
+  
+  .pagination-controls {
+    flex-direction: column;
+    gap: var(--space-12);
+  }
+
+  .bookmarklet-demo {
+    grid-template-columns: 1fr;
+    gap: var(--space-24);
+  }
+  
+  .favorites-showcase-centered {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .favorite-showcase-item-centered {
+    width: 100%;
+    max-width: 320px;
+  }
+  
+  .video-info-section-fixed {
+    flex-direction: column;
+  }
+  
+  .rating-labels-quick {
+    flex-direction: column;
+    gap: var(--space-4);
+    text-align: center;
+  }
 }
 
 @media (max-width: 480px) {
@@ -3013,11 +3055,63 @@ select.form-control:focus {
   gap: var(--space-16);
 }
 
+.modal-header-fixed {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-20) var(--space-24);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg-1);
+}
+
+.modal-title-left {
+  flex: 1;
+}
+
+.modal-main-title {
+  margin: 0;
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+}
+
+.modal-close-btn-fixed {
+  background: var(--color-secondary);
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: var(--font-size-2xl);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-standard);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-close-btn-fixed:hover {
+  background: var(--color-secondary-hover);
+  transform: scale(1.1);
+}
+
+.video-info-section-fixed {
+  display: flex;
+  gap: var(--space-16);
+  padding: var(--space-24);
+  background: var(--color-surface);
+}
+
+.video-thumbnail-section {
+  flex-shrink: 0;
+}
+
 .video-thumbnail-modal {
   flex-shrink: 0;
   width: 120px;
   height: 68px;
   border-radius: var(--radius-base);
+  object-fit: cover;
   overflow: hidden;
 }
 
@@ -3025,6 +3119,166 @@ select.form-control:focus {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.video-details-section {
+  flex: 1;
+}
+
+.video-title-modal {
+  margin: 0 0 var(--space-8) 0;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.4;
+}
+
+.video-channel-modal {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-base);
+}
+
+.rating-section-fixed {
+  padding: var(--space-24);
+}
+
+.rating-question p {
+  margin: 0 0 var(--space-20) 0;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-medium);
+  text-align: center;
+}
+
+/* Quick Rate Page Styles */
+.quick-rate-container {
+  min-height: 100vh;
+  background: var(--color-background);
+  padding: var(--space-20);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.quick-rate-modal {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-card-border);
+  max-width: 500px;
+  width: 100%;
+  box-shadow: var(--shadow-lg);
+}
+
+.quick-rate-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-20);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.quick-rate-header h2 {
+  margin: 0;
+  color: var(--color-text);
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: var(--font-size-3xl);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: var(--space-8);
+  border-radius: 50%;
+  transition: all var(--duration-fast) var(--ease-standard);
+}
+
+.close-btn:hover {
+  background: var(--color-secondary);
+  color: var(--color-text);
+}
+
+.video-info-quick {
+  display: flex;
+  gap: var(--space-16);
+  padding: var(--space-20);
+  background: var(--color-bg-1);
+}
+
+.video-thumb-quick {
+  width: 100px;
+  height: 56px;
+  border-radius: var(--radius-base);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.video-details-quick h3 {
+  margin: 0 0 var(--space-8) 0;
+  font-size: var(--font-size-base);
+  line-height: 1.4;
+}
+
+.video-details-quick p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.rating-form-quick {
+  padding: var(--space-20);
+}
+
+.rating-input-section label {
+  display: block;
+  margin-bottom: var(--space-16);
+  font-weight: var(--font-weight-semibold);
+  text-align: center;
+}
+
+.rating-slider-container {
+  text-align: center;
+  margin: var(--space-20) 0;
+}
+
+.rating-slider-quick {
+  width: 100%;
+  margin-bottom: var(--space-12);
+}
+
+.rating-display-quick {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+}
+
+.rating-labels-quick {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  margin-top: var(--space-16);
+}
+
+.form-actions-quick {
+  display: flex;
+  gap: var(--space-12);
+  margin-top: var(--space-24);
+}
+
+.form-actions-quick .btn {
+  flex: 1;
+}
+
+.quick-actions {
+  padding: var(--space-16) var(--space-20);
+  border-top: 1px solid var(--color-border);
+  text-align: center;
+}
+
+.auth-required,
+.invalid-video {
+  text-align: center;
+  padding: var(--space-32);
 }
 
 .video-details-modal {
@@ -3132,22 +3386,108 @@ select.form-control:focus {
   background: var(--color-primary-hover);
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .favorites-profile-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .favorite-options-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .video-info-section {
-    flex-direction: column;
-  }
-  
-  .pagination-controls {
-    flex-direction: column;
-    gap: var(--space-12);
-  }
+.bookmarklet-section-prominent {
+  background: linear-gradient(135deg, var(--color-bg-1), var(--color-bg-2));
+  border: 2px solid var(--color-primary);
+  border-radius: var(--radius-lg);
+  padding: var(--space-32);
+  margin: var(--space-48) 0;
+  text-align: center;
 }
+
+.bookmarklet-header h2 {
+  color: var(--color-primary);
+  margin: 0 0 var(--space-16) 0;
+  font-size: var(--font-size-3xl);
+}
+
+.bookmarklet-description {
+  font-size: var(--font-size-lg);
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--space-32) 0;
+}
+
+.bookmarklet-demo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-32);
+  margin: var(--space-32) 0;
+  align-items: center;
+}
+
+.bookmarklet-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-12);
+}
+
+.step-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: var(--color-primary);
+  color: white;
+  border-radius: 50%;
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-lg);
+}
+
+.bookmarklet-button-prominent {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-12);
+  padding: var(--space-16) var(--space-32);
+  background: linear-gradient(45deg, var(--color-primary), var(--color-primary-hover));
+  color: white;
+  text-decoration: none;
+  border-radius: var(--radius-full);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-lg);
+  box-shadow: var(--shadow-lg);
+  cursor: move;
+  transition: all var(--duration-normal) var(--ease-standard);
+  border: 3px solid transparent;
+}
+
+.bookmarklet-button-prominent:hover {
+  transform: scale(1.05);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--color-primary-active);
+}
+
+.bookmarklet-button-prominent:active {
+  transform: scale(0.98);
+}
+
+.bookmarklet-benefits {
+  background: var(--color-surface);
+  border-radius: var(--radius-base);
+  padding: var(--space-20);
+  margin-top: var(--space-24);
+  text-align: left;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.bookmarklet-benefits h4 {
+  margin: 0 0 var(--space-12) 0;
+  color: var(--color-text);
+  text-align: center;
+}
+
+.bookmarklet-benefits ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.bookmarklet-benefits li {
+  padding: var(--space-4) 0;
+  color: var(--color-text-secondary);
+}
+
+
