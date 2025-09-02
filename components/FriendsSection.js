@@ -126,7 +126,7 @@ export default function FriendsSection() {
             {following.map(user => (
               <div key={user.id} className="user-card-fixed following-card">
                 <div className="user-avatar-section">
-                  <img src={user.image || '/default-avatar.png'} alt={user.name} className="user-avatar" />
+                  <img src={user.avatar || '/default-avatar.png'} alt={user.name} className="user-avatar" />
                 </div>
                 <div className="user-info-section">
                   <h4 className="user-name">{user.name}</h4>
@@ -169,7 +169,7 @@ export default function FriendsSection() {
             {followers.map(user => (
               <div key={user.id} className="user-card-fixed follower-card">
                 <div className="user-avatar-section">
-                  <img src={user.image || '/default-avatar.png'} alt={user.name} className="user-avatar" />
+                  <img src={user.avatar || '/default-avatar.png'} alt={user.name} className="user-avatar" />
                 </div>
                 <div className="user-info-section">
                   <h4 className="user-name">{user.name}</h4>
@@ -227,7 +227,7 @@ export default function FriendsSection() {
               {searchResults.map(user => (
                 <div key={user.id} className="user-card-fixed search-result-card">
                   <div className="user-avatar-section">
-                    <img src={user.image || '/default-avatar.png'} alt={user.name} className="user-avatar" />
+                    <img src={user.avatar || '/default-avatar.png'} alt={user.name} className="user-avatar" />
                   </div>
                   <div className="user-info-section">
                     <h4 className="user-name">{user.name}</h4>
@@ -256,7 +256,7 @@ export default function FriendsSection() {
         )}
 
         {/* Only show "no results" message after a search has been performed and returned empty */}
-        {searchTerm && searchResults.length === 0 && !loading && searchTerm.length > 2 && (
+        {searchTerm && searchResults.length === 0 && !loading && searchTerm.length > 50 && (
           <div className="no-results-message">
             <p>No users found for "{searchTerm}". Try searching by name or email.</p>
           </div>
