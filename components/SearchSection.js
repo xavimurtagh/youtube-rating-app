@@ -106,7 +106,7 @@ export default function SearchSection({ onRateVideo }) {
               showLimit={null}
             />
           </>
-        ) : searchTerm.trim() && searchResults.length === 0 && !loading && hasSearched && (
+        ) : searchTerm.trim() && searchResults.length === 0 && !loading && hasSearched ? (
               <div className="no-results-message">
                 <p>No videos found for "{searchTerm}". Try different keywords.</p>
               </div>
