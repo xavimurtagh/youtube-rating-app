@@ -3609,3 +3609,54 @@ select.form-control:focus {
     display: none;
   }
 }
+
+.empty-state {
+  text-align: center;
+  padding: var(--space-48);
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  border: 2px dashed var(--color-border);
+}
+
+.empty-icon {
+  font-size: var(--font-size-4xl);
+  margin: 0 0 var(--space-16) 0;
+}
+
+.empty-state h3 {
+  margin: 0 0 var(--space-8) 0;
+  color: var(--color-text);
+}
+
+.empty-state p {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+.loading-state {
+  text-align: center;
+  padding: var(--space-48);
+  color: var(--color-text-secondary);
+}
+
+/* Error States */
+.error-message {
+  background: rgba(var(--color-red-400-rgb), 0.1);
+  border: 1px solid var(--color-red-400);
+  border-radius: var(--radius-base);
+  padding: var(--space-16);
+  margin: var(--space-16) 0;
+  color: var(--color-red-400);
+  text-align: center;
+}
+
+.success-message {
+  background: rgba(var(--color-teal-300-rgb), 0.1);
+  border: 1px solid var(--color-teal-300);
+  border-radius: var(--radius-base);
+  padding: var(--space-16);
+  margin: var(--space-16) 0;
+  color: var(--color-teal-300);
+  text-align: center;
+}
+
