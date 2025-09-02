@@ -29,7 +29,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         where: { id: me.id },
         data: {
           following: { set: [] },
-          followedBy: { set: [] },
+          followers: { set: [] },
           favourites: { set: [] }
         }
       })
