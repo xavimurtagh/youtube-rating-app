@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import VideoList from './VideoList';
 
 export default function SearchSection({ onRateVideo }) {
