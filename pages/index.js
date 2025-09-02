@@ -465,7 +465,7 @@ export default function Home() {
           </div>
         )}
         <script src="https://liberapay.com/xavstermur/widgets/button.js"></script>
-        <noscript><a href="https://liberapay.com/xavstermur/donate"><img alt="Donate using Liberapay" src="https://liberapay.com/assets/widgets/donate.svg"></a></noscript>
+        <noscript><a href="https://liberapay.com/xavstermur/donate"><img alt="Donate using Liberapay" src="https://liberapay.com/assets/widgets/donate.svg"></img></a></noscript>
       </main>
     </>
   );
