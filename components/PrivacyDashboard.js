@@ -6,10 +6,10 @@ export default function PrivacyDashboard() {
   const [preferences, setPreferences] = useState({
     essential: true,
     analytics: false,
-    personalization: false,
+    personalization: true,
     marketing: false
   });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     // Load preferences only on client side
@@ -136,16 +136,17 @@ export default function PrivacyDashboard() {
     }
   };
 
-  const clearAllUserData = async () => {
+  const handleDeleteAllData = async () => {
     if (!confirm('⚠️ This will permanently delete ALL your data including ratings, favorites, and social connections. This cannot be undone. Are you sure?')) {
       return;
     }
-  
-    if (!confirm('🚨 Last chance! This will DELETE EVERYTHING. Type "DELETE" to confirm you want to proceed.') || 
-        !window.prompt('Type DELETE to confirm:')?.toUpperCase().includes('DELETE')) {
+
+    const confirmText = window.prompt('Type "DELETE" to confirm you want to delete all your data:');
+    if (confirmText?.toUpperCase() !== 'DELETE') {
+      alert('Deletion cancelled.');
       return;
     }
-  
+
     setLoading(true);
     
     try {
@@ -154,33 +155,35 @@ export default function PrivacyDashboard() {
         method: 'DELETE',
         credentials: 'include'
       });
-  
+
       if (!response.ok) {
-        throw new Error('Failed to clear database data');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to clear database data');
       }
-  
+
       // Clear local storage as backup
       localStorage.clear();
       sessionStorage.clear();
-  
+
       alert('✅ All your data has been permanently deleted from our servers and your browser.');
       
-      // Reload page to reset all state
+      // Sign out and reload
+      await signOut({ redirect: false });
       window.location.reload();
       
     } catch (error) {
       console.error('Failed to clear data:', error);
-      alert('❌ Failed to clear all data. Please try again or contact support.');
+      alert(`❌ Failed to clear all data: ${error.message}`);
     } finally {
       setLoading(false);
     }
   };
-  
-  const clearLocalData = async () => {
+
+  const handleClearLocalData = async () => {
     if (!confirm('This will clear your browser data but keep your account data on our servers. Continue?')) {
       return;
     }
-  
+
     try {
       // Clear browser storage
       localStorage.clear();
@@ -195,7 +198,7 @@ export default function PrivacyDashboard() {
           }
         });
       }
-  
+
       alert('✅ Browser data cleared successfully.');
       window.location.reload();
       
@@ -204,6 +207,17 @@ export default function PrivacyDashboard() {
       alert('❌ Failed to clear browser data.');
     }
   };
+
+  if (!session) {
+    return (
+      <div className="privacy-section">
+        <div className="auth-required-content">
+          <h3>🔒 Sign In Required</h3>
+          <p>Sign in to access privacy settings and data management.</p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
