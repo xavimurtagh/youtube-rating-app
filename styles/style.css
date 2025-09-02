@@ -433,6 +433,27 @@ p {
     gap: var(--space-4);
     text-align: center;
   }
+
+  .users-grid-fixed {
+    grid-template-columns: 1fr;
+  }
+  
+  .user-card-fixed {
+    grid-template-columns: 50px 1fr;
+    grid-template-rows: auto auto;
+    gap: var(--space-12);
+  }
+  
+  .user-actions-section {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    justify-content: center;
+    margin-top: var(--space-12);
+  }
+  
+  .privacy-cards {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 480px) {
@@ -507,6 +528,15 @@ p {
   
   .user-details {
     display: none;
+  }
+
+  .user-actions-section .btn {
+    font-size: var(--font-size-xs);
+    padding: var(--space-4) var(--space-8);
+  }
+  
+  .data-controls {
+    gap: var(--space-8);
   }
 }
 
@@ -3660,3 +3690,217 @@ select.form-control:focus {
   text-align: center;
 }
 
+.friends-section {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--space-24);
+}
+
+.following-section-fixed,
+.followers-section-fixed,
+.search-section-fixed {
+  background: var(--color-surface);
+  border: 2px solid var(--color-card-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-24);
+  margin-bottom: var(--space-32);
+}
+
+.following-section-fixed h3,
+.followers-section-fixed h3,
+.search-section-fixed h3 {
+  margin: 0 0 var(--space-20) 0;
+  color: var(--color-text);
+  text-align: center;
+}
+
+.users-grid-fixed {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--space-20);
+  margin-top: var(--space-20);
+}
+
+.user-card-fixed {
+  display: grid;
+  grid-template-columns: 60px 1fr auto;
+  gap: var(--space-16);
+  align-items: center;
+  padding: var(--space-16);
+  background: var(--color-bg-1);
+  border: 1px solid var(--color-card-border);
+  border-radius: var(--radius-base);
+  transition: all var(--duration-fast) var(--ease-standard);
+}
+
+.user-card-fixed:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-primary);
+}
+
+.user-avatar-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--color-border);
+}
+
+.user-info-section {
+  min-width: 0; /* Allows text to truncate */
+}
+
+.user-name {
+  font-weight: var(--font-weight-semibold);
+  margin: 0 0 var(--space-4) 0;
+  font-size: var(--font-size-base);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-text);
+}
+
+.user-email {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  margin: 0 0 var(--space-4) 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-stats {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+}
+
+.user-actions-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  flex-shrink: 0;
+  min-width: 100px;
+}
+
+.user-actions-section .btn {
+  padding: var(--space-6) var(--space-12);
+  font-size: var(--font-size-xs);
+  white-space: nowrap;
+}
+
+/* Special styling for different card types */
+.following-card {
+  border-left: 4px solid var(--color-success);
+}
+
+.follower-card {
+  border-left: 4px solid var(--color-primary);
+}
+
+.search-result-card {
+  border-left: 4px solid var(--color-warning);
+}
+
+/* Search Results */
+.search-results {
+  margin-top: var(--space-24);
+  padding-top: var(--space-24);
+  border-top: 1px solid var(--color-border);
+}
+
+.search-results h4 {
+  margin: 0 0 var(--space-16) 0;
+  color: var(--color-text);
+  text-align: center;
+}
+
+.no-results-message {
+  text-align: center;
+  padding: var(--space-24);
+  color: var(--color-text-secondary);
+  background: var(--color-bg-2);
+  border-radius: var(--radius-base);
+  margin-top: var(--space-16);
+}
+
+.empty-message {
+  text-align: center;
+  padding: var(--space-32);
+  color: var(--color-text-secondary);
+  background: var(--color-bg-2);
+  border-radius: var(--radius-base);
+  border: 2px dashed var(--color-border);
+}
+
+/* Privacy Section Styling */
+.privacy-section {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: var(--space-24);
+}
+
+.privacy-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-24);
+  margin-top: var(--space-24);
+}
+
+.privacy-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-card-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-24);
+}
+
+.privacy-card h3 {
+  margin: 0 0 var(--space-12) 0;
+  color: var(--color-text);
+}
+
+.data-controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+  margin-top: var(--space-16);
+}
+
+.privacy-settings {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+  margin-top: var(--space-16);
+}
+
+.privacy-settings label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.data-summary {
+  background: var(--color-bg-1);
+  border-radius: var(--radius-base);
+  padding: var(--space-16);
+  margin-top: var(--space-12);
+}
+
+.data-summary p {
+  margin: 0 0 var(--space-8) 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.data-summary p:last-child {
+  margin-bottom: 0;
+}
