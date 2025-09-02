@@ -31,7 +31,9 @@ export const socialAPI = {
   searchUsers: (query: string) =>
     api(`users/search?q=${encodeURIComponent(query)}`),
   
-  getFollowing: () => api('following'),  // <-- This was missing!
+  getFollowing: () => api('following'),  
+
+  getFollowers: () => api('followers'),
   
   followUser: (userId: string) =>
     api(`follow/${userId}`, { method: 'POST' }),
