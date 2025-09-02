@@ -8,17 +8,21 @@ export default function FriendsSection() {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [following, setFollowing] = useState([]);
+  const [followers, setFollowers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingFollowing, setLoadingFollowing] = useState(true);
+  const [loadingFollowers, setLoadingFollowers] = useState(true);
 
-  // Load following list on mount
+  const router = useRouter();
+
+  // Load following and followers on mount
   useEffect(() => {
     if (session) {
       loadFollowing();
+      loadFollowers();
     }
   }, [session]);
 
-  const router = useRouter();
   const handleViewProfile = (userId) => {
     router.push(`/profile/${userId}`);
   };
@@ -31,6 +35,17 @@ export default function FriendsSection() {
       console.error('Failed to load following:', error);
     } finally {
       setLoadingFollowing(false);
+    }
+  };
+
+  const loadFollowers = async () => {
+    try {
+      const followersData = await socialAPI.getFollowers();
+      setFollowers(followersData);
+    } catch (error) {
+      console.error('Failed to load followers:', error);
+    } finally {
+      setLoadingFollowers(false);
     }
   };
 
@@ -58,7 +73,6 @@ export default function FriendsSection() {
           user.id === userId ? { ...user, isFollowing: true } : user
         )
       );
-      // Refresh following list
       loadFollowing();
     } catch (error) {
       console.error('Follow failed:', error);
@@ -83,9 +97,10 @@ export default function FriendsSection() {
 
   if (!session) {
     return (
-      <div className="auth-required">
-        <div className="auth-prompt">
-          <h2>👥 Sign In to Find Friends</h2>
+      <div className="friends-section">
+        <div className="auth-required-content">
+          <div className="auth-icon">👥</div>
+          <h3>Sign In to Find Friends</h3>
           <p>Use the Sign In button at the top to access social features!</p>
         </div>
       </div>
@@ -94,31 +109,31 @@ export default function FriendsSection() {
 
   return (
     <div className="friends-section">
-      <div className="friends-header">
+      <div className="section-header">
         <h2>👥 Friends & Following</h2>
-        <p className="section-description">
-          Manage your social connections and discover new users
-        </p>
+        <p>Manage your social connections and discover new users</p>
       </div>
 
-      {/* Following List */}
-      <div className="following-section">
+      {/* Following List - Fixed Layout */}
+      <div className="following-section-fixed">
         <h3>👥 People You Follow ({following.length})</h3>
         {loadingFollowing ? (
           <div className="loading-state">
             <p>Loading your connections...</p>
           </div>
         ) : following.length > 0 ? (
-          <div className="users-grid">
+          <div className="users-grid-fixed">
             {following.map(user => (
-              <div key={user.id} className="user-card following-card">
-                <img src={user.avatar} alt={user.name} className="user-avatar" />
-                <div className="user-info">
+              <div key={user.id} className="user-card-fixed following-card">
+                <div className="user-avatar-section">
+                  <img src={user.image || '/default-avatar.png'} alt={user.name} className="user-avatar" />
+                </div>
+                <div className="user-info-section">
                   <h4 className="user-name">{user.name}</h4>
                   <p className="user-email">{user.email}</p>
-                  <span className="user-stats">{user.totalRatings} ratings</span>
+                  <span className="user-stats">{user.totalRatings || 0} ratings</span>
                 </div>
-                <div className="user-actions">
+                <div className="user-actions-section">
                   <button 
                     onClick={() => handleViewProfile(user.id)}
                     className="btn btn--sm btn--outline"
@@ -136,16 +151,61 @@ export default function FriendsSection() {
             ))}
           </div>
         ) : (
-          <p className="empty-message">You're not following anyone yet. Search below to find users!</p>
+          <div className="empty-message">
+            <p>You're not following anyone yet. Search below to find users!</p>
+          </div>
         )}
       </div>
 
-      <div className="section-separator"></div>
+      {/* Followers List - New Section */}
+      <div className="followers-section-fixed">
+        <h3>👥 Your Followers ({followers.length})</h3>
+        {loadingFollowers ? (
+          <div className="loading-state">
+            <p>Loading your followers...</p>
+          </div>
+        ) : followers.length > 0 ? (
+          <div className="users-grid-fixed">
+            {followers.map(user => (
+              <div key={user.id} className="user-card-fixed follower-card">
+                <div className="user-avatar-section">
+                  <img src={user.image || '/default-avatar.png'} alt={user.name} className="user-avatar" />
+                </div>
+                <div className="user-info-section">
+                  <h4 className="user-name">{user.name}</h4>
+                  <p className="user-email">{user.email}</p>
+                  <span className="user-stats">{user.totalRatings || 0} ratings</span>
+                </div>
+                <div className="user-actions-section">
+                  <button 
+                    onClick={() => handleViewProfile(user.id)}
+                    className="btn btn--sm btn--outline"
+                  >
+                    Profile
+                  </button>
+                  {!following.some(f => f.id === user.id) && (
+                    <button 
+                      onClick={() => handleFollow(user.id)}
+                      className="btn btn--sm btn--primary"
+                    >
+                      Follow Back
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="empty-message">
+            <p>No followers yet. Share your profile to gain followers!</p>
+          </div>
+        )}
+      </div>
 
-      {/* Search Section */}
-      <div className="search-section">
+      {/* Search Section with Fixed Message */}
+      <div className="search-section-fixed">
         <h3>🔍 Find New Friends</h3>
-        <form onSubmit={handleSearch} className="search-bar">
+        <form onSubmit={handleSearch} className="friend-search">
           <input
             type="text"
             placeholder="Search by name or email..."
@@ -154,45 +214,50 @@ export default function FriendsSection() {
             className="form-control search-input"
             disabled={loading}
           />
-          <button 
-            type="submit" 
-            className="btn btn--primary" 
-            disabled={loading || !searchTerm.trim()}
-          >
-            {loading ? 'Searching...' : '🔍 Search Users'}
+          <button type="submit" className="btn btn--primary" disabled={loading}>
+            {loading ? 'Searching...' : 'Search Users'}
           </button>
         </form>
 
+        {/* Only show results after search is performed */}
         {searchResults.length > 0 && (
           <div className="search-results">
             <h4>Search Results ({searchResults.length})</h4>
-            <div className="users-grid">
+            <div className="users-grid-fixed">
               {searchResults.map(user => (
-                <div key={user.id} className="user-card">
-                  <img 
-                    src={user.avatar || '/default-avatar.png'} 
-                    alt={user.name}
-                    className="user-avatar" 
-                  />
-                  <div className="user-info">
+                <div key={user.id} className="user-card-fixed search-result-card">
+                  <div className="user-avatar-section">
+                    <img src={user.image || '/default-avatar.png'} alt={user.name} className="user-avatar" />
+                  </div>
+                  <div className="user-info-section">
                     <h4 className="user-name">{user.name}</h4>
                     <p className="user-email">{user.email}</p>
-                    <p className="user-stats">{user.totalRatings} ratings</p>
+                    <span className="user-stats">{user.totalRatings || 0} ratings</span>
                   </div>
-                  <button 
-                    className={`btn btn--sm ${user.isFollowing ? 'btn--outline' : 'btn--primary'}`}
-                    onClick={() => user.isFollowing ? handleUnfollow(user.id) : handleFollow(user.id)}
-                  >
-                    {user.isFollowing ? '✓ Following' : 'Follow'}
-                  </button>
+                  <div className="user-actions-section">
+                    <button 
+                      onClick={() => handleViewProfile(user.id)}
+                      className="btn btn--sm btn--outline"
+                    >
+                      Profile
+                    </button>
+                    <button 
+                      onClick={() => handleFollow(user.id)}
+                      className="btn btn--sm btn--primary"
+                      disabled={user.isFollowing}
+                    >
+                      {user.isFollowing ? 'Following' : 'Follow'}
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {searchTerm && searchResults.length === 0 && !loading && (
-          <div className="no-results">
+        {/* Only show "no results" message after a search has been performed and returned empty */}
+        {searchTerm && searchResults.length === 0 && !loading && searchTerm.length > 2 && (
+          <div className="no-results-message">
             <p>No users found for "{searchTerm}". Try searching by name or email.</p>
           </div>
         )}
