@@ -136,19 +136,72 @@ export default function PrivacyDashboard() {
     }
   };
 
-  const handleDeleteAllData = () => {
-    if (confirm('Are you sure you want to delete all your data? This cannot be undone.')) {
-      try {
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('youtube_rating_videos');
-          localStorage.removeItem('youtube_rating_ratings');
-          localStorage.removeItem('youtube_rating_privacy');
-          window.location.reload();
-        }
-      } catch (error) {
-        console.error('Delete failed:', error);
-        alert('Delete failed. Please try again.');
+  const clearAllUserData = async () => {
+    if (!confirm('⚠️ This will permanently delete ALL your data including ratings, favorites, and social connections. This cannot be undone. Are you sure?')) {
+      return;
+    }
+  
+    if (!confirm('🚨 Last chance! This will DELETE EVERYTHING. Type "DELETE" to confirm you want to proceed.') || 
+        !window.prompt('Type DELETE to confirm:')?.toUpperCase().includes('DELETE')) {
+      return;
+    }
+  
+    setLoading(true);
+    
+    try {
+      // Clear database data
+      const response = await fetch('/api/clear-all-data', {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+  
+      if (!response.ok) {
+        throw new Error('Failed to clear database data');
       }
+  
+      // Clear local storage as backup
+      localStorage.clear();
+      sessionStorage.clear();
+  
+      alert('✅ All your data has been permanently deleted from our servers and your browser.');
+      
+      // Reload page to reset all state
+      window.location.reload();
+      
+    } catch (error) {
+      console.error('Failed to clear data:', error);
+      alert('❌ Failed to clear all data. Please try again or contact support.');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const clearLocalData = async () => {
+    if (!confirm('This will clear your browser data but keep your account data on our servers. Continue?')) {
+      return;
+    }
+  
+    try {
+      // Clear browser storage
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      // Clear indexedDB if used
+      if ('indexedDB' in window) {
+        const databases = await indexedDB.databases();
+        databases.forEach(db => {
+          if (db.name) {
+            indexedDB.deleteDatabase(db.name);
+          }
+        });
+      }
+  
+      alert('✅ Browser data cleared successfully.');
+      window.location.reload();
+      
+    } catch (error) {
+      console.error('Failed to clear local data:', error);
+      alert('❌ Failed to clear browser data.');
     }
   };
 
