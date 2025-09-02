@@ -39,6 +39,13 @@ export default function SearchSection({ onRateVideo }) {
     }
   };
 
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setHasSearched(false);
+      setSearchResults([]);
+    }
+  }, [searchTerm]);
+
   return (
     <div className="search-section">
       <div className="search-header">
@@ -99,11 +106,11 @@ export default function SearchSection({ onRateVideo }) {
               showLimit={null}
             />
           </>
-        ) : hasSearched && searchResults.length === 0 && !error ? (
-          <div className="empty-state">
-            <h3>No videos found</h3>
-            <p>No videos found for "{searchTerm}". Try different keywords or check your spelling.</p>
-          </div>
+        ) : {searchTerm.trim() && searchResults.length === 0 && !loading && hasSearched && (
+              <div className="no-results-message">
+                <p>No videos found for "{searchTerm}". Try different keywords.</p>
+              </div>
+            )}
         ) : !hasSearched ? (
           <div className="search-placeholder">
             <div className="placeholder-icon">🔍</div>
