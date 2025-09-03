@@ -12,6 +12,7 @@ export default function VideoCard({
 }) {
   const [videoStats, setVideoStats] = useState(null);
   const [loadingStats, setLoadingStats] = useState(false);
+  const [isRemoving, setIsRemoving] = useState(false);
 
   // Load video stats
   useEffect(() => {
@@ -53,48 +54,77 @@ export default function VideoCard({
     }
   };
 
-  const handleRemoveRating = async (videoId, videoTitle = 'this video') => {
-  // Simplified confirmation without video title dependency
-  if (!confirm(`Are you sure you want to completely remove your rating for this video? This cannot be undone.`)) {
-    return;
-  }
-
-  try {
-    console.log('Removing rating for video:', videoId);
-
-    // Call the API directly since removeRatingCompletely might not exist
-    const response = await fetch('/api/rate', {
-      method: 'DELETE',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ videoId: videoId })
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to remove rating from database');
+  const handleRemoveRating = useCallback(async (videoId, videoTitle = 'this video') => {
+    // Prevent multiple simultaneous calls
+    if (isRemoving) {
+      console.log('Remove already in progress, ignoring');
+      return;
     }
-
-    // Update local state - remove from ratings
-    setRatings(prev => {
-      const newRatings = { ...prev };
-      delete newRatings[videoId];
-      return newRatings;
-    });
-
-    // Update local state - remove from videos array  
-    setVideos(prev => prev.filter(video => video.id !== videoId));
-
-    // Clean up localStorage
-    cleanupVideoFromStorage(videoId);
-
-    console.log('Rating successfully removed');
-    alert('✅ Rating removed successfully!');
+  
+    // Validate inputs
+    if (!videoId) {
+      console.error('No videoId provided to handleRemoveRating');
+      return;
+    }
+  
+    setIsRemoving(true);
+  
+    try {
+      // Simple confirmation without video title to avoid undefined issues
+      const confirmed = window.confirm(
+        'Are you sure you want to completely remove your rating for this video? This cannot be undone.'
+      );
+  
+      if (!confirmed) {
+        console.log('Rating removal cancelled by user');
+        return;
+      }
+  
+      console.log('Starting rating removal for video:', videoId);
+  
+      // Call API to remove rating
+      const response = await fetch('/api/rate', {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoId: videoId })
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Network error' }));
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+      }
+  
+      const result = await response.json();
+      console.log('Rating removal result:', result);
+  
+      // Update local state immediately
+      setRatings(prev => {
+        const newRatings = { ...prev };
+        delete newRatings[videoId];
+        return newRatings;
+      });
+  
+      // Remove from videos array
+      setVideos(prev => prev.filter(video => video.id !== videoId));
+  
+      // Clean up localStorage
+      cleanupVideoFromStorage(videoId);
+  
+      // Show success message
+      console.log('Rating successfully removed');
+      
+      // Optional: Show success toast instead of alert
+      showSuccessMessage('Rating removed successfully!');
+  
     } catch (error) {
       console.error('Failed to remove rating:', error);
-      alert(`❌ Failed to remove rating: ${error.message}`);
+      alert(`Failed to remove rating: ${error.message}`);
+    } finally {
+      setIsRemoving(false);
     }
-  };
+  }, [isRemoving, setRatings, setVideos]);
+
 
   const cleanupVideoFromStorage = (videoId) => {
     const keys = [
@@ -266,9 +296,9 @@ export default function VideoCard({
           </a>
           
           {ratingValue && (
-            <button onClick={(e) => {
+            <button className="btn btn--sm btn--danger" onClick={(e) => {
               e.preventDefault();
-              e.stopPropagation();  
+              e.stopPropagation(); 
               handleRemoveRating(video.id, video.title);
             }}>
               🗑️ Remove Rating
