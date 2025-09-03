@@ -266,10 +266,11 @@ export default function VideoCard({
           </a>
           
           {ratingValue && (
-            <button 
-              onClick={handleRemoveRating(video.id, video.title)}
-              className="btn btn--sm btn--danger"
-            >
+            <button onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();  
+              handleRemoveRating(video.id, video.title);
+            }}>
               🗑️ Remove Rating
             </button>
           )}
