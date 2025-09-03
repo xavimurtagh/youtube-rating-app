@@ -19,7 +19,7 @@ export default function SearchSection({ onRateVideo }) {
 
     try {
       const query = category === 'all' ? searchTerm : `${searchTerm} ${category}`;
-      const response = await fetch(`/api/youtube/search?q=${encodeURIComponent(query)}&maxResults=20`);
+      const response = await fetch(`/api/youtube/search?q=${encodeURIComponent(query)}&maxResults=50`);
 
       if (!response.ok) {
         if (response.status === 403) {
