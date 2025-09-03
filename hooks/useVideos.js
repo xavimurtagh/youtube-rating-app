@@ -166,7 +166,9 @@ export function useVideos() {
       if (!existingVideo) {
         missingVideoIds.push(rating.videoId);
       }
-    });
+    } catch (error) {
+        console.error('Failed to load ratings from DB:', error);
+    };
     
     // Fetch missing video details from YouTube API
     if (missingVideoIds.length > 0) {
