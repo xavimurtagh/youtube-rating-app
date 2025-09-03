@@ -5,6 +5,7 @@ export default function UserStatsSection({ videos, ratings }) {
   const { data: session } = useSession();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const ratingDistribution = calculateRatingDistribution();
 
   useEffect(() => {
     if (videos.length > 0) {
@@ -54,6 +55,7 @@ export default function UserStatsSection({ videos, ratings }) {
     const regularVideos = videos.filter(v => !(v.isMusic || isMusicVideo(v)));
     const ratedVideos = videos.filter(v => getRatingValue(v.id) !== null);
     const ratingValues = ratedVideos.map(v => getRatingValue(v.id)).filter(r => r !== null);
+    const ratingDistribution = calculateRatingDistribution();
     
     // Channel statistics with watch counts
     const channelStats = {};
@@ -99,12 +101,6 @@ export default function UserStatsSection({ videos, ratings }) {
       .map(v => ({ ...v, rating: getRatingValue(v.id) }))
       .sort((a, b) => b.rating - a.rating)
       .slice(0, 5);
-
-    // Rating distribution
-    const ratingDistribution = {};
-    ratingValues.forEach(rating => {
-      ratingDistribution[rating] = (ratingDistribution[rating] || 0) + 1;
-    });
 
     
 
