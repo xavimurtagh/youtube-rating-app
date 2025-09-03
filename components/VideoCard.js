@@ -56,7 +56,7 @@ export default function VideoCard({
   const handleRemoveRating = (e) => {
     e.stopPropagation();
     if (onRemoveRating && confirm('Are you sure you want to remove this rating?')) {
-      onRemoveRating(video.id);
+      onRemoveRating(video.id, 'complete');
     }
   };
 
