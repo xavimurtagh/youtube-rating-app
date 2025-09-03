@@ -5,7 +5,6 @@ export default function UserStatsSection({ videos, ratings }) {
   const { data: session } = useSession();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const ratingDistribution = calculateRatingDistribution();
 
   useEffect(() => {
     if (videos.length > 0) {
