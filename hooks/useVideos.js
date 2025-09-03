@@ -33,6 +33,96 @@ export function useVideos() {
     }
   }, []);
 
+  const removeRatingCompletely = async (videoId) => {
+    try {
+      console.log('Completely removing rating for video:', videoId);
+  
+      // 1. Remove from database
+      const response = await fetch('/api/rate', {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoId })
+      });
+  
+      if (!response.ok) {
+        throw new Error('Failed to remove rating from database');
+      }
+  
+      // 2. Remove from local ratings state
+      setRatings(prev => {
+        const newRatings = { ...prev };
+        delete newRatings[videoId];
+        return newRatings;
+      });
+  
+      // 3. Remove from videos array completely
+      setVideos(prev => prev.filter(video => video.id !== videoId));
+  
+      // 4. Remove from localStorage
+      const localStorageKeys = [
+        'youtube_rating_videos',
+        'youtube_rating_ratings', 
+        'youtube_rating_ignored',
+        'youtube_rating_favorites'
+      ];
+  
+      localStorageKeys.forEach(key => {
+        try {
+          const stored = localStorage.getItem(key);
+          if (stored) {
+            const data = JSON.parse(stored);
+            
+            if (key === 'youtube_rating_videos' && Array.isArray(data)) {
+              // Remove from videos array
+              const filtered = data.filter(video => video.id !== videoId);
+              localStorage.setItem(key, JSON.stringify(filtered));
+            } else if (key === 'youtube_rating_ratings' && typeof data === 'object') {
+              // Remove from ratings object
+              delete data[videoId];
+              localStorage.setItem(key, JSON.stringify(data));
+            } else if (key === 'youtube_rating_ignored' && Array.isArray(data)) {
+              // Remove from ignored array if present
+              const filtered = data.filter(id => id !== videoId);
+              localStorage.setItem(key, JSON.stringify(filtered));
+            } else if (key === 'youtube_rating_favorites' && Array.isArray(data)) {
+              // Remove from favorites array if present
+              const filtered = data.filter(id => id !== videoId);
+              localStorage.setItem(key, JSON.stringify(filtered));
+            }
+          }
+        } catch (error) {
+          console.error(`Error cleaning ${key}:`, error);
+        }
+      });
+  
+      // 5. Clear any cached data
+      if ('caches' in window) {
+        caches.keys().then(names => {
+          names.forEach(name => {
+            if (name.includes('youtube-rating')) {
+              caches.delete(name);
+            }
+          });
+        });
+      }
+  
+      // 6. Update ignored set if needed
+      setIgnoredIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(videoId);
+        return newSet;
+      });
+  
+      console.log('Video completely removed from all storage');
+      return true;
+  
+    } catch (error) {
+      console.error('Failed to completely remove video:', error);
+      throw error;
+    }
+  };
+
   const setRatingsFromDatabase = async (dbRatings) => {
     const ratingsObj = {};
     const missingVideoIds = [];
@@ -281,6 +371,7 @@ export function useVideos() {
     getMusicVideos,
     getRegularVideos,
     setRatingsFromDatabase,
+    removeRatingCompletely,
     getVideoStats
   };
 }
