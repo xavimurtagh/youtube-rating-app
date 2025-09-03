@@ -217,7 +217,7 @@ export default function Home() {
             onRateVideo={video => setRatingModalVideo(video)}
             musicVideos={musicVideos}
             ratings={ratings}
-            onIgnoreVideo={ignoreVideo}
+            onRemoveRating={removeRating}
           />
         );
       
