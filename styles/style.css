@@ -3729,10 +3729,9 @@ select.form-control:focus {
 
 .user-card-fixed {
   display: grid;
-  grid-template-columns: 60px 1fr auto;
-  gap: var(--space-16);
+  
   align-items: center;
-  padding: var(--space-16);
+  
   background: var(--color-bg-1);
   border: 1px solid var(--color-card-border);
   border-radius: var(--radius-base);
@@ -3800,11 +3799,6 @@ select.form-control:focus {
   padding: var(--space-6) var(--space-12);
   font-size: var(--font-size-xs);
   white-space: nowrap;
-}
-
-/* Special styling for different card types */
-.following-card {
-  border-left: 4px solid var(--color-success);
 }
 
 .follower-card {
