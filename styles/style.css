@@ -3722,16 +3722,17 @@ select.form-control:focus {
 
 .users-grid-fixed {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: var(--space-20);
   margin-top: var(--space-20);
 }
 
 .user-card-fixed {
   display: grid;
-  
+  grid-template-columns: 60px 1fr auto;
+  gap: var(--space-16);
+  padding: var(--space-16);
   align-items: center;
-  
   background: var(--color-bg-1);
   border: 1px solid var(--color-card-border);
   border-radius: var(--radius-base);
