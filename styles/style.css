@@ -454,6 +454,19 @@ p {
   .privacy-cards {
     grid-template-columns: 1fr;
   }
+
+  .distribution-row {
+    grid-template-columns: 40px 1fr 50px;
+    gap: var(--space-12);
+  }
+  
+  .rating-percentage {
+    display: none;
+  }
+  
+  .average-number {
+    font-size: 2.5rem;
+  }  
 }
 
 @media (max-width: 480px) {
@@ -543,6 +556,16 @@ p {
     grid-template-columns: 30px 1fr;
     grid-template-rows: auto auto;
     gap: var(--space-8);
+  }
+
+  .distribution-row {
+    grid-template-columns: 35px 1fr 45px;
+    gap: var(--space-8);
+    padding: var(--space-8);
+  }
+  
+  .bar-container {
+    height: 20px;
   }
 }
 
@@ -2345,6 +2368,24 @@ select.form-control:focus {
   margin-top: var(--space-16);
 }
 
+.distribution-row {
+  display: grid;
+  grid-template-columns: 50px 1fr 60px 70px;
+  gap: var(--space-16);
+  align-items: center;
+  padding: var(--space-12);
+  background: var(--color-bg-1);
+  border-radius: var(--radius-base);
+  border: 1px solid var(--color-border);
+  transition: all var(--duration-fast) var(--ease-standard);
+}
+
+.distribution-row:hover {
+  background: var(--color-bg-2);
+  transform: translateX(4px);
+  box-shadow: var(--shadow-sm);
+}
+
 .distribution-bar {
   display: flex;
   align-items: center;
@@ -3904,4 +3945,38 @@ select.form-control:focus {
 
 .data-summary p:last-child {
   margin-bottom: 0;
+}
+
+.rating-distribution-container {
+  background: var(--color-surface);
+  border: 2px solid var(--color-card-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-24);
+  margin: var(--space-24) 0;
+  box-shadow: var(--shadow-sm);
+}
+
+.average-score-display {
+  text-align: center;
+  margin-bottom: var(--space-32);
+  padding: var(--space-20);
+  background: linear-gradient(135deg, var(--color-bg-1), var(--color-bg-2));
+  border-radius: var(--radius-base);
+  border: 1px solid var(--color-border);
+}
+
+.average-number {
+  display: block;
+  font-size: 3.5rem;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+  line-height: 1;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.average-label {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-medium);
+  margin-top: var(--space-8);
 }
