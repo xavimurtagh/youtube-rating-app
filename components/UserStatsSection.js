@@ -4,7 +4,6 @@ import { useSession } from 'next-auth/react';
 export default function UserStatsSection({ videos, ratings }) {
   const { data: session } = useSession();
   const [stats, setStats] = useState(null);
-  const [ratingDistribution, setRatingDistribution] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
