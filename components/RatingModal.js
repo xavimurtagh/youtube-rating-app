@@ -11,6 +11,35 @@ export default function RatingModal({ video, isOpen, onClose, onSave }) {
     onClose();
   };
 
+  const handleRatingUpdate = async (video, rating) => {
+    try {
+      const response = await fetch('/api/rate', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ video, score: rating })
+      });
+  
+      if (!response.ok) {
+        throw new Error('Failed to update rating');
+      }
+  
+      // Show success message
+      setShowSuccessMessage(true);
+      setTimeout(() => setShowSuccessMessage(false), 3000);
+  
+      // Reload data instead of full page
+      await loadRatings();
+      await loadVideos();
+  
+      console.log('Rating updated and data refreshed');
+  
+    } catch (error) {
+      console.error('Failed to update rating:', error);
+      alert('❌ Failed to update rating. Please try again.');
+    }
+  };
+
   const handleOverlayClick = (e) => {
     if (e.target === e.currentTarget) {
       onClose();
