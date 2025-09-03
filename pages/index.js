@@ -109,6 +109,15 @@ export default function Home() {
       }
   
       updateLocalRating(video.id, score);
+
+      setRatingsFromDatabase(prev => ({
+        ...prev,
+        [video.id]: {
+          rating: Number(newRating),
+          ratedAt: new Date().toISOString()
+        }
+      }));
+      
   
       console.log('Rating saved successfully:', video.id, score);
     } catch (error) {
