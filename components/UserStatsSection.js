@@ -119,9 +119,9 @@ export default function UserStatsSection({ videos, ratings }) {
       ratingDistribution[rating] = (ratingDistribution[rating] || 0) + 1;
     });
 
-    const totalRatings = stats?.ratings?.length || 0;
-    const averageRating = totalRatings > 0 
-      ? (stats.ratings.reduce((sum, r) => sum + r.score, 0) / totalRatings).toFixed(1)
+    const totalRatings = stats?.overview?.ratedVideos || 0;
+    const averageRating = totalRatings > 0
+      ? (stats.ratingValues.reduce((acc, val) => acc + val, 0) / totalRatings).toFixed(1)
       : 0;
 
     // Total estimated watch time
