@@ -26,6 +26,8 @@ export default function Home() {
   const [showSignInModal, setShowSignInModal] = useState(false);
   const [storageWarning, setStorageWarning] = useState(null);
   const [videoDetailsModal, setVideoDetailsModal] = useState(null);
+  const [updateKey, setUpdateKey] = useState(0);
+  const forceUpdate = () => setUpdateKey(prev => prev + 1);
 
   const { data: session } = useSession();
   
@@ -44,6 +46,7 @@ export default function Home() {
     clearUnrated,
     updateLocalRating,
     removeRating,
+    removeRatingCompletely,
     setRatingsFromDatabase,
     ignoredIds
   } = useVideos();
@@ -169,6 +172,18 @@ export default function Home() {
   }, [session, videos]);
 
 
+  const handleRemoveRatingComplete = async (videoId) => {
+    try {
+      await removeRatingCompletely(videoId);
+      // Force component re-render by updating state
+      forceUpdate(); 
+    } catch (error) {
+      console.error('Failed to remove rating completely:', error);
+      alert('Failed to remove rating. Please try again.');
+    }
+  };
+
+
 
   const handleVideoClick = async (video, videoStats) => {
     setVideoDetailsModal({ video, videoStats });
@@ -218,6 +233,8 @@ export default function Home() {
             musicVideos={musicVideos}
             ratings={ratings}
             onRemoveRating={removeRating}
+            onIgnoreVideo={handleIgnoreVideo}
+            onRemoveRatingCompletely={handleRemoveRatingComplete}
           />
         );
       
@@ -227,8 +244,9 @@ export default function Home() {
             videos={videos}
             ratings={ratings}
             onRateVideo={video => setRatingModalVideo(video)}
-            onRemoveRating={removeRating}  // Add this line
+            onRemoveRating={removeRating} 
             onVideoClick={handleVideoClick}
+            onRemoveRating={handleRemoveRatingComplete}
           />
         );
       
@@ -366,7 +384,7 @@ export default function Home() {
             <div className="bookmarklet-header">
               <h2>📌 Rate Videos While Watching YouTube</h2>
               <p className="bookmarklet-description">
-                Never forget to rate a video again! Drag the button below to your bookmarks bar.
+                Never forget to rate a video again! Drag the button below to your bookmarks bar(Only for Computers).
               </p>
             </div>
             
