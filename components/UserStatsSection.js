@@ -23,8 +23,9 @@ export default function UserStatsSection({ videos, ratings }) {
   };
 
   const totalRatings = stats?.overview?.ratedVideos || 0;
-  const averageRating = totalRatings > 0
-    ? (stats.ratingValues.reduce((acc, val) => acc + val, 0) / totalRatings).toFixed(1)
+  const averageRating =
+  stats?.ratingValues && stats.ratingValues.length > 0
+    ? (stats.ratingValues.reduce((acc, val) => acc + val, 0) / stats.ratingValues.length).toFixed(1)
     : 0;
 
   function calculateEnhancedStats(videos, ratings) {
@@ -109,6 +110,7 @@ export default function UserStatsSection({ videos, ratings }) {
       yearlyStats,
       topFavorites,
       ratingDistribution,
+      ratingValues,
       watchingHabits: calculateWatchingHabits(videos)
     };
   }
