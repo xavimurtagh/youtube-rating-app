@@ -150,11 +150,17 @@ export function useVideos() {
     const ratingsObj = {};
     const missingVideoIds = [];
     
-    dbRatings.forEach(rating => {
-      ratingsObj[rating.videoId] = {
-        rating: rating.score,
-        ratedAt: rating.ratedAt
-      };
+    try {
+      const response = await fetch('/api/profile/' + userId + '/ratings', {
+        credentials: 'include'
+      });
+      const data = await response.json();
+  
+      const dbRatings = Array.isArray(data.ratings) ? data.ratings : [];
+      // Now safe to forEach:
+      dbRatings.forEach(r => {
+        ratingsObj[r.videoId] = { rating: r.score, ratedAt: r.ratedAt };
+      });
       
       const existingVideo = videos.find(v => v.id === rating.videoId);
       if (!existingVideo) {
@@ -182,7 +188,7 @@ export function useVideos() {
           console.error('Failed to fetch video details:', response.status);
         }
       } catch (error) {
-        console.error('Error fetching video details:', error);
+        console.error('Failed to load ratings from DB:', error);
       }
     }
     
