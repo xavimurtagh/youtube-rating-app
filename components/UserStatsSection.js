@@ -23,11 +23,19 @@ export default function UserStatsSection({ videos, ratings }) {
     return typeof rating === 'object' ? rating.rating : rating;
   };
 
-  // Safe calculation of derived values ONLY when stats exists
+  const getBarColor = (rating) => {
+    if (rating >= 9) return '#22c55e'; // Green
+    if (rating >= 7) return '#84cc16'; // Light green  
+    if (rating >= 5) return '#eab308'; // Yellow
+    if (rating >= 3) return '#f59e0b'; // Orange
+    return '#ef4444'; // Red
+  };
+
+  // Calculation of derived values
   const totalRatings = stats?.overview?.ratedVideos || 0;
   const averageRating = stats?.overview?.averageRating || 0;
   
-  // Get rating distribution from stats (calculated internally)
+  // Get rating distribution from stats 
   const ratingDistribution = stats?.ratingDistribution || {};
 
   function calculateEnhancedStats(videos, ratings) {
@@ -84,7 +92,7 @@ export default function UserStatsSection({ videos, ratings }) {
       .sort((a, b) => b.rating - a.rating)
       .slice(0, 5);
 
-    // Rating distribution - PROPERLY CALCULATED
+    // Rating distribution
     const ratingDistribution = {};
     for (let i = 1; i <= 10; i++) {
       ratingDistribution[i] = 0;
@@ -116,8 +124,8 @@ export default function UserStatsSection({ videos, ratings }) {
       monthlyStats,
       yearlyStats,
       topFavorites,
-      ratingDistribution, // <-- CRITICAL: Include this in return
-      ratingValues, // <-- Also include raw values for other calculations
+      ratingDistribution, 
+      ratingValues, 
       watchingHabits: calculateWatchingHabits(videos)
     };
   }
@@ -293,7 +301,7 @@ export default function UserStatsSection({ videos, ratings }) {
         </div>
       </div>
 
-      {/* Rating Distribution - SAFELY RENDERED */}
+      {/* Rating Distribution */}
       {totalRatings > 0 && Object.keys(ratingDistribution).length > 0 && (
         <div className="stats-section">
           <h3>📊 Rating Distribution</h3>
@@ -305,20 +313,27 @@ export default function UserStatsSection({ videos, ratings }) {
             
             <div className="distribution-chart">
               {Object.entries(ratingDistribution)
-                .reverse()
+                .sort(([a], [b]) => parseInt(b) - parseInt(a)) // Sort 10→1
+                .filter(([rating, count]) => parseInt(rating) >= 1 && parseInt(rating) <= 10)
                 .map(([rating, count]) => {
                   const percentage = totalRatings > 0 ? (count / totalRatings) * 100 : 0;
+                  const displayWidth = Math.max(percentage, count > 0 ? 8 : 0); // Minimum 8% if has count
+                  
                   return (
-                    <div key={rating} className="distribution-bar-fixed">
-                      <span className="rating-label-fixed">{rating}★</span>
-                      <div className="bar-container-fixed">
+                    <div key={rating} className="distribution-row">
+                      <span className="rating-label">{rating}★</span>
+                      <div className="bar-container">
                         <div 
-                          className="bar-fill-fixed" 
-                          style={{ width: `${Math.max(percentage, count > 0 ? 5 : 0)}%` }}
+                          className="bar-fill" 
+                          style={{ 
+                            width: `${displayWidth}%`,
+                            backgroundColor: getBarColor(parseInt(rating)),
+                            transition: 'width 0.8s ease-out'
+                          }}
                         ></div>
                       </div>
-                      <span className="rating-count-fixed">{count}</span>
-                      <span className="rating-percentage-fixed">{percentage.toFixed(1)}%</span>
+                      <span className="rating-count">{count}</span>
+                      <span className="rating-percentage">{percentage.toFixed(1)}%</span>
                     </div>
                   );
                 })}
