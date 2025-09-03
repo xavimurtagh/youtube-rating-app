@@ -18,6 +18,32 @@ async function withRetry(operation, maxRetries = 3, delay = 1000) {
   }
 }
 
+const triggerCleanupIfNeeded = async () => {
+  // Only run cleanup occasionally (1% chance per API call)
+  if (Math.random() > 0.01) return;
+
+  try {
+    console.log('Triggering automatic activity cleanup...');
+    
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const deleteResult = await prisma.activity.deleteMany({
+      where: {
+        createdAt: {
+          lt: sevenDaysAgo
+        }
+      }
+    });
+
+    if (deleteResult.count > 0) {
+      console.log(`Auto-cleaned ${deleteResult.count} old activities`);
+    }
+  } catch (error) {
+    console.error('Auto-cleanup failed (non-critical):', error);
+  }
+};
+
 export default async function handler(req, res) {
   const me = await getUser(req, res)
 
@@ -26,6 +52,9 @@ export default async function handler(req, res) {
   }
 
   try {
+
+    triggerCleanupIfNeeded();
+    
     if (req.method === 'POST') {
       const { video, score } = req.body
       
