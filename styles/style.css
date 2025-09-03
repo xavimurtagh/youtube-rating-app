@@ -538,6 +538,12 @@ p {
   .data-controls {
     gap: var(--space-8);
   }
+
+  .user-card-fixed {
+    grid-template-columns: 50px 1fr;
+    grid-template-rows: auto auto;
+    gap: var(--space-8);
+  }
 }
 
 /* Buttons */
