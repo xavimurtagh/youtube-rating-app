@@ -15,42 +15,6 @@ export default function UserStatsSection({ videos, ratings }) {
     }
   }, [videos, ratings]);
 
-  const loadStatistics = async () => {
-    try {
-      setLoading(true);
-      
-      // Load basic stats
-      const response = await fetch('/api/stats', {
-        credentials: 'include'
-      });
-      
-      if (response.ok) {
-        const statsData = await response.json();
-        setStats(statsData);
-        
-        // Calculate rating distribution
-        const distribution = {};
-        for (let i = 1; i <= 10; i++) {
-          distribution[i] = 0;
-        }
-        
-        // Count ratings for each score
-        statsData.ratings?.forEach(rating => {
-          const score = Math.floor(rating.score);
-          if (score >= 1 && score <= 10) {
-            distribution[score]++;
-          }
-        });
-        
-        setRatingDistribution(distribution);
-      }
-    } catch (error) {
-      console.error('Failed to load statistics:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
 
   // Helper to get rating value
   const getRatingValue = (videoId) => {
