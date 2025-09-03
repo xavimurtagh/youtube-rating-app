@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import VideoList from './VideoList';
 
-export default function MusicSection({ onRateVideo, musicVideos, ratings, onIgnoreVideo, onRemoveRating }) {
+export default function MusicSection({ onRateVideo, musicVideos, ratings, onIgnoreVideo, onRemoveRating, onRemoveRatingCompletely }) {
   const [searchResults, setSearchResults] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
@@ -16,6 +16,15 @@ export default function MusicSection({ onRateVideo, musicVideos, ratings, onIgno
     const rating = ratings[videoId];
     if (!rating) return null;
     return typeof rating === 'object' ? rating.rating : rating;
+  };
+
+  // Functionality for button to remove video rating
+  const handleRemoveRating = (videoId, type = 'basic') => {
+    if (type === 'complete' && onRemoveRatingCompletely) {
+      onRemoveRatingCompletely(videoId);
+    } else if (onRemoveRating) {
+      onRemoveRating(videoId);
+    }
   };
 
   // Filter music videos and remove duplicates
@@ -34,6 +43,8 @@ export default function MusicSection({ onRateVideo, musicVideos, ratings, onIgno
         return uniqueMusicVideos;
     }
   };
+
+  
 
   const filteredMusicVideos = getFilteredMusicVideos();
   const unratedMusicVideos = uniqueMusicVideos.filter(video => getRatingValue(video.id) === null);
@@ -209,7 +220,7 @@ export default function MusicSection({ onRateVideo, musicVideos, ratings, onIgno
                 videos={filteredMusicVideos}
                 ratings={ratings}
                 onRateVideo={onRateVideo}
-                onRemoveRating={onRemoveRating}
+                onRemoveRating={handleRemoveRating}
                 showLimit={100}
               />
             </>
