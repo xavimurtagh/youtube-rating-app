@@ -1,119 +1,104 @@
-import { NextApiRequest, NextApiResponse } from 'next';
-import { prisma } from '../../lib/prisma';
-import { getUser } from '../../lib/auth';
+import { NextApiRequest, NextApiResponse } from 'next'
+import { prisma } from '../../lib/prisma'
+import { getUser } from '../../lib/auth'
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // Handle DELETE requests (remove rating)
-  if (req.method === 'DELETE') {
-    try {
-      const me = await getUser(req, res);
-      if (!me) {
-        return res.status(401).json({ error: 'Unauthorized' });
-      }
+export default async function handler(req, res) {
+  const me = await getUser(req, res)
 
-      const { videoId } = req.body;
-      if (!videoId) {
-        return res.status(400).json({ error: 'Missing videoId' });
-      }
-
-      // Delete the rating
-      await prisma.rating.delete({
-        where: {
-          userId_videoId: {
-            userId: me.id,
-            videoId: videoId
-          }
-        }
-      });
-
-      // Log the activity
-      await prisma.activity.create({
-        data: {
-          userId: me.id,
-          type: 'rating_removed',
-          videoId: videoId,
-          data: {}
-        }
-      });
-
-      return res.status(200).json({ ok: true });
-    } catch (error) {
-      console.error('Remove rating error:', error);
-      return res.status(500).json({ error: 'Internal server error' });
-    }
+  if (!me) {
+    return res.status(401).json({ error: 'Unauthorized' })
   }
 
-  // Handle POST requests (add/update rating)
-  if (req.method === 'POST') {
-    try {
-      const me = await getUser(req, res);
-      if (!me) {
-        return res.status(401).json({ error: 'Unauthorized' });
+  try {
+    if (req.method === 'POST') {
+      // Existing POST logic for adding/updating ratings
+      const { video, score } = req.body
+      
+      if (!video?.id || score === undefined) {
+        return res.status(400).json({ error: 'Missing video or score' })
       }
 
-      const { video, score } = req.body;
-      const scoreNum = typeof score === 'string' ? parseInt(score, 10) : Number(score);
-
-      if (
-        !video ||
-        typeof video.id !== 'string' ||
-        isNaN(scoreNum) ||
-        scoreNum < 1 ||
-        scoreNum > 10
-      ) {
-        return res.status(400).json({ error: 'Invalid video or score data' });
-      }
-
-      // 1) Upsert the Video record
+      // Ensure video exists
       await prisma.video.upsert({
         where: { id: video.id },
         create: {
           id: video.id,
           title: video.title || 'Unknown Video',
           channel: video.channel || 'Unknown Channel',
-          thumbnail: video.thumbnail || null,
-          isMusic: Boolean(video.isMusic),
+          thumbnail: video.thumbnail || null
         },
         update: {
-          // Always update with latest info if available
-          title: video.title || 'Unknown Video',
-          channel: video.channel || 'Unknown Channel',
-          thumbnail: video.thumbnail || null,
-        },
-      });
+          ...(video.title && { title: video.title }),
+          ...(video.channel && { channel: video.channel }),
+          ...(video.thumbnail && { thumbnail: video.thumbnail })
+        }
+      })
 
-      // 2) Upsert the Rating
-      const savedRating = await prisma.rating.upsert({
-        where: { userId_videoId: { userId: me.id, videoId: video.id } },
+      // Create or update rating
+      await prisma.rating.upsert({
+        where: {
+          userId_videoId: {
+            userId: me.id,
+            videoId: video.id
+          }
+        },
         create: {
           userId: me.id,
           videoId: video.id,
-          score: scoreNum,
+          score: parseFloat(score)
         },
         update: {
-          score: scoreNum,
-          ratedAt: new Date(),
-        },
-      });
+          score: parseFloat(score)
+        }
+      })
 
-      // 3) Log the activity
-      await prisma.activity.create({
-        data: {
-          userId: me.id,
-          type: 'rating',
-          videoId: video.id,
-          data: { score: scoreNum },
-        },
-      });
-
-      return res.status(200).json({ ok: true, rating: savedRating });
-    } catch (error) {
-      console.error('Rating API error:', error);
-      return res.status(500).json({ error: 'Internal server error' });
+      return res.status(200).json({ success: true })
     }
-  }
 
-  // Handle unsupported methods
-  res.setHeader('Allow', ['POST', 'DELETE']);
-  return res.status(405).json({ error: 'Method not allowed' });
+    if (req.method === 'DELETE') {
+      const { videoId } = req.body
+      
+      if (!videoId) {
+        return res.status(400).json({ error: 'Missing videoId' })
+      }
+
+      console.log('Completely deleting rating for user:', me.id, 'video:', videoId)
+
+      // Delete the rating completely from database
+      const deletedRating = await prisma.rating.deleteMany({
+        where: {
+          userId: me.id,
+          videoId: videoId
+        }
+      })
+
+      console.log('Deleted ratings:', deletedRating.count)
+
+      // Also remove from favorites if it exists there
+      await prisma.user.update({
+        where: { id: me.id },
+        data: {
+          favourites: { 
+            disconnect: { id: videoId }
+          }
+        }
+      }).catch(() => {
+        // Ignore error if video wasn't in favorites
+        console.log('Video was not in favorites, continuing...')
+      })
+
+      return res.status(200).json({ 
+        success: true, 
+        deleted: deletedRating.count,
+        videoId: videoId
+      })
+    }
+
+    res.setHeader('Allow', ['POST', 'DELETE'])
+    return res.status(405).json({ error: 'Method not allowed' })
+
+  } catch (error) {
+    console.error('Rating API error:', error)
+    return res.status(500).json({ error: 'Internal server error', details: error.message })
+  }
 }
