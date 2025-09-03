@@ -9,6 +9,35 @@ export default function SearchSection({ onRateVideo }) {
   const [error, setError] = useState(null);
   const [hasSearched, setHasSearched] = useState(false);
 
+  const handleRatingUpdate = async (video, newRating) => {
+    try {
+      const response = await fetch('/api/rate', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ video, score: newRating })
+      });
+  
+      if (!response.ok) {
+        throw new Error('Failed to update rating');
+      }
+  
+      // Show success message
+      setShowSuccessMessage(true);
+      setTimeout(() => setShowSuccessMessage(false), 3000);
+  
+      // Reload data instead of full page
+      await loadRatings();
+      await loadVideos();
+  
+      console.log('Rating updated and data refreshed');
+  
+    } catch (error) {
+      console.error('Failed to update rating:', error);
+      alert('❌ Failed to update rating. Please try again.');
+    }
+  };
+
   const handleSearch = async (e) => {
     e.preventDefault();
     if (!searchTerm.trim()) return;
