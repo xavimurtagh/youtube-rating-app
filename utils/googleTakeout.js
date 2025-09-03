@@ -35,7 +35,7 @@ export function parseGoogleTakeoutFile(file) {
                   channel: item.subtitles && item.subtitles[0] ? item.subtitles[0].name : 'Unknown Channel',
                   watchedAt: item.time || new Date().toISOString(),
                   url: item.titleUrl,
-                  description: item.description || ''
+                  description: ''
                 });
               }
             }
