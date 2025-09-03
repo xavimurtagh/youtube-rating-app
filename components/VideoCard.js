@@ -53,10 +53,24 @@ export default function VideoCard({
     }
   };
 
-  const handleRemoveRating = (e) => {
-    e.stopPropagation();
-    if (onRemoveRating && confirm('Are you sure you want to remove this rating?')) {
-      onRemoveRating(video.id);
+  const handleRemoveRating = async (video) => {
+    if (!confirm(`Are you sure you want to completely remove your rating for "${video.title}"? This cannot be undone.`)) {
+      return;
+    }
+  
+    try {
+      // Use the complete removal method
+      await removeRatingCompletely(video.id);
+      
+      // Show success message
+      alert('✅ Rating and video data completely removed!');
+      
+      // Optional: Soft refresh to update UI
+      window.location.reload();
+      
+    } catch (error) {
+      console.error('Failed to remove rating:', error);
+      alert('❌ Failed to remove rating. Please try again.');
     }
   };
 
