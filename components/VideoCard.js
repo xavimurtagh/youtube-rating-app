@@ -12,7 +12,6 @@ export default function VideoCard({
 }) {
   const [videoStats, setVideoStats] = useState(null);
   const [loadingStats, setLoadingStats] = useState(false);
-  const [isRemoving, setIsRemoving] = useState(false);
 
   // Load video stats
   useEffect(() => {
@@ -54,152 +53,10 @@ export default function VideoCard({
     }
   };
 
-  const handleRemoveRating = useCallback(async (videoId, videoTitle = 'this video') => {
-    // Prevent multiple simultaneous calls
-    if (isRemoving) {
-      console.log('Remove already in progress, ignoring');
-      return;
-    }
-  
-    // Validate inputs
-    if (!videoId) {
-      console.error('No videoId provided to handleRemoveRating');
-      return;
-    }
-  
-    setIsRemoving(true);
-  
-    try {
-      // Simple confirmation without video title to avoid undefined issues
-      const confirmed = window.confirm(
-        'Are you sure you want to completely remove your rating for this video? This cannot be undone.'
-      );
-  
-      if (!confirmed) {
-        console.log('Rating removal cancelled by user');
-        return;
-      }
-  
-      console.log('Starting rating removal for video:', videoId);
-  
-      // Call API to remove rating
-      const response = await fetch('/api/rate', {
-        method: 'DELETE',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ videoId: videoId })
-      });
-  
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Network error' }));
-        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
-      }
-  
-      const result = await response.json();
-      console.log('Rating removal result:', result);
-  
-      // Update local state immediately
-      setRatings(prev => {
-        const newRatings = { ...prev };
-        delete newRatings[videoId];
-        return newRatings;
-      });
-  
-      // Remove from videos array
-      setVideos(prev => prev.filter(video => video.id !== videoId));
-  
-      // Clean up localStorage
-      cleanupVideoFromStorage(videoId);
-  
-      // Show success message
-      console.log('Rating successfully removed');
-      
-      // Optional: Show success toast instead of alert
-      showSuccessMessage('Rating removed successfully!');
-  
-    } catch (error) {
-      console.error('Failed to remove rating:', error);
-      alert(`Failed to remove rating: ${error.message}`);
-    } finally {
-      setIsRemoving(false);
-    }
-  }, [isRemoving, setRatings, setVideos]);
-
-
-  const cleanupVideoFromStorage = (videoId) => {
-    const keys = [
-      'youtube_rating_videos',
-      'youtube_rating_ratings',
-      'youtube_rating_ignored', 
-      'youtube_rating_favorites',
-      'youtube_rating_stats'
-    ];
-  
-    console.log('Cleaning up video from localStorage:', videoId);
-  
-    keys.forEach(key => {
-      try {
-        const stored = localStorage.getItem(key);
-        if (!stored) return;
-  
-        const data = JSON.parse(stored);
-        let modified = false;
-  
-        if (Array.isArray(data)) {
-          const filtered = data.filter(item => {
-            if (typeof item === 'string') return item !== videoId;
-            if (typeof item === 'object' && item?.id) return item.id !== videoId;
-            if (typeof item === 'object' && item?.videoId) return item.videoId !== videoId;
-            return true;
-          });
-          
-          if (filtered.length !== data.length) {
-            localStorage.setItem(key, JSON.stringify(filtered));
-            modified = true;
-          }
-        } else if (typeof data === 'object' && data !== null) {
-          if (data[videoId]) {
-            delete data[videoId];
-            localStorage.setItem(key, JSON.stringify(data));
-            modified = true;
-          }
-        }
-  
-        if (modified) {
-          console.log(`Cleaned ${key}`);
-        }
-      } catch (error) {
-        console.error(`Error cleaning ${key}:`, error);
-      }
-    });
-  };
-
-  const handleRatingUpdate = async (video, newRating) => {
-    try {
-      const response = await fetch('/api/rate', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ video, score: newRating })
-      });
-  
-      if (!response.ok) {
-        throw new Error('Failed to update rating');
-      }
-  
-      // Show success message
-      setShowSuccessMessage(true);
-      setTimeout(() => setShowSuccessMessage(false), 3000);
-  
-      // Reload data instead of full page
-      await loadRatings();
-      await loadVideos();
-  
-      console.log('Rating updated and data refreshed');
-  
-    } catch (error) {
-      console.error('Failed to update rating:', error);
-      alert('❌ Failed to update rating. Please try again.');
+  const handleRemoveRating = (e) => {
+    e.stopPropagation();
+    if (onRemoveRating && confirm('Are you sure you want to remove this rating?')) {
+      onRemoveRating(video.id);
     }
   };
 
@@ -296,12 +153,11 @@ export default function VideoCard({
           </a>
           
           {ratingValue && (
-            <button className="btn btn--sm btn--danger" onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation(); 
-              handleRemoveRating(video.id, video.title);
-            }}>
-              🗑️ Remove Rating
+            <button 
+              onClick={handleRemoveRating}
+              className="btn btn--sm btn--danger"
+            >
+              Remove Rating
             </button>
           )}
           
