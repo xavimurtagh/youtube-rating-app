@@ -22,6 +22,11 @@ export default function UserStatsSection({ videos, ratings }) {
     return typeof rating === 'object' ? rating.rating : rating;
   };
 
+  const ratingDistribution = {};
+  for (let i = 1; i <= 10; i++) {
+    ratingDistribution[i] = rated.filter(r => Math.floor(r.score) === i).length;
+  }
+
   const totalRatings = stats?.overview?.ratedVideos || 0;
   const averageRating =
   stats?.ratingValues && stats.ratingValues.length > 0
@@ -284,33 +289,25 @@ export default function UserStatsSection({ videos, ratings }) {
       </div>
 
       {totalRatings > 0 && (
-        <div className="stats-section">
+        <div className="profile-section">
           <h3>📊 Rating Distribution</h3>
-          <div className="rating-distribution-stats">
-            <div className="average-display">
-              <span className="average-number">{averageRating}</span>
-              <span className="average-label">/10 Average</span>
-            </div>
-            
+          <div className="rating-distribution">
+            <p><strong>Average Score: {averageRating}/10</strong></p>
             <div className="distribution-chart">
               {Object.entries(ratingDistribution)
                 .reverse()
-                .map(([rating, count]) => {
-                  const percentage = totalRatings > 0 ? (count / totalRatings) * 100 : 0;
-                  return (
-                    <div key={rating} className="distribution-row">
-                      <span className="rating-label">{rating}★</span>
-                      <div className="bar-container">
-                        <div 
-                          className="bar-fill" 
-                          style={{ width: `${Math.max(percentage, 2)}%` }}
-                        ></div>
-                      </div>
-                      <span className="rating-count">{count}</span>
-                      <span className="rating-percentage">{percentage.toFixed(1)}%</span>
+                .map(([rating, count]) => (
+                  <div key={rating} className="distribution-bar">
+                    <span className="rating-label">{rating}★</span>
+                    <div className="bar-container">
+                      <div 
+                        className="bar-fill" 
+                        style={{width: `${totalRatings > 0 ? (count/totalRatings)*100 : 0}%`}}
+                      ></div>
                     </div>
-                  );
-                })}
+                    <span className="rating-count">{count}</span>
+                  </div>
+                ))}
             </div>
           </div>
         </div>
