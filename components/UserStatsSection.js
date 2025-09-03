@@ -23,7 +23,7 @@ export default function UserStatsSection({ videos, ratings }) {
 
   const ratingDistribution = {};
   for (let i = 1; i <= 10; i++) {
-    ratingDistribution[i] = rated.filter(r => Math.floor(r.score) === i).length;
+    ratingDistribution[i] = ratedVideos.filter(r => Math.floor(r.score) === i).length;
   }
 
   const totalRatings = stats?.overview?.ratedVideos || 0;
