@@ -9,7 +9,6 @@ export default function UserStatsSection({ videos, ratings }) {
 
   useEffect(() => {
     if (videos.length > 0) {
-      loadStatistics();
       const calculatedStats = calculateEnhancedStats(videos, ratings);
       setStats(calculatedStats);
     }
