@@ -97,6 +97,8 @@ export function useVideos() {
       delete updated[videoId];
       setRatings(updated);
       saveRatings(updated);
+
+      setVideos(prev => prev.filter(v => v.id !== videoId));
       
       console.log('Rating removed successfully:', videoId);
     } catch (error) {
