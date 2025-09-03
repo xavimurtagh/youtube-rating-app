@@ -10,6 +10,7 @@ export default function UserStatsSection({ videos, ratings }) {
     if (videos.length > 0) {
       const calculatedStats = calculateEnhancedStats(videos, ratings);
       setStats(calculatedStats);
+      const ratingDistribution = calculateRatingDistribution();
     }
   }, [videos, ratings]);
 
@@ -21,10 +22,23 @@ export default function UserStatsSection({ videos, ratings }) {
     return typeof rating === 'object' ? rating.rating : rating;
   };
 
-  const ratingDistribution = {};
-  for (let i = 1; i <= 10; i++) {
-    ratingDistribution[i] = ratings.filter(r => Math.floor(r.score) === i).length;
-  }
+  const calculateRatingDistribution = () => {
+    if (!stats?.ratingValues) return {};
+    
+    const distribution = {};
+    for (let i = 1; i <= 10; i++) {
+      distribution[i] = 0;
+    }
+    
+    stats.ratingValues.forEach(rating => {
+      const score = Math.floor(rating);
+      if (score >= 1 && score <= 10) {
+        distribution[score]++;
+      }
+    });
+    
+    return distribution;
+  };
 
   const totalRatings = stats?.overview?.ratedVideos || 0;
   const averageRating =
