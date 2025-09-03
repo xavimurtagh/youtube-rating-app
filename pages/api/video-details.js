@@ -23,7 +23,7 @@ export default async function handler(req, res) {
           title: details.title,
           channel: details.channel,
           thumbnail: details.thumbnail,
-          description: details.description,
+          description: '',
           isMusic: false, // You can enhance this logic
         });
       } catch (error) {
