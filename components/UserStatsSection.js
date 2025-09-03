@@ -23,6 +23,11 @@ export default function UserStatsSection({ videos, ratings }) {
     return typeof rating === 'object' ? rating.rating : rating;
   };
 
+  const totalRatings = stats?.overview?.ratedVideos || 0;
+  const averageRating = totalRatings > 0
+    ? (stats.ratingValues.reduce((acc, val) => acc + val, 0) / totalRatings).toFixed(1)
+    : 0;
+
   function calculateEnhancedStats(videos, ratings) {
     if (!videos.length) return null;
 
@@ -83,10 +88,7 @@ export default function UserStatsSection({ videos, ratings }) {
       ratingDistribution[rating] = (ratingDistribution[rating] || 0) + 1;
     });
 
-    const totalRatings = stats?.overview?.ratedVideos || 0;
-    const averageRating = totalRatings > 0
-      ? (stats.ratingValues.reduce((acc, val) => acc + val, 0) / totalRatings).toFixed(1)
-      : 0;
+    
 
     // Total estimated watch time
     const totalWatchTimeMinutes = videos.reduce((sum, v) => sum + estimateWatchTime(v), 0);
