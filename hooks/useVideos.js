@@ -151,12 +151,6 @@ export function useVideos() {
     const missingVideoIds = [];
     
     try {
-      const response = await fetch('/api/profile/' + userId + '/ratings', {
-        credentials: 'include'
-      });
-      const data = await response.json();
-  
-      const dbRatings = Array.isArray(data.ratings) ? data.ratings : [];
       // Now safe to forEach:
       dbRatings.forEach(r => {
         ratingsObj[r.videoId] = { rating: r.score, ratedAt: r.ratedAt };
@@ -167,7 +161,7 @@ export function useVideos() {
         missingVideoIds.push(rating.videoId);
       }
     } catch (error) {
-        console.error('Failed to load ratings from DB:', error);
+        console.error('Failed to set ratings from DB:', error);
     };
     
     // Fetch missing video details from YouTube API
