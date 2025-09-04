@@ -9,6 +9,8 @@ export default function RatingModal({ video, isOpen, onClose, onSave }) {
   const handleSave = () => {
     onSave(video, rating);
     onClose();
+    await loadRatings();
+    await loadVideos();
   };
 
   const handleRatingUpdate = async (video, rating) => {
