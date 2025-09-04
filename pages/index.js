@@ -102,12 +102,12 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ video, score }),
       });
+      console.log('Alright for 105:', video.id, score);
   
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(errorText);
       }
-      console.log('Alright for 110:', video.id, score);
       updateLocalRating(video.id, score);
       
   
