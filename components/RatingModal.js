@@ -33,7 +33,7 @@ export default function RatingModal({ video, isOpen, onClose, onSave }) {
   };
 
   const refreshRatings = async () => {
-    const resp = await fetch('/api/profile/me/ratings', { credentials: 'include' });
+    const resp = await fetch('/api/profile/my-ratings', { credentials: 'include' });
     const { ratings } = await resp.json();
     setRatings( /* transform ratings here as needed */ );
   };
