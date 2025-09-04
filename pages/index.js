@@ -113,7 +113,7 @@ export default function Home() {
       setRatingsFromDatabase(prev => ({
         ...prev,
         [video.id]: {
-          rating: Number(newRating),
+          rating: Number(score),
           ratedAt: new Date().toISOString()
         }
       }));
