@@ -20,11 +20,7 @@ export default function MusicSection({ onRateVideo, musicVideos, ratings, onIgno
 
   // Functionality for button to remove video rating
   const handleRemoveRating = (videoId, type = 'basic') => {
-    if (type === 'complete' && onRemoveRatingCompletely) {
-      onRemoveRatingCompletely(videoId);
-    } else if (onRemoveRating) {
-      onRemoveRating(videoId);
-    }
+    onRemoveRatingCompletely(videoId);
   };
 
   // Filter music videos and remove duplicates
