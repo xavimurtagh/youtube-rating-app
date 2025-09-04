@@ -45,6 +45,9 @@ export function useVideos() {
       'youtube_rating_cache',
       'youtube_rating_stats'
     ];
+
+    localStorage.setItem('youtube_rating_videos', JSON.stringify([]));
+
   
     keys.forEach(key => {
       try {
