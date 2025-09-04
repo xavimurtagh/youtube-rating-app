@@ -95,27 +95,22 @@ export default function Home() {
       ? rating.rating
       : rating;
   
-    try {
-      const response = await fetch('/api/rate', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ video, score }),
-      });
-      console.log('Alright for 105:', video.id, score);
-  
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText);
-      }
-      updateLocalRating(video.id, score);
-      
-  
-      console.log('Rating saved successfully:', video.id, score);
-    } catch (error) {
-      console.error('Failed to save rating:', error);
-      alert('Failed to save rating. Please try again.');
+    const response = await fetch('/api/rate', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ video, score }),
+    });
+    console.log('Alright for 105:', video.id, score);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText);
     }
+    updateLocalRating(video.id, score);
+    
+
+    console.log('Rating saved successfully:', video.id, score);
   };
 
   const migrateLocalRatingsToDatabase = async () => {
