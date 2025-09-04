@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { escapeHtml } from '../utils/googleTakeout';
 
@@ -7,35 +8,9 @@ export default function RatingModal({ video, isOpen, onClose, onSave }) {
   if (!isOpen || !video) return null;
 
   const handleSave = async () => {
-    try {
-      // 1. Save rating to backend
-      const response = await fetch('/api/rate', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ video: video, score: rating }),
-      });
-  
-      if (!response.ok) throw new Error('Failed to save rating');
-  
-      // 2. Re-fetch backend ratings (or call a prop callback to trigger it)
-      if (typeof refreshRatings === 'function') {
-        await refreshRatings(); // This should update parent state with latest ratings
-      }
-  
-      // 3. Optionally close modal or show a quick success
-      if (typeof onClose === 'function') onClose();
-      // Optionally show toast here
-  
-    } catch (error) {
-      alert('Failed to save rating.');
-    }
-  };
-
-  const refreshRatings = async () => {
-    const resp = await fetch('/api/profile/my-ratings', { credentials: 'include' });
-    const { ratings } = await resp.json();
-    setRatings( /* transform ratings here as needed */ );
+    onSave(video, rating);
+    window.location.reload();
+    onClose();
   };
 
   const handleRatingUpdate = async (video, rating) => {
