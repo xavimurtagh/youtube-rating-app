@@ -137,7 +137,7 @@ export default function PrivacyDashboard() {
   };
 
   const handleDeleteAllData = async () => {
-    if (!confirm('⚠️ This will permanently delete ALL your data including ratings, favorites, and social connections. This cannot be undone. Are you sure?')) {
+    if (!confirm('⚠️ This will permanently delete your video data including ratings, favorites')) {
       return;
     }
 
@@ -164,11 +164,11 @@ export default function PrivacyDashboard() {
       // Clear local storage as backup
       localStorage.clear();
       sessionStorage.clear();
+      handleClearLocalData();
 
-      alert('✅ All your data has been permanently deleted from our servers and your browser.');
+      alert('✅ All your data has been deleted from our servers and your browser.');
       
       // Sign out and reload
-      await signOut({ redirect: false });
       window.location.reload();
       
     } catch (error) {
