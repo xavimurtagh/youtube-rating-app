@@ -20,23 +20,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Use a transaction to ensure all data is cleared together
     await prisma.$transaction(async (tx) => {
       // Clear user's ratings
-      await tx.rating.deleteMany({
+      await tx.Rating.deleteMany({
         where: { userId: me.id }
       })
 
-      // Clear user's social connections
-      await tx.user.update({
-        where: { id: me.id },
-        data: {
-          following: { set: [] },
-          followers: { set: [] },
-          favourites: { set: [] }
-        }
+      // Clear user's activity
+      await tx.Activity.deleteMany({
+        where: { userId: me.id }
       })
 
       // Optionally clear the user account entirely
       // Uncomment the line below if you want to delete the user account too
-      // await tx.user.delete({ where: { id: me.id } })
+      // await tx.User.delete({ where: { id: me.id } })
     })
 
     console.log('Successfully cleared all user data')
