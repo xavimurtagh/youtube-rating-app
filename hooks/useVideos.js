@@ -157,10 +157,6 @@ export function useVideos() {
           rating: rating.score,
           ratedAt: rating.ratedAt
         };
-      
-      const existingVideo = videos.find(v => v.id === rating.videoId);
-      if (!existingVideo) {
-        missingVideoIds.push(rating.videoId);
       }
     } catch (error) {
         console.error('Failed to set ratings from DB:', error);
