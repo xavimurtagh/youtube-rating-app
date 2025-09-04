@@ -107,16 +107,8 @@ export default function Home() {
         const errorText = await response.text();
         throw new Error(errorText);
       }
-  
+      console.log('Alright for 110:', video.id, score);
       updateLocalRating(video.id, score);
-
-      setRatingsFromDatabase(prev => ({
-        ...prev,
-        [video.id]: {
-          rating: Number(score),
-          ratedAt: new Date().toISOString()
-        }
-      }));
       
   
       console.log('Rating saved successfully:', video.id, score);
