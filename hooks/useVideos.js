@@ -152,9 +152,11 @@ export function useVideos() {
     
     try {
       // Now safe to forEach:
-      dbRatings.forEach(r => {
-        ratingsObj[r.videoId] = { rating: r.score, ratedAt: r.ratedAt };
-      });
+      dbRatings.forEach(rating => {
+        ratingsObj[rating.videoId] = {
+          rating: rating.score,
+          ratedAt: rating.ratedAt
+        };
       
       const existingVideo = videos.find(v => v.id === rating.videoId);
       if (!existingVideo) {
