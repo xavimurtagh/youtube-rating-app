@@ -253,7 +253,6 @@ export default function Home() {
             videos={videos}
             ratings={ratings}
             onRateVideo={video => setRatingModalVideo(video)}
-            onRemoveRating={removeRating} 
             onVideoClick={handleVideoClick}
             onRemoveRating={handleRemoveRatingComplete}
           />
@@ -268,7 +267,6 @@ export default function Home() {
             ratings={ratings}
             videos={videos}
             onRateVideo={video => setRatingModalVideo(video)}
-            onRemoveRating={removeRating}  // Add this if FavoritesSection needs it too
           />
         );
       
