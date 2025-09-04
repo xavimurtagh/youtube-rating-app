@@ -20,12 +20,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Use a transaction to ensure all data is cleared together
     await prisma.$transaction(async (tx) => {
       // Clear user's ratings
-      await tx.Rating.deleteMany({
+      await tx.rating.deleteMany({
         where: { userId: me.id }
       })
 
       // Clear user's activity
-      await tx.Activity.deleteMany({
+      await tx.activity.deleteMany({
         where: { userId: me.id }
       })
 
