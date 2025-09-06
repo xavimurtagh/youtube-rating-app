@@ -180,9 +180,6 @@ export default function PrivacyDashboard() {
   };
 
   const handleClearLocalData = async () => {
-    if (!confirm('This will clear your browser data but keep your account data on our servers. Continue?')) {
-      return;
-    }
 
     try {
       // Clear browser storage
