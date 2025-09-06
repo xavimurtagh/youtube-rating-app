@@ -26,14 +26,14 @@ export default function ImportSection({ videos, ratings, ignoredIds = [], onImpo
           v => v.watchedAt === lastImported
         );
         // Next batch: the set after the last imported one, up to N videos
-        nextBatch = sortedByRecent
+        currentBatch = sortedByRecent
           .slice(lastIndex + 1, lastIndex + 1 + 5000);
       } else {
-        nextBatch = nextBatch.slice(0, 5000);
+        currentBatch = nextBatch.slice(0, 5000);
       }
-      const message = `Successfully imported ${nextBatch.length} videos`;
-      onImportComplete(nextBatch);
-      const lastImportedVideoId = nextBatch[nextBatch.length - 1]?.id;
+      const message = `Successfully imported ${currentBatch.length} videos`;
+      onImportComplete(currentBatch);
+      const lastImportedVideoId = currentBatch[currentBatch.length - 1]?.id;
       localStorage.setItem('youtube_rating_lastImportedVideoId', lastImportedVideoId);
       
     } else {
