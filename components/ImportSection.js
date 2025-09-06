@@ -30,7 +30,7 @@ export default function ImportSection({ videos, ratings, ignoredIds = [], onImpo
         nextBatch = sortedByRecent
           .slice(lastIndex + 1, lastIndex + 1 + 5000);
       } else {
-        nextBatch = allVideos.slice(0, 5000);
+        nextBatch = nextBatch.slice(0, 5000);
       }
       
       onImportComplete(nextBatch);
