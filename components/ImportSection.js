@@ -18,7 +18,7 @@ export default function ImportSection({ videos, ratings, ignoredIds = [], onImpo
       const sortedByRecent = result.videos
         .filter(v => v.watchedAt) // ensure valid date
         .sort((a, b) => new Date(b.watchedAt) - new Date(a.watchedAt)) // most recent first
-        .slice(0, 1000);
+        .slice(0, 5000);
       
       onImportComplete(sortedByRecent);
     } else {
