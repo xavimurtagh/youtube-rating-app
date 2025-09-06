@@ -29,6 +29,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         where: { userId: me.id }
       })
 
+      // Clear user's activity
+      await tx.activity.deleteMany({
+        where: { userId: me.id }
+      })
+
+      // Clear user's favourites
+      await tx.favourites.deleteMany({
+        where: { userId: me.id }
+      })
+
       // Optionally clear the user account entirely
       // Uncomment the line below if you want to delete the user account too
       // await tx.User.delete({ where: { id: me.id } })
