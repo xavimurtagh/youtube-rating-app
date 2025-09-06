@@ -31,7 +31,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       // Clear user's favourites
       await tx.user.update({
-        where: { userId: me.id },
+        where: { id: me.id },
           data: {
             favourites: { [] }
           }
