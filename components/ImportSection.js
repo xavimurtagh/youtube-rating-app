@@ -32,9 +32,10 @@ export default function ImportSection({ videos, ratings, ignoredIds = [], onImpo
       } else {
         currentBatch = nextBatch.slice(0, 5000);
       }
-      delete nextBatch;
+      
       const message = `Successfully imported ${currentBatch.length} videos`;
       onImportComplete(currentBatch);
+      nextBatch = {};
       const lastImportedVideoId = currentBatch[currentBatch.length - 1]?.id;
       localStorage.setItem('youtube_rating_lastImportedVideoId', lastImportedVideoId);
       
