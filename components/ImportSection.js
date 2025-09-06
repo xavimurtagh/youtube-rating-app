@@ -12,7 +12,6 @@ export default function ImportSection({ videos, ratings, ignoredIds = [], onImpo
 
   const handleFileParsed = (result) => {
     if (result && result.videos) {
-      const message = `Successfully imported ${result.videos.length} videos`;
       setImportStatus(message);
       setError(null);
       const lastImported = localStorage.getItem('youtube_rating_lastVideoId');
@@ -32,7 +31,7 @@ export default function ImportSection({ videos, ratings, ignoredIds = [], onImpo
       } else {
         nextBatch = nextBatch.slice(0, 5000);
       }
-      
+      const message = `Successfully imported ${nextBatch.length} videos`;
       onImportComplete(nextBatch);
       const lastImportedVideoId = nextBatch[nextBatch.length - 1]?.id;
       localStorage.setItem('youtube_rating_lastImportedVideoId', lastImportedVideoId);
