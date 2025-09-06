@@ -15,12 +15,28 @@ export default function ImportSection({ videos, ratings, ignoredIds = [], onImpo
       const message = `Successfully imported ${result.videos.length} videos`;
       setImportStatus(message);
       setError(null);
+      const lastImported = localStorage.getItem('youtube_rating_lastVideoId');
+      let nextBatch;
       const sortedByRecent = result.videos
-        .filter(v => v.watchedAt) // ensure valid date
-        .sort((a, b) => new Date(b.watchedAt) - new Date(a.watchedAt)) // most recent first
-        .slice(0, 5000);
+        .filter(v => v.watchedAt) 
+        .sort((a, b) => new Date(b.watchedAt) - new Date(a.watchedAt)) 
+        //.slice(0, 5000);
+      if (lastImported) {
+        // Find the index of the last imported video
+        const lastIndex = sortedByRecent.findIndex(
+          v => v.watchedAt === lastImported
+        );
+        // Next batch: the set after the last imported one, up to N videos
+        nextBatch = sortedByRecent
+          .slice(lastIndex + 1, lastIndex + 1 + 5000);
+      } else {
+        nextBatch = allVideos.slice(0, 5000);
+      }
       
-      onImportComplete(sortedByRecent);
+      onImportComplete(nextBatch);
+      const lastImportedVideoId = nextBatch[nextBatch.length - 1]?.id;
+      localStorage.setItem('youtube_rating_lastImportedVideoId', lastImportedVideoId);
+      
     } else {
       setError('Failed to parse video data from file');
     }
@@ -64,6 +80,7 @@ export default function ImportSection({ videos, ratings, ignoredIds = [], onImpo
       setClearing(false);
     }
   };
+
 
 
   // Get videos that need rating (not rated and not ignored)
