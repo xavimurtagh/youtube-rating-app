@@ -16,6 +16,7 @@ export default function ImportSection({ videos, ratings, ignoredIds = [], onImpo
       setError(null);
       const lastImported = localStorage.getItem('youtube_rating_lastVideoId');
       let nextBatch;
+      let currentBatch;
       const sortedByRecent = result.videos
         .filter(v => v.watchedAt) 
         .sort((a, b) => new Date(b.watchedAt) - new Date(a.watchedAt)) 
@@ -31,6 +32,7 @@ export default function ImportSection({ videos, ratings, ignoredIds = [], onImpo
       } else {
         currentBatch = nextBatch.slice(0, 5000);
       }
+      delete nextBatch;
       const message = `Successfully imported ${currentBatch.length} videos`;
       onImportComplete(currentBatch);
       const lastImportedVideoId = currentBatch[currentBatch.length - 1]?.id;
