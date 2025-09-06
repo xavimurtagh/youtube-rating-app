@@ -15,7 +15,12 @@ export default function ImportSection({ videos, ratings, ignoredIds = [], onImpo
       const message = `Successfully imported ${result.videos.length} videos`;
       setImportStatus(message);
       setError(null);
-      onImportComplete(result.videos);
+      const sortedByRecent = result.videos
+        .filter(v => v.watchedAt) // ensure valid date
+        .sort((a, b) => new Date(b.watchedAt) - new Date(a.watchedAt)) // most recent first
+        .slice(0, 1000);
+      
+      onImportComplete(sortedByRecent);
     } else {
       setError('Failed to parse video data from file');
     }
