@@ -59,7 +59,7 @@ export default function Home() {
     const result = addVideos(importedVideos);
     
     if (result && result.truncated) {
-      setStorageWarning(`Large watch history detected! Showing most recent ${result.saved || 500} videos to keep the app running smoothly.`);
+      setStorageWarning(`Large watch history detected! Showing most recent ${result.saved || 5000} videos to keep the app running smoothly.`);
     }
     
     setActiveTab('import');
