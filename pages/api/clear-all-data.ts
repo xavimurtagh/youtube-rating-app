@@ -29,13 +29,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         where: { userId: me.id }
       })
 
-      // Clear user's activity
-      await tx.activity.deleteMany({
-        where: { userId: me.id }
-      })
-
       // Clear user's favourites
-      await tx.favourites.deleteMany({
+      await tx.user.favourites.deleteMany({
         where: { userId: me.id }
       })
 
