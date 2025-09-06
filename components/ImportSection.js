@@ -127,12 +127,6 @@ export default function ImportSection({ videos, ratings, ignoredIds = [], onImpo
         </div>
       )}
 
-      {importedVideos.length > 1000 && (
-        <div className="warning-message">
-          <strong>Large file detected:</strong> Your watch history has been truncated to the most recent videos.
-        </div>
-      )}
-
       {videosToRate.length > 0 ? (
         <div className="videos-to-rate">
           <div className="section-stats">
