@@ -33,7 +33,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       await tx.user.update({
         where: { id: me.id },
           data: {
-            favourites: { [] }
+            favourites: { set:[] }
           }
       })
 
