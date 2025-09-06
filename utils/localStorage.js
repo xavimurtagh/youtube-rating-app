@@ -30,8 +30,8 @@ function safeSave(key, data) {
     if (error.name === 'QuotaExceededError') {
       console.warn('Storage quota exceeded for', key);
       // Try to truncate arrays if too large
-      if (Array.isArray(data) && data.length > 500) {
-        const truncated = data.slice(-500);
+      if (Array.isArray(data) && data.length > 5000) {
+        const truncated = data.slice(0, 5000);
         try {
           localStorage.setItem(key, JSON.stringify(truncated));
           return { success: true, truncated: true, saved: truncated.length };
