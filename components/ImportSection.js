@@ -11,34 +11,38 @@ export default function ImportSection({ videos, ratings, ignoredIds = [], onImpo
   const VIDEOS_PER_PAGE = 20;
 
   const handleFileParsed = (result) => {
-    if (result && result.videos) {
-      setImportStatus(message);
-      setError(null);
-      const lastImported = localStorage.getItem('youtube_rating_lastVideoId');
-      let currentBatch;
+    if (result && Array.isArray(result.videos) && result.videos.length > 0) {
+      const lastImported = localStorage.getItem('youtube_rating_lastImportedVideoId');
       const sortedByRecent = result.videos
-        .filter(v => v.watchedAt) 
-        .sort((a, b) => new Date(b.watchedAt) - new Date(a.watchedAt)) 
-        //.slice(0, 5000);
+        .filter(v => v && v.watchedAt)
+        .sort((a, b) => new Date(b.watchedAt) - new Date(a.watchedAt));
+
+      let currentBatch;
       if (lastImported) {
-        // Find the index of the last imported video
         const lastIndex = sortedByRecent.findIndex(
-          v => v.watchedAt === lastImported
+          v => v.id === lastImported
         );
-        // Next batch: the set after the last imported one, up to N videos
-        currentBatch = sortedByRecent
-          .slice(lastIndex + 1, lastIndex + 1 + 5000);
+        // If lastIndex not found, import from start
+        currentBatch = sortedByRecent.slice(
+          lastIndex >= 0 ? lastIndex + 1 : 0,
+          (lastIndex >= 0 ? lastIndex + 1 : 0) + 5000
+        );
       } else {
         currentBatch = sortedByRecent.slice(0, 5000);
       }
-      
+  
       const message = `Successfully imported ${currentBatch.length} videos`;
+      setImportStatus(message);
+      setError(null);
       onImportComplete(currentBatch);
+  
       const lastImportedVideoId = currentBatch[currentBatch.length - 1]?.id;
-      localStorage.setItem('youtube_rating_lastImportedVideoId', lastImportedVideoId);
-      
+      if (lastImportedVideoId) {
+        localStorage.setItem('youtube_rating_lastImportedVideoId', lastImportedVideoId);
+      }
     } else {
       setError('Failed to parse video data from file');
+      setImportStatus(null);
     }
   };
 
