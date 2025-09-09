@@ -83,7 +83,7 @@ export default async function handler(req, res) {
         });
 
         // Create or update rating
-        return await prisma.rating.upsert({
+        await prisma.rating.upsert({
           where: {
             userId_videoId: {
               userId: me.id,
