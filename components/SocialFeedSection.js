@@ -8,6 +8,28 @@ export default function SocialFeedSection() {
     loadSocialFeed();
   }, []);
 
+  const cleanVideoId = (id) => {
+    if (!id) return id;
+    
+    // Remove URL parameters and duplicates
+    if (id.includes(',')) {
+      id = id.split(',');
+    }
+    
+    // Remove ?v= prefix if present
+    if (id.startsWith('?v=')) {
+      id = id.substring(3);
+    }
+    
+    // Extract from URL if full URL provided
+    const match = id.match(/[?&]v=([^&]+)/);
+    if (match) {
+      id = match;
+    }
+    
+    return id;
+  };
+
   const loadSocialFeed = async () => {
     try {
       setLoading(true);
@@ -59,7 +81,7 @@ export default function SocialFeedSection() {
               <div className="activity-content">
                 <span>Rated: </span>
                 <a 
-                  href={getVideoUrl(activity.videoId)} 
+                  href={getVideoUrl(cleanVideoId(activity.videoId))} 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="video-link"
