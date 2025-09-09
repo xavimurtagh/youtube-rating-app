@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import VideoList from './VideoList';
 
@@ -10,6 +10,35 @@ export default function RatingsSection({ videos, ratings, onRateVideo, onRemoveR
   const [sortBy, setSortBy] = useState('rating');
   const [sortOrder, setSortOrder] = useState('desc');
   const [groupBy, setGroupBy] = useState('rating');
+
+  useEffect(() => {
+    if (session) {
+      // Force reload ratings from database when component mounts
+      const loadDbRatings = async () => {
+        try {
+          const response = await fetch('/api/my-ratings', {
+            credentials: 'include',
+          });
+          if (response.ok) {
+            const dbRatings = await response.json();
+            // Convert to the format expected by useVideos
+            const ratingsObj = {};
+            dbRatings.forEach(rating => {
+              ratingsObj[rating.videoId] = {
+                rating: rating.score,
+                ratedAt: rating.ratedAt
+              };
+            });
+            // Update the ratings state directly
+            setRatings(ratingsObj);
+          }
+        } catch (error) {
+          console.error('Failed to load ratings:', error);
+        }
+      };
+      loadDbRatings();
+    }
+  }, [session]);
 
   // Helper to get rating value (handle both old and new format)
   const getRatingValue = (videoId) => {
