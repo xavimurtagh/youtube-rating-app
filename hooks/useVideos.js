@@ -151,45 +151,67 @@ export function useVideos() {
     const missingVideoIds = [];
     
     try {
-      // Now safe to forEach:
+      // Process ratings first
       dbRatings.forEach(rating => {
         ratingsObj[rating.videoId] = {
           rating: rating.score,
           ratedAt: rating.ratedAt
         };
-      
+        
         const existingVideo = videos.find(v => v.id === rating.videoId);
         if (!existingVideo) {
           missingVideoIds.push(rating.videoId);
         }
-      }
-    )} catch (error) {
-        console.error('Failed to set ratings from DB:', error);
-    };
-    
-    // Fetch missing video details from YouTube API
-    if (missingVideoIds.length > 0) {
-      try {
-        console.log(`Fetching details for ${missingVideoIds.length} missing videos...`);
-        const response = await fetch('/api/video-details', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ videoIds: missingVideoIds }),
-        });
+      });
+      
+      // Update ratings immediately
+      setRatings(ratingsObj);
+      saveRatings(ratingsObj);
+      
+      // Then handle missing videos
+      if (missingVideoIds.length > 0) {
+        console.log(`Need to fetch ${missingVideoIds.length} missing videos...`);
+        // Create placeholder videos for missing ones
+        const placeholderVideos = missingVideoIds.map(id => ({
+          id,
+          title: 'Loading...',
+          channel: 'Unknown Channel',
+          thumbnail: `https://img.youtube.com/vi/${id}/maxresdefault.jpg`
+        }));
         
-        if (response.ok) {
-          const { videos: fetchedVideos } = await response.json();
-          const updatedVideos = [...videos, ...fetchedVideos];
-          setVideos(updatedVideos);
-          saveVideos(updatedVideos);
-          console.log(`Successfully fetched details for ${fetchedVideos.length} videos`);
-        } else {
-          console.error('Failed to fetch video details:', response.status);
+        const updatedVideos = [...videos, ...placeholderVideos];
+        setVideos(updatedVideos);
+        saveVideos(updatedVideos);
+        
+        // Try to fetch real details
+        try {
+          const response = await fetch('/api/video-details', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ videoIds: missingVideoIds }),
+          });
+          
+          if (response.ok) {
+            const { videos: fetchedVideos } = await response.json();
+            // Update with real video details
+            const finalVideos = updatedVideos.map(v => {
+              const fetched = fetchedVideos.find(fv => fv.id === v.id);
+              return fetched || v;
+            });
+            setVideos(finalVideos);
+            saveVideos(finalVideos);
+            console.log(`Successfully updated ${fetchedVideos.length} videos with real data`);
+          }
+        } catch (error) {
+          console.error('Failed to fetch video details:', error);
+          // Keep placeholder videos
         }
-      } catch (error) {
-        console.error('Failed to load ratings from DB:', error);
       }
+      
+    } catch (error) {
+      console.error('Failed to set ratings from DB:', error);
     }
+  };
     
     setRatings(ratingsObj);
     localStorage.setItem('youtube_rating_ratings', JSON.stringify(ratingsObj));
