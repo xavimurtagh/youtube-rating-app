@@ -99,6 +99,17 @@ export default async function handler(req, res) {
             score: parseFloat(score)
           }
         });
+
+        // Log the activity
+        await prisma.activity.create({
+          data: {
+            userId: me.id,
+            type: 'rating',
+            videoId: video.id,
+            data: { score: scoreNum },
+          },
+        });
+          
       });
 
       console.log('Rating saved successfully');
