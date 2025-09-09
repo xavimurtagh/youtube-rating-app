@@ -106,7 +106,7 @@ export default async function handler(req, res) {
             userId: me.id,
             type: 'rating',
             videoId: video.id,
-            data: { score: scoreNum },
+            data: parseFloat(score),
           },
         });
           
