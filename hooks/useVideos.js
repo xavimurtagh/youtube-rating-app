@@ -211,7 +211,7 @@ export function useVideos() {
     } catch (error) {
       console.error('Failed to set ratings from DB:', error);
     }
-  };
+  }
     
     setRatings(ratingsObj);
     localStorage.setItem('youtube_rating_ratings', JSON.stringify(ratingsObj));
