@@ -12,19 +12,30 @@ export default function QuickRate() {
 
   useEffect(() => {
     if (videoId && title) {
-      setVideo({
-        id: videoId,
-        title: decodeURIComponent(title),
-        channel: decodeURIComponent(channel || 'Unknown Channel'),
-        thumbnail: thumbnail ? decodeURIComponent(thumbnail) : `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`
-      });
+      try {
+        setVideo({
+          id: videoId,
+          title: decodeURIComponent(title),
+          channel: decodeURIComponent(channel || 'Unknown Channel'),
+          thumbnail: thumbnail ? decodeURIComponent(thumbnail) : `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`
+        });
+      } catch (decodeError) {
+        // Fallback for encoding issues
+        setVideo({
+          id: videoId,
+          title: title,
+          channel: channel || 'Unknown Channel',
+          thumbnail: thumbnail || `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`
+        });
+      }
     }
   }, [videoId, title, channel, thumbnail]);
-
+  
+  // Enhanced submit handler with better error handling
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!video || saving) return;
-
+  
     setSaving(true);
     
     try {
@@ -32,17 +43,20 @@ export default function QuickRate() {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          video: video, 
-          score: rating 
-        }),
+        body: JSON.stringify({ video: video, score: rating }),
       });
-      
+  
       if (response.ok) {
         alert('✅ Rating saved successfully!');
-        window.close();
+        // Try to close, fallback to redirect if it fails
+        try {
+          window.close();
+        } catch (closeError) {
+          // If window.close() fails, redirect to main app
+          window.location.href = 'https://youtube-rating-app.vercel.app';
+        }
       } else {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({ error: 'Network error' }));
         throw new Error(errorData.error || 'Failed to save rating');
       }
     } catch (error) {
