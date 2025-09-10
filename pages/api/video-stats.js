@@ -16,9 +16,9 @@ export default async function handler(req, res) {
     console.log('Stats request for video ID:', rawVideoId);
     
     // Clean the video ID
-    const videoId = cleanVideoId(rawVideoId);
+    const id = cleanVideoId(rawVideoId);
     
-    if (!videoId) {
+    if (!id) {
       console.warn('Invalid video ID format:', rawVideoId);
       // For existing malformed data, try to extract a valid ID
       let fallbackId = rawVideoId;
