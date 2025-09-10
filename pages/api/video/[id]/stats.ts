@@ -1,19 +1,24 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '../../../../lib/prisma';
+import { cleanVideoId } from '../../../utils/videoUtils';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const rawId = req.query.id;
-  const id = Array.isArray(rawId) ? rawId[0] : rawId;
-  
-  if (typeof id !== 'string') {
-    return res.status(400).json({ error: 'Invalid video ID' });
-  }
-
   try {
+    const { videoId: rawVideoId } = req.query.id;
+    const id = cleanVideoId(rawVideoId);
+    
+    if (!id) {
+      return res.status(400).json({ error: 'Invalid video ID format' });
+    }
+    
+    if (typeof id !== 'string') {
+      return res.status(400).json({ error: 'Invalid video ID' });
+    }
+
     const videoStats = await prisma.rating.aggregate({
       where: { videoId: id },
       _avg: { score: true },
