@@ -24,7 +24,7 @@ export default function VideoCard({
     
     setLoadingStats(true);
     try {
-      const response = await fetch(`/api/video/${video.id}/stats`);
+      const response = await fetch(`pages/api/video/${video.id}/stats`);
       if (response.ok) {
         const stats = await response.json();
         setVideoStats(stats);
