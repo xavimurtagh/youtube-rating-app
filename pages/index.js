@@ -387,7 +387,39 @@ export default function Home() {
                 <span className="step-number">1</span>
                 <p>Drag this button to your bookmarks bar:</p>
                 <a 
-                  href={"javascript:(function(){var v=document.querySelector('video')||document.querySelector('[data-video-id]');if(!v){alert('No video found!');return;}var videoId=null;var urlMatch=window.location.href.match(/[?&]v=([^&]+)/);if(urlMatch){videoId=urlMatch;}else if(v.getAttribute('data-video-id')){videoId=v.getAttribute('data-video-id');}if(!videoId){alert('Could not find video ID!');return;}videoId=videoId.split(',').split('&').split('#').split('?');if(videoId.startsWith('?v=')){videoId=videoId.substring(3);}if(videoId.length!==11||!/^[a-zA-Z0-9_-]+$/.test(videoId)){alert('Invalid video ID format: '+videoId);return;}var title=(document.querySelector('h1.ytd-video-primary-info-renderer')||{textContent:''}).textContent.trim()||document.title.replace(' - YouTube','');var channel=(document.querySelector('ytd-channel-name a')||{textContent:''}).textContent.trim()||(document.querySelector('.ytd-video-owner-renderer a')||{textContent:''}).textContent.trim()||'Unknown';var url='https://youtube-rating-app.vercel.app/rate?videoId='+encodeURIComponent(videoId)+'&title='+encodeURIComponent(title)+'&channel='+encodeURIComponent(channel);window.open(url,'_blank','width=500,height=600');})();"}
+                  href=
+                  javascript:(function(){
+                    var v = document.querySelector('video') || document.querySelector('[data-video-id]');
+                    if (!v) {
+                      alert('No video found!');
+                      return;
+                    }
+                    // Extract videoId either from data-video-id attribute or URL
+                    var videoId = v.getAttribute('data-video-id') || (window.location.href.match(/[?&]v=([^&]+)/) || [])[1];
+                    if (!videoId) {
+                      alert('Could not find video ID!');
+                      return;
+                    }
+                    // Clean the videoId to remove commas, prefixes like '?v='
+                    if (videoId.includes(',')) {
+                      videoId = videoId.split(',')[0];
+                    }
+                    if (videoId.startsWith('?v=')) {
+                      videoId = videoId.substring(3);
+                    }
+                    // Use the clean video ID only hereafter (important!)
+                    var title = (document.querySelector('h1.ytd-video-primary-info-renderer') || { textContent: '' }).textContent.trim() || document.title.replace(' - YouTube', '');
+                    var channel = (document.querySelector('ytd-channel-name a') || { textContent: '' }).textContent.trim() ||
+                      (document.querySelector('.ytd-video-owner-renderer a') || { textContent: '' }).textContent.trim() ||
+                      'Unknown Channel';
+                    var thumbnail = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+                    var rateURL = 'https://youtube-rating-app.vercel.app/rate?videoId=' + encodeURIComponent(videoId) +
+                      '&title=' + encodeURIComponent(title) +
+                      '&channel=' + encodeURIComponent(channel) +
+                      '&thumbnail=' + encodeURIComponent(thumbnail);
+                    window.open(rateURL, '_blank', 'width=500,height=600');
+                  })();
+
                   className="bookmarklet-button-prominent"
                   onDragStart={(e) => {
                     e.dataTransfer.setData("text/plain", e.target.href);
