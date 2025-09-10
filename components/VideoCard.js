@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { decodeHtmlEntities } from '../utils/htmlUtils';
-import { getThumbnailUrl, getYouTubeUrl } from '../utils/videoUtils';
+import { getThumbnailUrl, safeThumbnailUrl, getYouTubeUrl } from '../utils/videoUtils';
 
 export default function VideoCard({ 
   video, 
@@ -83,11 +83,18 @@ export default function VideoCard({
       <div className="video-thumbnail-container">
         {video.thumbnail ? (
           <img 
-            src={getThumbnailUrl(video.id) || video.thumbnail} 
+            src={getThumbnailUrl(video.id) || safeThumbnailUrl(video.id) || video.thumbnail} 
             alt={video.title}
             className="video-thumbnail"
             onError={(e) => {
-              e.target.src = getThumbnailUrl(video.id, 'hqdefault') || '/fallback-thumbnail.jpg';
+              // Try fallback thumbnail
+              const fallback = safeThumbnailUrl(video.id, 'hqdefault');
+              if (fallback && e.target.src !== fallback) {
+                e.target.src = fallback;
+              } else {
+                // Use a placeholder or hide image
+                e.target.style.display = 'none';
+              }
             }}
           />
         ) : (
