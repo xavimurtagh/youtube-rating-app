@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { decodeHtmlEntities } from '../utils/htmlUtils';
+import { getThumbnailUrl, getYouTubeUrl } from '../utils/videoUtils';
 
 export default function VideoCard({ 
   video, 
@@ -82,9 +83,12 @@ export default function VideoCard({
       <div className="video-thumbnail-container">
         {video.thumbnail ? (
           <img 
-            src={video.thumbnail} 
+            src={getThumbnailUrl(video.id) || video.thumbnail} 
             alt={video.title}
             className="video-thumbnail"
+            onError={(e) => {
+              e.target.src = getThumbnailUrl(video.id, 'hqdefault') || '/fallback-thumbnail.jpg';
+            }}
           />
         ) : (
           <div className="video-thumbnail-placeholder">
@@ -143,10 +147,10 @@ export default function VideoCard({
           </button>
           
           <a 
-            href={`https://www.youtube.com/watch?v=${video.id}`}
+            href={getYouTubeUrl(video.id)} 
             target="_blank" 
             rel="noopener noreferrer"
-            className="btn btn--outline btn--sm"
+            className="btn btn-sm btn-outline-primary"
             onClick={(e) => e.stopPropagation()}
           >
             Watch on YouTube
