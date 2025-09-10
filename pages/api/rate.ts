@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { prisma } from '../../lib/prisma'
 import { getUser } from '../../lib/auth'
+import { cleanVideoId } from '../../utils/videoUtils';
 
 // Add retry utility
 async function withRetry(operation, maxRetries = 3, delay = 1000) {
@@ -62,15 +63,27 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Missing video or score' })
       }
 
-      console.log('Rating video:', video.id, 'with score:', score);
+      // Clean the video ID
+      const cleanId = cleanVideoId(video.id);
+      if (!cleanId) {
+        return res.status(400).json({ error: 'Invalid video ID format' });
+      }
+    
+      // Update video object with clean ID
+      const cleanVideo = {
+        ...video,
+        id: cleanId
+      };
+
+      console.log('Rating video:', cleanId, 'with score:', score);
 
       // Use retry logic for database operations
       const result = await withRetry(async () => {
         // Ensure video exists first
         await prisma.video.upsert({
-          where: { id: video.id },
+          where: { id: cleanId },
           create: {
-            id: video.id,
+            id: cleanId,
             title: video.title || 'Unknown Video',
             channel: video.channel || 'Unknown Channel',
             thumbnail: video.thumbnail || null
@@ -87,12 +100,12 @@ export default async function handler(req, res) {
           where: {
             userId_videoId: {
               userId: me.id,
-              videoId: video.id
+              videoId: cleanId
             }
           },
           create: {
             userId: me.id,
-            videoId: video.id,
+            videoId: cleanId,
             score: parseFloat(score)
           },
           update: {
@@ -105,7 +118,7 @@ export default async function handler(req, res) {
           data: {
             userId: me.id,
             type: 'rating',
-            videoId: video.id,
+            videoId: cleanId,
             data: parseFloat(score),
           },
         });
