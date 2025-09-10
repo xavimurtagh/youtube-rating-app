@@ -24,12 +24,20 @@ export default function VideoCard({
     
     setLoadingStats(true);
     try {
-      const response = await fetch("/api/video-stats?videoId=${encodeURIComponent(video.id)}");
+      // Try the nested route first, then fallback to query param route
+      let response = await fetch(`/api/video/${encodeURIComponent(video.id)}/stats`);
+      
+      if (!response.ok && response.status === 404) {
+        // Fallback to query param route
+        response = await fetch(`/api/video-stats?videoId=${encodeURIComponent(video.id)}`);
+      }
+      
       if (response.ok) {
         const stats = await response.json();
         setVideoStats(stats);
       } else {
-        console.warn('Failed to load video stats:', response.status);
+        const errorData = await response.json().catch(() => ({}));
+        console.warn('Failed to load video stats:', response.status, errorData);
         setVideoStats({ totalRatings: 0, averageRating: null });
       }
     } catch (error) {
