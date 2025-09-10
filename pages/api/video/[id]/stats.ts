@@ -9,7 +9,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const { videoId: rawVideoId } = req.query;
-    const id = cleanVideoId(rawVideoId);
+    const cleanId = cleanVideoId(rawVideoId);
+
+    const id = Array.isArray(cleanId) ? cleanId[0] : cleanId;
     
     if (!id) {
       return res.status(400).json({ error: 'Invalid video ID format' });
