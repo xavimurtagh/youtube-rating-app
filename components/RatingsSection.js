@@ -1,8 +1,9 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import VideoList from './VideoList';
+import { cleanVideoId } from '../utils/videoUtils';
 
-export default function RatingsSection({ videos, ratings, onRateVideo, onRemoveRating, stats }) {
+export default function RatingsSection({ videos, ratings, setRatings, onRateVideo, onRemoveRating, stats }) {
   const { data: session } = useSession();
   const [filterType, setFilterType] = useState('rated');
   const [ratingFilter, setRatingFilter] = useState('all');
@@ -12,7 +13,7 @@ export default function RatingsSection({ videos, ratings, onRateVideo, onRemoveR
   const [groupBy, setGroupBy] = useState('rating');
 
   useEffect(() => {
-    if (session) {
+    if (session && setRatings) {
       // Force reload ratings from database when component mounts
       const loadDbRatings = async () => {
         try {
@@ -24,10 +25,13 @@ export default function RatingsSection({ videos, ratings, onRateVideo, onRemoveR
             // Convert to the format expected by useVideos
             const ratingsObj = {};
             dbRatings.forEach(rating => {
-              ratingsObj[rating.videoId] = {
-                rating: rating.score,
-                ratedAt: rating.ratedAt
-              };
+              const cleanId = cleanVideoId(rating.videoId);
+              if (cleanId) {
+                ratingsObj[cleanId] = {
+                  rating: rating.score,
+                  ratedAt: rating.ratedAt
+                };
+              }
             });
             // Update the ratings state directly
             setRatings(ratingsObj);
@@ -38,7 +42,7 @@ export default function RatingsSection({ videos, ratings, onRateVideo, onRemoveR
       };
       loadDbRatings();
     }
-  }, [session]);
+  }, [session, setRatings]);
 
   // Helper to get rating value (handle both old and new format)
   const getRatingValue = (videoId) => {
