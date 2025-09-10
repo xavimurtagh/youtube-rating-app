@@ -9,41 +9,63 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const { videoId: rawVideoId } = req.query;
-    const cleanId = cleanVideoId(rawVideoId);
-
-    const id = Array.isArray(cleanId) ? cleanId[0] : cleanId;
     
-    if (!id) {
-      return res.status(400).json({ error: 'Invalid video ID format' });
-    }
+    console.log('Stats request for video ID:', rawVideoId);
     
-    if (typeof id !== 'string') {
-      return res.status(400).json({ error: 'Invalid video ID' });
+    const videoId = cleanVideoId(rawVideoId);
+    
+    if (!videoId) {
+      console.warn('Invalid video ID format:', rawVideoId);
+      return res.status(400).json({ 
+        error: 'Invalid video ID format',
+        received: rawVideoId,
+        cleaned: videoId
+      });
     }
 
-    const videoStats = await prisma.rating.aggregate({
-      where: { videoId: id },
-      _avg: { score: true },
-      _count: { score: true }
-    });
+    console.log('Cleaned video ID:', videoId);
 
+    // Get all ratings for this video
     const ratings = await prisma.rating.findMany({
-      where: { videoId: id },
+      where: { videoId },
       select: { score: true }
     });
 
-    const ratingDistribution = ratings.reduce((acc, rating) => {
-      acc[rating.score] = (acc[rating.score] || 0) + 1;
-      return acc;
-    }, {} as Record<number, number>);
+    console.log(`Found ${ratings.length} ratings for video ${videoId}`);
 
-    res.status(200).json({
-      averageRating: videoStats._avg.score ? Math.round(videoStats._avg.score * 10) / 10 : null,
-      totalRatings: videoStats._count.score || 0,
+    if (ratings.length === 0) {
+      return res.status(200).json({
+        totalRatings: 0,
+        averageRating: null,
+        ratingDistribution: {}
+      });
+    }
+
+    const totalRatings = ratings.length;
+    const averageRating = ratings.reduce((sum, r) => sum + r.score, 0) / totalRatings;
+    
+    // Calculate rating distribution
+    const ratingDistribution = {};
+    for (let i = 1; i <= 10; i++) {
+      ratingDistribution[i] = ratings.filter(r => Math.floor(r.score) === i).length;
+    }
+
+    const result = {
+      totalRatings,
+      averageRating: Math.round(averageRating * 10) / 10,
       ratingDistribution
-    });
+    };
+
+    console.log('Returning stats:', result);
+
+    res.status(200).json(result);
+    
   } catch (error) {
-    console.error('Video stats error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Video stats API error:', error);
+    res.status(500).json({ 
+      error: 'Internal server error',
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 }
