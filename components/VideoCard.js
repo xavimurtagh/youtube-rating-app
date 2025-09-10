@@ -83,18 +83,11 @@ export default function VideoCard({
       <div className="video-thumbnail-container">
         {video.thumbnail ? (
           <img 
-            src={getThumbnailUrl(video.id) || safeThumbnailUrl(video.id) || video.thumbnail} 
+            src={video.thumbnail || getThumbnailUrl(video.id)} 
             alt={video.title}
             className="video-thumbnail"
             onError={(e) => {
-              // Try fallback thumbnail
-              const fallback = safeThumbnailUrl(video.id, 'hqdefault');
-              if (fallback && e.target.src !== fallback) {
-                e.target.src = fallback;
-              } else {
-                // Use a placeholder or hide image
-                e.target.style.display = 'none';
-              }
+              e.target.src = getThumbnailUrl(video.id, 'hqdefault') || '/fallback-thumbnail.jpg';
             }}
           />
         ) : (
