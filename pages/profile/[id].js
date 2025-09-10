@@ -1,6 +1,7 @@
 import { useRouter } from 'next/router'
 import { useEffect, useState } from 'react'
 import { socialAPI } from '../../utils/api'
+import { getYouTubeUrl, cleanVideoId } from '../../utils/videoUtils';
 
 export default function ProfilePage() {
   const router = useRouter()
@@ -91,7 +92,7 @@ export default function ProfilePage() {
   }
 
   const getVideoUrl = (videoId) => {
-    return `https://www.youtube.com/watch?v=${videoId}`;
+    return getYouTubeUrl(videoId) || `https://www.youtube.com/watch?v=${videoId}`;
   };
 
   return (
@@ -212,24 +213,26 @@ export default function ProfilePage() {
                 <div className="ratings-list">
                   {filteredRatings
                     .slice((ratingsPage - 1) * ratingsPerPage, ratingsPage * ratingsPerPage)
-                    .map((r) => (
-                      <div key={r.id} className="rating-item">
-                        <span className="rating-score">{r.score}/10</span>
-                        <div className="rating-video">
-                          <strong>{r.videoTitle}</strong>
-                          <br />
-                          <span className="channel-name">{r.videoChannel}</span>
+                    .map((r) => {
+                      const cleanId = cleanVideoId(r.videoId);
+                      return (
+                        <div key={r.id} className="rating-item">
+                          <span className="rating-badge">{r.score}/10</span>
+                          <div className="rating-details">
+                            <strong>{r.videoTitle}</strong><br />
+                            <span className="text-muted">{r.videoChannel}</span>
+                          </div>
+                          <a 
+                            href={getVideoUrl(cleanId || r.videoId)} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="btn btn-sm btn-outline-primary"
+                          >
+                            🎬 Watch Video
+                          </a>
                         </div>
-                        <a 
-                          href={getVideoUrl(r.videoId)} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="video-link"
-                        >
-                          🎬 Watch Video
-                        </a>
-                      </div>
-                    ))}
+                      );
+                    })}
                 </div>
                 
                 {/* Pagination Controls */}
