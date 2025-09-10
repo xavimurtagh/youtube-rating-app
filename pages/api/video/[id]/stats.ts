@@ -8,7 +8,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const { videoId: rawVideoId } = req.query.id;
+    const { videoId: rawVideoId } = req.query;
     const id = cleanVideoId(rawVideoId);
     
     if (!id) {
