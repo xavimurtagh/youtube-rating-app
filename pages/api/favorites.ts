@@ -45,28 +45,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // POST - Add to favorites
     if (req.method === 'POST') {
-      const { videoId, videoTitle, videoChannel, videoThumbnail } = req.body
+      // Accept both naming conventions (videoTitle/title, etc.) so either
+      // caller works.
+      const { videoId } = req.body
+      const title = req.body.videoTitle ?? req.body.title
+      const channel = req.body.videoChannel ?? req.body.channel
+      const thumbnail = req.body.videoThumbnail ?? req.body.thumbnail
 
       if (!videoId) {
         return res.status(400).json({ error: 'Missing videoId' })
       }
-
-      console.log('Adding to favorites:', { videoId, videoTitle, videoChannel })
 
       // Ensure video exists with proper field mapping
       await prisma.video.upsert({
         where: { id: videoId },
         create: {
           id: videoId,
-          title: videoTitle || 'Unknown Video',
-          channel: videoChannel || 'Unknown Channel',
-          thumbnail: videoThumbnail || null
+          title: title || 'Unknown Video',
+          channel: channel || 'Unknown Channel',
+          thumbnail: thumbnail || null
         },
         update: {
           // Only update if we have better data
-          ...(videoTitle && { title: videoTitle }),
-          ...(videoChannel && { channel: videoChannel }),
-          ...(videoThumbnail && { thumbnail: videoThumbnail })
+          ...(title && { title }),
+          ...(channel && { channel }),
+          ...(thumbnail && { thumbnail })
         }
       })
 
@@ -94,7 +97,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         
         // Handle query parameters
         if (videoId?.includes('?')) {
-          videoId = videoId.split('?')
+          videoId = videoId.split('?')[0]
         }
       }
 
