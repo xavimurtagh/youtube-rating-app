@@ -5,6 +5,25 @@ const youtube = google.youtube({
   auth: process.env.YOUTUBE_API_KEY
 });
 
+// Stable YouTube category IDs → human-readable names (used to enrich Video
+// records so recommendations can use category affinity).
+const YT_CATEGORIES = {
+  '1': 'Film & Animation', '2': 'Autos & Vehicles', '10': 'Music',
+  '15': 'Pets & Animals', '17': 'Sports', '18': 'Short Movies',
+  '19': 'Travel & Events', '20': 'Gaming', '21': 'Videoblogging',
+  '22': 'People & Blogs', '23': 'Comedy', '24': 'Entertainment',
+  '25': 'News & Politics', '26': 'Howto & Style', '27': 'Education',
+  '28': 'Science & Technology', '29': 'Nonprofits & Activism', '30': 'Movies',
+  '31': 'Anime/Animation', '32': 'Action/Adventure', '33': 'Classics',
+  '34': 'Comedy', '35': 'Documentary', '36': 'Drama', '37': 'Family',
+  '38': 'Foreign', '39': 'Horror', '40': 'Sci-Fi/Fantasy', '41': 'Thriller',
+  '43': 'Shows', '44': 'Trailers'
+};
+
+export function categoryName(categoryId) {
+  return categoryId != null ? (YT_CATEGORIES[String(categoryId)] || null) : null;
+}
+
 export async function searchVideos(query, maxResults = 20) {
   try {
     const response = await youtube.search.list({
@@ -46,6 +65,7 @@ export async function getVideoDetails(videoId) {
       id: video.id,
       title: video.snippet.title,
       channel: video.snippet.channelTitle,
+      category: categoryName(video.snippet.categoryId),
       description: '',
       thumbnail: video.snippet.thumbnails?.medium?.url || video.snippet.thumbnails?.default?.url,
       publishedAt: video.snippet.publishedAt,

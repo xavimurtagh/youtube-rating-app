@@ -62,6 +62,28 @@ export default function ProfilePage() {
     return null
   }
 
+  if (profile.isPrivate) {
+    return (
+      <div className="profile-page-container">
+        <div className="profile-page-content">
+          <button onClick={handleGoBack} className="btn btn--outline back-button">
+            ← Back to Friends
+          </button>
+          <div className="profile-header">
+            <h2>{profile.name}'s Profile</h2>
+            {profile.avatar && (
+              <img src={profile.avatar} alt={profile.name} className="profile-avatar" />
+            )}
+            {profile.bio && <p className="profile-bio">{profile.bio}</p>}
+          </div>
+          <div className="profile-section">
+            <p className="empty-message">🔒 This profile is private.</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   const favs = profile.favourites || []
   const rated = profile.ratings || []
   

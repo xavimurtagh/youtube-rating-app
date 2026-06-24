@@ -1,12 +1,17 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { prisma } from '../../lib/prisma'
 import { getUser } from '../../lib/auth'
+import { enforceRateLimit } from '../../lib/rateLimit'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const me = await getUser(req, res)
 
   if (!me) {
     return res.status(401).json({ error: 'Unauthorized' })
+  }
+
+  if (!enforceRateLimit(req, res, { id: `favorites:${me.id}`, limit: 60, windowMs: 60_000 })) {
+    return
   }
 
   try {

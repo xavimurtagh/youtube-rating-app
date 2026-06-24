@@ -18,6 +18,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const activities = await prisma.activity.findMany({
       where: {
         user: {
+          showActivity: true,
           followers: { some: { followerId: me.id } }
         }
       },

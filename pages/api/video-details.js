@@ -1,4 +1,5 @@
 import { getVideoDetails } from '../../utils/youtube';
+import { prisma } from '../../lib/prisma';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -6,15 +7,14 @@ export default async function handler(req, res) {
   }
 
   const { videoIds } = req.body;
-  
+
   if (!Array.isArray(videoIds) || videoIds.length === 0) {
     return res.status(400).json({ error: 'videoIds array required' });
   }
 
   try {
     const videoDetails = [];
-    
-    // Process in batches to avoid rate limits
+
     for (const videoId of videoIds) {
       try {
         const details = await getVideoDetails(videoId);
@@ -22,17 +22,29 @@ export default async function handler(req, res) {
           id: details.id,
           title: details.title,
           channel: details.channel,
+          category: details.category || null,
           thumbnail: details.thumbnail,
           description: '',
-          isMusic: false, // You can enhance this logic
+          isMusic: false,
         });
+
+        // Opportunistically backfill the category on existing rows (without
+        // overwriting a value that's already set).
+        if (details.category) {
+          await prisma.video
+            .updateMany({
+              where: { id: details.id, category: null },
+              data: { category: details.category },
+            })
+            .catch(() => {});
+        }
       } catch (error) {
         console.error(`Failed to fetch details for video ${videoId}:`, error);
-        // Fallback for videos that can't be found
         videoDetails.push({
           id: videoId,
           title: 'Previously Rated Video',
           channel: 'Unknown Channel',
+          category: null,
           thumbnail: null,
           isMusic: false,
         });

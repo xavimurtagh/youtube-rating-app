@@ -36,6 +36,7 @@ export default async function handler(
         name: true,
         avatar: true,
         bio: true,
+        publicProfile: true,
         favourites: {
           select: {
             id: true,
@@ -68,6 +69,22 @@ export default async function handler(
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Respect the profile owner's visibility preference. Owners can always see
+    // their own profile.
+    if (me.id !== user.id && !user.publicProfile) {
+      return res.status(200).json({
+        id: user.id,
+        name: user.name,
+        avatar: user.avatar,
+        bio: user.bio,
+        isPrivate: true,
+        favourites: [],
+        ratings: [],
+        followers: user.followers,
+        following: user.following,
+      });
     }
 
     // Flatten the video relation onto each rating so the client can read

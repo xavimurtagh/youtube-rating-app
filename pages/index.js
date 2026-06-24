@@ -36,7 +36,6 @@ export default function Home() {
     loading,
     error,
     addVideos,
-    rateVideo,
     ignoreVideo,
     clearAllData,
     getVideoStats,
@@ -204,15 +203,6 @@ export default function Home() {
     } catch (error) {
       console.error('Failed to ignore video:', videoId, error);
     }
-  };
-
-  const handleSaveRating = (videoOrId, rating) => {
-    const videoObj = typeof videoOrId === 'object' ? videoOrId : videos.find(v => v.id === videoOrId);
-    if (videoObj && !videos.some(v => v.id === videoObj.id)) {
-      addVideos([videoObj]);
-    }
-    rateVideo(videoObj.id, rating);
-    setRatingModalVideo(null);
   };
 
   const renderActiveTab = () => {

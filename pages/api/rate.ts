@@ -3,6 +3,7 @@ import { prisma } from '../../lib/prisma'
 import { getUser } from '../../lib/auth'
 import { cleanVideoId } from '../../utils/videoUtils';
 import { parseScore } from '../../lib/validation';
+import { enforceRateLimit } from '../../lib/rateLimit';
 
 // Add retry utility
 async function withRetry(operation, maxRetries = 3, delay = 1000) {
@@ -53,6 +54,10 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Unauthorized' })
   }
 
+  if (!enforceRateLimit(req, res, { id: `rate:${me.id}`, limit: 60, windowMs: 60_000 })) {
+    return
+  }
+
   try {
 
     triggerCleanupIfNeeded();
@@ -86,12 +91,14 @@ export default async function handler(req, res) {
             id: cleanId,
             title: video.title || 'Unknown Video',
             channel: video.channel || 'Unknown Channel',
-            thumbnail: video.thumbnail || null
+            thumbnail: video.thumbnail || null,
+            category: video.category || null
           },
           update: {
             ...(video.title && { title: video.title }),
             ...(video.channel && { channel: video.channel }),
-            ...(video.thumbnail && { thumbnail: video.thumbnail })
+            ...(video.thumbnail && { thumbnail: video.thumbnail }),
+            ...(video.category && { category: video.category })
           }
         });
 

@@ -8,6 +8,15 @@ import {
   saveIgnored
 } from '../utils/localStorage';
 
+/**
+ * Local video/rating state.
+ *
+ * Data model: when the user is signed in, the database is the source of truth
+ * for ratings. They are loaded from /api/my-ratings on app start and written
+ * through /api/rate; localStorage only acts as a fast cache (updated via
+ * `updateLocalRating` after a successful server write) and as the staging area
+ * for imported Google Takeout videos, which never leave the browser.
+ */
 export function useVideos() {
   const [videos, setVideos] = useState([]);
   const [ratings, setRatings] = useState({});
@@ -292,28 +301,6 @@ export function useVideos() {
   };
 
 
-  // Rate a video - store rating as number, not object
-  const rateVideo = (videoId, rating) => {
-    try {
-      const updated = {
-        ...ratings,
-        [videoId]: {
-          rating: Number(rating),
-          ratedAt: new Date().toISOString()
-        }
-      };
-
-      setRatings(updated);
-      const result = saveRatings(updated);
-
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to save rating');
-      }
-    } catch (err) {
-      console.error('Failed to save rating:', err);
-      setError('Failed to save rating: ' + err.message);
-    }
-  };
 
 
   // Ignore or un-ignore a video. Passing `ignore = false` removes it from the
@@ -414,7 +401,6 @@ export function useVideos() {
     loading,
     error,
     addVideos,
-    rateVideo,
     removeRating,
     ignoreVideo,
     clearAllData,
