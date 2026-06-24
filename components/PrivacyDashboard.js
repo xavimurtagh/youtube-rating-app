@@ -67,8 +67,8 @@ export default function PrivacyDashboard() {
       active: !!session
     },
     {
-      title: 'Client-Side Data Storage',
-      description: 'All data stored locally in your browser',
+      title: 'Account Data Storage',
+      description: 'Your ratings, favorites, and follows are stored securely in our database and tied to your Google account; your imported watch history stays in your browser',
       active: true
     },
     {
@@ -293,7 +293,7 @@ export default function PrivacyDashboard() {
         </div>
         
         <div className="data-info">
-          <p><strong>Note:</strong> All your data is stored locally in your browser. Nothing is sent to our servers except for YouTube search requests.</p>
+          <p><strong>Note:</strong> Your ratings, favorites, and follows are stored in our database so they sync across devices and power social and recommendation features. Your imported Google Takeout watch history is processed in your browser and is not uploaded. Use &quot;Delete All Data&quot; to remove your server-side data at any time.</p>
         </div>
       </div>
     </div>

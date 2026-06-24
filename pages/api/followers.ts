@@ -20,7 +20,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           select: {
             id: true,
             name: true,
-            email: true,
             avatar: true,
             bio: true,
             ratings: { select: { id: true } }
@@ -32,7 +31,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const formattedFollowers = followers.map(f => ({
       id: f.follower.id,
       name: f.follower.name,
-      email: f.follower.email,
       avatar: f.follower.avatar,
       bio: f.follower.bio,
       totalRatings: f.follower.ratings.length,

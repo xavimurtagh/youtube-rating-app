@@ -35,7 +35,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       select: {
         id: true,
         name: true,
-        email: true,
         avatar: true,
         bio: true,
         ratings: { select: { id: true } },
@@ -50,7 +49,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const formattedUsers = users.map(user => ({
       id: user.id,
       name: user.name,
-      email: user.email,
       avatar: user.avatar,
       bio: user.bio,
       totalRatings: user.ratings.length,

@@ -12,6 +12,7 @@ export default function FriendsSection() {
   const [loading, setLoading] = useState(false);
   const [loadingFollowing, setLoadingFollowing] = useState(true);
   const [loadingFollowers, setLoadingFollowers] = useState(true);
+  const [hasSearched, setHasSearched] = useState(false);
 
   const router = useRouter();
 
@@ -52,8 +53,9 @@ export default function FriendsSection() {
   const handleSearch = async (e) => {
     e.preventDefault();
     if (!searchTerm.trim()) return;
-    
+
     setLoading(true);
+    setHasSearched(true);
     try {
       const results = await socialAPI.searchUsers(searchTerm);
       setSearchResults(results);
@@ -130,7 +132,7 @@ export default function FriendsSection() {
                 </div>
                 <div className="user-info-section">
                   <h4 className="user-name">{user.name}</h4>
-                  <p className="user-email">{user.email}</p>
+                  {user.bio && <p className="user-bio">{user.bio}</p>}
                   <span className="user-stats">{user.totalRatings || 0} ratings</span>
                 </div>
                 <div className="user-actions-section">
@@ -173,7 +175,7 @@ export default function FriendsSection() {
                 </div>
                 <div className="user-info-section">
                   <h4 className="user-name">{user.name}</h4>
-                  <p className="user-email">{user.email}</p>
+                  {user.bio && <p className="user-bio">{user.bio}</p>}
                   <span className="user-stats">{user.totalRatings || 0} ratings</span>
                 </div>
                 <div className="user-actions-section">
@@ -231,7 +233,7 @@ export default function FriendsSection() {
                   </div>
                   <div className="user-info-section">
                     <h4 className="user-name">{user.name}</h4>
-                    <p className="user-email">{user.email}</p>
+                    {user.bio && <p className="user-bio">{user.bio}</p>}
                     <span className="user-stats">{user.totalRatings || 0} ratings</span>
                   </div>
                   <div className="user-actions-section">
@@ -256,9 +258,9 @@ export default function FriendsSection() {
         )}
 
         {/* Only show "no results" message after a search has been performed and returned empty */}
-        {searchTerm && searchResults.length === 0 && !loading && searchTerm.length > 50 && (
+        {hasSearched && searchResults.length === 0 && !loading && (
           <div className="no-results-message">
-            <p>No users found for "{searchTerm}". Try searching by name or email.</p>
+            <p>No users found for &quot;{searchTerm}&quot;. Try searching by name or email.</p>
           </div>
         )}
       </div>

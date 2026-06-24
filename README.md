@@ -8,9 +8,10 @@ A secure, privacy-focused web application for rating and managing your YouTube w
 - 📁 **Google Takeout Import**: Import your YouTube watch history from Google Takeout
 - ⭐ **Rating System**: Rate videos on a 1-10 scale with visual feedback
 - 🛡️ **Privacy Dashboard**: Manage your data and privacy preferences
-- 🤖 **AI Recommendations**: Get personalized recommendations based on your ratings (coming soon)
+- 🤖 **AI Recommendations**: Collaborative-filtering recommendations from users with similar taste, with a content/popularity fallback while the community grows
+- 👥 **Social**: Follow other users, see their activity, and compare ratings
 - 🎨 **Modern Design**: Clean, responsive interface with dark/light mode support
-- 🔒 **Local Storage**: All data stored locally in your browser for maximum privacy
+- ☁️ **Synced Account Data**: Your ratings, favorites, and follows are stored in a database tied to your Google account so they sync across devices
 
 ## Getting Started
 
@@ -85,11 +86,23 @@ youtube-rating-app/
 
 ## Privacy & Security
 
-- All data is stored locally in your browser
-- No data is sent to external servers
-- Google Takeout files are processed client-side only
-- Optional privacy controls for analytics and features
-- Secure headers and content security policies
+- Sign-in uses Google OAuth — the app never sees or stores your password
+- Your **imported Google Takeout watch history is processed in your browser** and is not uploaded
+- **Account data you create — ratings, favorites, and follows — is stored server-side** in a PostgreSQL database, tied to your Google account, so it can sync across devices and power the social and recommendation features
+- You can export your local data or permanently delete your server-side data at any time from the Privacy Dashboard
+- Security headers (X-Frame-Options, X-Content-Type-Options, Referrer-Policy) are configured in `vercel.json`
+
+### Environment variables
+
+Copy `.env.example` to `.env` and fill in the values:
+
+| Variable | Purpose |
+| --- | --- |
+| `DATABASE_URL` | PostgreSQL connection string (Prisma) |
+| `NEXTAUTH_SECRET` | Secret used to encrypt NextAuth session tokens |
+| `NEXTAUTH_URL` | Base URL of the app (e.g. `http://localhost:3000`) |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth credentials |
+| `YOUTUBE_API_KEY` | Server-side YouTube Data API key (used for search) |
 
 ## Contributing
 
