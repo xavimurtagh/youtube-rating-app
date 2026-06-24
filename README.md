@@ -31,18 +31,38 @@ cd youtube-rating-app
 2. Install dependencies:
 ```bash
 npm install
-# or
-yarn install
 ```
 
-3. Run the development server:
+3. Configure environment variables — copy `.env.example` to `.env` and fill in
+   the values (see the table under [Privacy & Security](#privacy--security)).
+
+4. Set up the database (PostgreSQL):
+```bash
+npx prisma generate   # generate the Prisma client
+npx prisma db push    # create/update tables to match prisma/schema.prisma
+```
+
+5. Run the development server:
 ```bash
 npm run dev
-# or
-yarn dev
 ```
 
-4. Open [http://localhost:3000](http://localhost:3000) in your browser
+6. Open [http://localhost:3000](http://localhost:3000) in your browser
+
+> After changing `prisma/schema.prisma`, re-run `npx prisma db push` (this
+> project uses `db push` rather than a migrations history).
+
+## Testing
+
+```bash
+npm test         # run the Vitest unit tests once
+npm run test:watch
+npm run typecheck # tsc --noEmit
+npm run lint
+```
+
+CI (GitHub Actions, `.github/workflows/ci.yml`) runs lint, typecheck, tests and
+a production build on every push to `main` and on pull requests.
 
 ## Deployment
 
