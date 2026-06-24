@@ -46,9 +46,12 @@ export default async function handler(
         },
         ratings: {
           select: {
+            id: true,
             videoId: true,
-            score: true
-          }
+            score: true,
+            video: { select: { title: true, channel: true } }
+          },
+          orderBy: { ratedAt: 'desc' }
         },
         followers: {
           select: {
@@ -67,8 +70,21 @@ export default async function handler(
       return res.status(404).json({ error: 'User not found' });
     }
 
+    // Flatten the video relation onto each rating so the client can read
+    // `videoTitle` / `videoChannel` directly.
+    const profile = {
+      ...user,
+      ratings: user.ratings.map(r => ({
+        id: r.id,
+        videoId: r.videoId,
+        score: r.score,
+        videoTitle: r.video?.title || null,
+        videoChannel: r.video?.channel || null
+      }))
+    };
+
     // Return profile data
-    return res.status(200).json(user);
+    return res.status(200).json(profile);
   } catch (error) {
     console.error('Profile error:', error);
     return res.status(500).json({ error: 'Internal server error' });

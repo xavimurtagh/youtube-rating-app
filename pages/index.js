@@ -8,7 +8,6 @@ import MusicSection from '../components/MusicSection';
 import RatingsSection from '../components/RatingsSection';
 import UserStatsSection from '../components/UserStatsSection';
 import PrivacyDashboard from '../components/PrivacyDashboard';
-import RecommendationsSection from '../components/RecommendationsSection';
 import RatingModal from '../components/RatingModal';
 import SignInModal from '../components/SignInModal';
 import AuthButton from '../components/AuthButton';
@@ -101,16 +100,12 @@ export default function Home() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ video, score }),
     });
-    console.log('Alright for 105:', video.id, score);
 
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(errorText);
     }
     updateLocalRating(video.id, score);
-    
-
-    console.log('Rating saved successfully:', video.id, score);
   };
 
   const migrateLocalRatingsToDatabase = async () => {
@@ -150,22 +145,38 @@ export default function Home() {
     alert(`Migration completed! ${successCount} ratings saved, ${errorCount} failed.`);
   };
   
-  // Add this useEffect to trigger migration on load (run once)
+  // Offer (once) to sync ratings saved in localStorage by older versions of
+  // the app to the user's account. Depends on `session` only — depending on
+  // `videos` caused the prompt to reappear on every data change, and the flag
+  // is now written synchronously so re-renders can't re-trigger it.
   useEffect(() => {
-    const hasRunMigration = localStorage.getItem('ratings_migrated');
-    if (session && !hasRunMigration) {
-      const shouldMigrate = confirm(
-        'We found existing ratings in your browser storage. Would you like to sync them to your account? (This only needs to be done once)'
-      );
-      if (shouldMigrate) {
-        migrateLocalRatingsToDatabase().then(() => {
-          localStorage.setItem('ratings_migrated', 'true');
-        });
-      } else {
-        localStorage.setItem('ratings_migrated', 'skipped');
-      }
+    if (!session) return;
+    if (localStorage.getItem('ratings_migrated')) return;
+
+    let localRatings = {};
+    try {
+      localRatings = JSON.parse(localStorage.getItem('youtube_rating_ratings') || '{}');
+    } catch {
+      localRatings = {};
     }
-  }, [session, videos]);
+
+    // Nothing to migrate — mark done so we never ask again.
+    if (!localRatings || Object.keys(localRatings).length === 0) {
+      localStorage.setItem('ratings_migrated', 'true');
+      return;
+    }
+
+    const shouldMigrate = confirm(
+      'We found existing ratings in your browser storage. Would you like to sync them to your account? (This only needs to be done once)'
+    );
+
+    // Mark immediately so re-renders during the async migration don't re-prompt.
+    localStorage.setItem('ratings_migrated', shouldMigrate ? 'true' : 'skipped');
+
+    if (shouldMigrate) {
+      migrateLocalRatingsToDatabase();
+    }
+  }, [session]);
 
 
   const handleRemoveRatingComplete = async (videoId) => {

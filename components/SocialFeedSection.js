@@ -47,7 +47,14 @@ export default function SocialFeedSection() {
 
   const getVideoTitle = (activity) => {
     // Try to get video title from activity data
-    return activity.videoTitle || activity.video?.title || `Video ${activity.videoId.substring(0, 8)}...`;
+    return activity.data?.title || activity.videoTitle || activity.video?.title || `Video ${activity.videoId.substring(0, 8)}...`;
+  };
+
+  // `data` is an object ({ score, title, ... }) for new activities, but older
+  // rows stored the bare numeric score. Support both shapes.
+  const getActivityScore = (activity) => {
+    const data = activity.data;
+    return data && typeof data === 'object' ? data.score : data;
   };
 
   const getVideoUrl = (videoId) => {
@@ -74,7 +81,7 @@ export default function SocialFeedSection() {
                   </span>
                 </div>
                 <div className="rating-badge">
-                  ⭐ {activity.data.score}/10
+                  ⭐ {getActivityScore(activity)}/10
                 </div>
               </div>
               

@@ -58,9 +58,16 @@ export default async function handler(req, res) {
     
     if (req.method === 'POST') {
       const { video, score } = req.body
-      
-      if (!video?.id || score === undefined) {
+
+      if (!video?.id || score === undefined || score === null) {
         return res.status(400).json({ error: 'Missing video or score' })
+      }
+
+      // Validate the score: it must be an integer between 1 and 10
+      // (the Rating.score column is an Int, and the UI only offers 1-10).
+      const numericScore = Math.round(Number(score))
+      if (!Number.isFinite(numericScore) || numericScore < 1 || numericScore > 10) {
+        return res.status(400).json({ error: 'Score must be a number between 1 and 10' })
       }
 
       // Clean the video ID
@@ -68,14 +75,6 @@ export default async function handler(req, res) {
       if (!cleanId) {
         return res.status(400).json({ error: 'Invalid video ID format' });
       }
-    
-      // Update video object with clean ID
-      const cleanVideo = {
-        ...video,
-        id: cleanId
-      };
-
-      console.log('Rating video:', cleanId, 'with score:', score);
 
       // Use retry logic for database operations
       const result = await withRetry(async () => {
@@ -106,26 +105,32 @@ export default async function handler(req, res) {
           create: {
             userId: me.id,
             videoId: cleanId,
-            score: parseFloat(score)
+            score: numericScore
           },
           update: {
-            score: parseFloat(score)
+            score: numericScore,
+            ratedAt: new Date()
           }
         });
 
-        // Log the activity
+        // Log the activity. `data` is stored as an object so the social feed
+        // can read `activity.data.score` (and show the title without an extra
+        // lookup, since Activity has no relation to Video).
         await prisma.activity.create({
           data: {
             userId: me.id,
             type: 'rating',
             videoId: cleanId,
-            data: parseFloat(score),
+            data: {
+              score: numericScore,
+              title: video.title || null,
+              channel: video.channel || null
+            },
           },
         });
           
       });
 
-      console.log('Rating saved successfully');
       return res.status(200).json({ success: true, rating: result });
     }
 

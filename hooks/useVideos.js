@@ -316,10 +316,14 @@ export function useVideos() {
   };
 
 
-  // Ignore a video
-  const ignoreVideo = (videoId) => {
+  // Ignore or un-ignore a video. Passing `ignore = false` removes it from the
+  // ignored list (previously the second argument was dropped, so un-ignoring
+  // was impossible).
+  const ignoreVideo = (videoId, ignore = true) => {
     try {
-      const updated = Array.from(new Set([...ignoredIds, videoId]));
+      const updated = ignore
+        ? Array.from(new Set([...ignoredIds, videoId]))
+        : ignoredIds.filter(id => id !== videoId);
       setIgnoredIds(updated);
 
       const result = saveIgnored(updated);
@@ -327,8 +331,8 @@ export function useVideos() {
         throw new Error(result.error || 'Failed to save ignored list');
       }
     } catch (err) {
-      console.error('Failed to ignore video:', err);
-      setError('Failed to ignore video: ' + err.message);
+      console.error('Failed to update ignored video:', err);
+      setError('Failed to update ignored video: ' + err.message);
     }
   };
 
