@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next'
 import { prisma } from '../../lib/prisma'
 import { getUser } from '../../lib/auth'
 import { cleanVideoId } from '../../utils/videoUtils';
+import { parseScore } from '../../lib/validation';
 
 // Add retry utility
 async function withRetry(operation, maxRetries = 3, delay = 1000) {
@@ -65,8 +66,8 @@ export default async function handler(req, res) {
 
       // Validate the score: it must be an integer between 1 and 10
       // (the Rating.score column is an Int, and the UI only offers 1-10).
-      const numericScore = Math.round(Number(score))
-      if (!Number.isFinite(numericScore) || numericScore < 1 || numericScore > 10) {
+      const numericScore = parseScore(score)
+      if (numericScore === null) {
         return res.status(400).json({ error: 'Score must be a number between 1 and 10' })
       }
 

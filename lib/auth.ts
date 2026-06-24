@@ -1,11 +1,12 @@
 import { getServerSession } from 'next-auth';
+import type { Session } from 'next-auth';
 import { authOptions } from '../pages/api/auth/[...nextauth]'; // Make sure this path is correct
 import { prisma } from './prisma';
 
 export async function getUser(req: any, res?: any) {
   try {
-    const session = await getServerSession(req, res, authOptions);
-    
+    const session = (await getServerSession(req, res, authOptions)) as Session | null;
+
     if (!session?.user?.email) {
       return null;
     }
@@ -16,7 +17,6 @@ export async function getUser(req: any, res?: any) {
         email: session.user.email,
         name: session.user.name || session.user.email,
         avatar: session.user.image,
-        passwordHash: 'nextauth-user'
       },
       update: {
         name: session.user.name || session.user.email,
