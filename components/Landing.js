@@ -72,25 +72,25 @@ export default function Landing() {
         <div className="principles">
           <div className="principle">
             <span className="principle__no">i.</span>
-            <h2 className="h3">Ratings, not watch time</h2>
-            <p className="prose">
-              We rank videos by how much people enjoyed them once they’d finished, never by how long they kept anyone
-              watching.
-            </p>
-          </div>
-          <div className="principle">
-            <span className="principle__no">ii.</span>
             <h2 className="h3">Every pick explains itself</h2>
             <p className="prose">
               Each recommendation comes with a plain reason. You can see what we think you like, and change it.
             </p>
           </div>
           <div className="principle">
-            <span className="principle__no">iii.</span>
-            <h2 className="h3">People, not pipelines</h2>
+            <span className="principle__no">ii.</span>
+            <h2 className="h3">People you can check</h2>
             <p className="prose">
-              Follow friends and people with similar taste. A rating from someone like you counts for more than a
-              million anonymous clicks.
+              Picks come from named people, and you can see how closely their taste matches yours before you trust
+              them.
+            </p>
+          </div>
+          <div className="principle">
+            <span className="principle__no">iii.</span>
+            <h2 className="h3">A programme that ends</h2>
+            <p className="prose">
+              A short list each day, then it’s over. No autoplay, no endless feed, nothing designed to keep you
+              scrolling.
             </p>
           </div>
         </div>
