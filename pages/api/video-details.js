@@ -1,59 +1,55 @@
-import { getVideoDetails } from '../../utils/youtube';
+import { getVideosDetails } from '../../utils/youtube';
 import { prisma } from '../../lib/prisma';
+import { cleanVideoId } from '../../utils/videoUtils';
+
+const MAX_IDS = 50;
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
+    res.setHeader('Allow', ['POST']);
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { videoIds } = req.body;
+  const raw = Array.isArray(req.body?.videoIds) ? req.body.videoIds : [];
+  const ids = Array.from(new Set(raw.map(cleanVideoId).filter(Boolean))).slice(0, MAX_IDS);
 
-  if (!Array.isArray(videoIds) || videoIds.length === 0) {
+  if (ids.length === 0) {
     return res.status(400).json({ error: 'videoIds array required' });
   }
 
   try {
-    const videoDetails = [];
+    // One batched call (1 quota unit) no matter how many ids, up to 50.
+    const found = await getVideosDetails(ids);
 
-    for (const videoId of videoIds) {
-      try {
-        const details = await getVideoDetails(videoId);
-        videoDetails.push({
-          id: details.id,
-          title: details.title,
-          channel: details.channel,
-          category: details.category || null,
-          thumbnail: details.thumbnail,
-          description: '',
-          isMusic: false,
-        });
+    const videos = ids.map((id) => {
+      const v = found.get(id);
+      if (!v) return { id, found: false };
+      return {
+        id: v.id,
+        title: v.title,
+        channel: v.channel,
+        category: v.category || null,
+        thumbnail: v.thumbnail,
+        publishedAt: v.publishedAt,
+        duration: v.duration,
+        embeddable: v.embeddable !== false,
+      };
+    });
 
-        // Opportunistically backfill the category on existing rows (without
-        // overwriting a value that's already set).
-        if (details.category) {
-          await prisma.video
-            .updateMany({
-              where: { id: details.id, category: null },
-              data: { category: details.category },
-            })
-            .catch(() => {});
-        }
-      } catch (error) {
-        console.error(`Failed to fetch details for video ${videoId}:`, error);
-        videoDetails.push({
-          id: videoId,
-          title: 'Previously Rated Video',
-          channel: 'Unknown Channel',
-          category: null,
-          thumbnail: null,
-          isMusic: false,
-        });
-      }
-    }
+    // Opportunistically backfill categories on stored videos (never overwriting).
+    await Promise.all(
+      videos
+        .filter((v) => v.found !== false && v.category)
+        .map((v) =>
+          prisma.video
+            .updateMany({ where: { id: v.id, category: null }, data: { category: v.category } })
+            .catch(() => {})
+        )
+    );
 
-    res.status(200).json({ videos: videoDetails });
+    res.status(200).json({ videos });
   } catch (error) {
     console.error('Video details API error:', error);
-    res.status(500).json({ error: 'Failed to fetch video details' });
+    res.status(502).json({ error: 'Could not reach YouTube for video details' });
   }
 }

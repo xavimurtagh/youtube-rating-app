@@ -28,9 +28,13 @@ export default async function handler(
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
+    // "me" resolves to the signed-in user, so the client can link to its own
+    // profile without knowing its id.
+    const targetId = id === 'me' ? me.id : id;
+
     // Fetch user profile
     const user = await prisma.user.findUnique({
-      where: { id },
+      where: { id: targetId },
       select: {
         id: true,
         name: true,
@@ -80,6 +84,7 @@ export default async function handler(
         avatar: user.avatar,
         bio: user.bio,
         isPrivate: true,
+        viewerId: me.id,
         favourites: [],
         ratings: [],
         followers: user.followers,
@@ -91,6 +96,7 @@ export default async function handler(
     // `videoTitle` / `videoChannel` directly.
     const profile = {
       ...user,
+      viewerId: me.id,
       ratings: user.ratings.map(r => ({
         id: r.id,
         videoId: r.videoId,

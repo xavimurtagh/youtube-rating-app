@@ -45,6 +45,13 @@ export interface CandidateRating {
 
 export type RecommendationSource = 'similar_users' | 'channel' | 'category' | 'popular'
 
+/** Structured explanation, so the interface can write a precise sentence. */
+export type Because =
+  | { kind: 'neighbour'; name: string; similarity: number; rating: number }
+  | { kind: 'category'; category: string }
+  | { kind: 'channel'; channel: string }
+  | { kind: 'community' }
+
 export interface Recommendation {
   video: VideoLite
   /** 0–100 */
@@ -53,6 +60,7 @@ export interface Recommendation {
   recommenderCount: number
   source: RecommendationSource
   reason: string
+  because?: Because
 }
 
 export interface RecommendOptions {
@@ -190,6 +198,9 @@ export function scoreCollaborative(
   for (const v of byVideo.values()) {
     const predicted = v.simSum > 0 ? v.weightedSum / v.simSum : v.scoreSum / v.count
     const avgRating = v.scoreSum / v.count
+    const lead = v.reasons
+      .slice()
+      .sort((a, b) => b.rating * b.similarity - a.rating * a.similarity)[0]
     recs.push({
       video: v.video,
       matchScore: clamp(Math.round(predicted * 10), 0, 100),
@@ -197,6 +208,7 @@ export function scoreCollaborative(
       recommenderCount: v.count,
       source: 'similar_users',
       reason: similarUsersReason(v.reasons, avgRating),
+      because: { kind: 'neighbour', name: lead.user, similarity: lead.similarity, rating: lead.rating },
     })
   }
 
@@ -278,14 +290,17 @@ export function scoreFallback(
     const channelMatch = !!v.video.channel && likedChannels.has(v.video.channel)
 
     let source: RecommendationSource = 'popular'
+    let because: Because = { kind: 'community' }
     let reason = `Popular with the community — average ${round1(avg)}/10 across ${v.count} rating(s).`
     let boost = 0
     if (categoryMatch) {
       source = 'category'
+      because = { kind: 'category', category: v.video.category as string }
       boost = 12
       reason = `In ${v.video.category}, a category you rate highly — community average ${round1(avg)}/10 across ${v.count} rating(s).`
     } else if (channelMatch) {
       source = 'channel'
+      because = { kind: 'channel', channel: v.video.channel as string }
       boost = 10
       reason = `From ${v.video.channel}, a channel you rate highly — community average ${round1(avg)}/10 across ${v.count} rating(s).`
     }
@@ -297,6 +312,7 @@ export function scoreFallback(
       recommenderCount: v.count,
       source,
       reason,
+      because,
     })
   }
 
@@ -306,6 +322,59 @@ export function scoreFallback(
     b.recommenderCount - a.recommenderCount ||
     b.matchScore - a.matchScore
   )
+}
+
+export interface CommunityPick {
+  video: VideoLite
+  avgRating: number
+  ratingCount: number
+  /** Bayesian-smoothed score used for ranking */
+  score: number
+}
+
+/**
+ * Community favourites for cold start: the best-rated videos among members,
+ * ranked by a Bayesian average so that two perfect 10s can't outrank twenty
+ * strong 9s. Every video is pulled toward the community's mean rating until
+ * it has enough ratings to speak for itself.
+ */
+export function communityFavourites(
+  ratings: CandidateRating[],
+  excludeIds: string[] = [],
+  opts: { priorWeight?: number; minRatings?: number; limit?: number } = {}
+): CommunityPick[] {
+  const priorWeight = opts.priorWeight ?? 3
+  const minRatings = opts.minRatings ?? 2
+  const limit = opts.limit ?? 12
+  if (ratings.length === 0) return []
+
+  const exclude = new Set(excludeIds)
+  const mean = ratings.reduce((s, r) => s + r.score, 0) / ratings.length
+
+  const byVideo = new Map<string, { video: VideoLite; sum: number; count: number }>()
+  for (const r of ratings) {
+    if (!r.video || exclude.has(r.videoId)) continue
+    let v = byVideo.get(r.videoId)
+    if (!v) {
+      v = { video: r.video, sum: 0, count: 0 }
+      byVideo.set(r.videoId, v)
+    }
+    v.sum += r.score
+    v.count += 1
+  }
+
+  const picks: CommunityPick[] = []
+  for (const v of byVideo.values()) {
+    if (v.count < minRatings) continue
+    picks.push({
+      video: v.video,
+      avgRating: round1(v.sum / v.count),
+      ratingCount: v.count,
+      score: (priorWeight * mean + v.sum) / (priorWeight + v.count),
+    })
+  }
+
+  return picks.sort((a, b) => b.score - a.score || b.ratingCount - a.ratingCount).slice(0, limit)
 }
 
 /** Merge collaborative results with fallback, de-duplicating by video id. */

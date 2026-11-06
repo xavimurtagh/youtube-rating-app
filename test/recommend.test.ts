@@ -6,6 +6,7 @@ import {
   affinitySet,
   scoreFallback,
   mergeRecommendations,
+  communityFavourites,
   type NeighbourRating,
   type Neighbour,
   type CandidateRating,
@@ -140,5 +141,61 @@ describe('mergeRecommendations', () => {
   it('slices to the max length', () => {
     const merged = mergeRecommendations([r('x'), r('y')], [r('z')], 2)
     expect(merged.map(m => m.video.id)).toEqual(['x', 'y'])
+  })
+})
+
+describe('explanations (because)', () => {
+  it('credits the neighbour who contributed most', () => {
+    const neighbours: Neighbour[] = [
+      { userId: 'A', user: { name: 'Alice' }, similarity: 0.25, correlation: 0.9, commonRatings: 5 },
+      { userId: 'D', user: { name: 'Dave' }, similarity: 0.2, correlation: 0.6, commonRatings: 4 },
+    ]
+    const recs = scoreCollaborative(neighbours, [
+      { userId: 'A', videoId: 'x', score: 9, video: { id: 'x' } },
+      { userId: 'D', videoId: 'x', score: 10, video: { id: 'x' } },
+    ])
+    // Alice: 9 * 90 = 810 beats Dave: 10 * 60 = 600
+    expect(recs[0].because).toEqual({ kind: 'neighbour', name: 'Alice', similarity: 90, rating: 9 })
+  })
+
+  it('labels fallback picks by kind', () => {
+    const mine: RatingLite[] = [
+      { videoId: 'a', score: 9, video: { id: 'a', channel: 'Good', category: 'Music' } },
+    ]
+    const recs = scoreFallback(mine, [
+      { userId: 'u1', videoId: 'e', score: 9, video: { id: 'e', channel: 'Other', category: 'Music' } },
+      { userId: 'u2', videoId: 'f', score: 9, video: { id: 'f', channel: 'Good', category: 'News' } },
+      { userId: 'u3', videoId: 'g', score: 9, video: { id: 'g', channel: 'Else', category: 'News' } },
+    ], [])
+    expect(recs.map(r => r.because)).toEqual([
+      { kind: 'category', category: 'Music' },
+      { kind: 'channel', channel: 'Good' },
+      { kind: 'community' },
+    ])
+  })
+})
+
+describe('communityFavourites', () => {
+  const rating = (videoId: string, score: number, userId = 'u') => ({ userId, videoId, score, video: { id: videoId } })
+
+  it('prefers many strong ratings over a couple of perfect ones (Bayesian average)', () => {
+    const ratings = [
+      rating('lucky', 10, 'a'), rating('lucky', 10, 'b'),
+      ...Array.from({ length: 20 }, (_, i) => rating('solid', 9, `s${i}`)),
+      ...Array.from({ length: 10 }, (_, i) => rating('meh', 5, `m${i}`)),
+    ]
+    const picks = communityFavourites(ratings)
+    expect(picks.map(p => p.video.id)).toEqual(['solid', 'lucky', 'meh'])
+    expect(picks[0]).toMatchObject({ avgRating: 9, ratingCount: 20 })
+  })
+
+  it('excludes videos you have rated and ones with too few ratings', () => {
+    const ratings = [rating('seen', 9, 'a'), rating('seen', 9, 'b'), rating('lonely', 10, 'c'), rating('ok', 8, 'd'), rating('ok', 8, 'e')]
+    const picks = communityFavourites(ratings, ['seen'])
+    expect(picks.map(p => p.video.id)).toEqual(['ok'])
+  })
+
+  it('returns nothing for an empty community', () => {
+    expect(communityFavourites([])).toEqual([])
   })
 })

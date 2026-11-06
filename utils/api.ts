@@ -9,8 +9,16 @@ export async function api<T = any>(path: string, opts: RequestInit = {}) {
   });
 
   if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(errorText);
+    // Surface the server's human-readable message, not a raw JSON string.
+    const text = await res.text();
+    let message = text;
+    try {
+      const body = JSON.parse(text);
+      message = body.error || body.message || text;
+    } catch {
+      // Not JSON; use the text as-is.
+    }
+    throw new Error(message || `Request failed (${res.status})`);
   }
 
   return res.json() as Promise<T>;

@@ -51,30 +51,48 @@ export async function searchVideos(query, maxResults = 20) {
   }
 }
 
+function toVideo(video) {
+  return {
+    id: video.id,
+    title: video.snippet.title,
+    channel: video.snippet.channelTitle,
+    category: categoryName(video.snippet.categoryId),
+    description: '',
+    thumbnail: video.snippet.thumbnails?.medium?.url || video.snippet.thumbnails?.default?.url,
+    publishedAt: video.snippet.publishedAt,
+    viewCount: video.statistics?.viewCount,
+    likeCount: video.statistics?.likeCount,
+    duration: video.contentDetails?.duration,
+    embeddable: video.status?.embeddable,
+    url: `https://www.youtube.com/watch?v=${video.id}`,
+    channelId: video.snippet.channelId
+  };
+}
+
+/**
+ * Details for many videos at once. videos.list accepts up to 50 ids per call
+ * and costs the same single quota unit regardless, so always batch.
+ * Returns a Map of id → video (missing/removed videos are simply absent).
+ */
+export async function getVideosDetails(videoIds) {
+  const ids = Array.from(new Set(videoIds.filter(Boolean)));
+  const found = new Map();
+  for (let i = 0; i < ids.length; i += 50) {
+    const response = await youtube.videos.list({
+      part: ['snippet', 'statistics', 'contentDetails', 'status'],
+      id: ids.slice(i, i + 50)
+    });
+    for (const item of response.data.items || []) found.set(item.id, toVideo(item));
+  }
+  return found;
+}
+
 export async function getVideoDetails(videoId) {
   try {
-    const response = await youtube.videos.list({
-      part: ['snippet', 'statistics', 'contentDetails'],
-      id: [videoId]
-    });
-
-    const video = response.data.items[0];
+    const found = await getVideosDetails([videoId]);
+    const video = found.get(videoId);
     if (!video) throw new Error('Video not found');
-
-    return {
-      id: video.id,
-      title: video.snippet.title,
-      channel: video.snippet.channelTitle,
-      category: categoryName(video.snippet.categoryId),
-      description: '',
-      thumbnail: video.snippet.thumbnails?.medium?.url || video.snippet.thumbnails?.default?.url,
-      publishedAt: video.snippet.publishedAt,
-      viewCount: video.statistics?.viewCount,
-      likeCount: video.statistics?.likeCount,
-      duration: video.contentDetails?.duration,
-      url: `https://www.youtube.com/watch?v=${video.id}`,
-      channelId: video.snippet.channelId
-    };
+    return video;
   } catch (error) {
     console.error('YouTube API Error:', error);
     throw new Error(`Failed to get video details: ${error.message}`);
