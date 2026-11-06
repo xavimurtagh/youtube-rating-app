@@ -1,17 +1,37 @@
-# YouTube Video Rating App
+# Matinee
 
-A secure, privacy-focused web application for rating and managing your YouTube watch history using Google Takeout data.
+Videos worth your time, and the reasons why. Rate what you watch on YouTube and
+get a short daily programme of videos chosen by people with taste like yours —
+every pick with a plain-language reason. Videos play inside the app through
+YouTube's official embedded player.
 
-## Features
+> "Matinee" is a working name, set in one place (`lib/brand.js`). YouTube's
+> branding guidelines don't allow "YouTube" or "YT" in an app's name, though an
+> app may say it works with YouTube.
 
-- 🔍 **Search & Rate Videos**: Search for YouTube videos and rate them
-- 📁 **Google Takeout Import**: Import your YouTube watch history from Google Takeout
-- ⭐ **Rating System**: Rate videos on a 1-10 scale with visual feedback
-- 🛡️ **Privacy Dashboard**: Manage your data and privacy preferences
-- 🤖 **AI Recommendations**: Collaborative-filtering recommendations from users with similar taste, with a content/popularity fallback while the community grows
-- 👥 **Social**: Follow other users, see their activity, and compare ratings
-- 🎨 **Modern Design**: Clean, responsive interface with dark/light mode support
-- ☁️ **Synced Account Data**: Your ratings, favorites, and follows are stored in a database tied to your Google account so they sync across devices
+## What's in it
+
+- **Today** — a finite daily programme: a main feature, "Also showing", and the
+  rest of the bill, each with its reason. Below ten ratings it becomes a
+  cold-start page: rate from your watch history (most-rewatched first) and
+  browse community favourites.
+- **The screening room** (`/watch/[id]`) — YouTube's unmodified player, your
+  rating, the community's score and spread, and why the video was picked. When a
+  video ends, the rating prompt appears beside the player, never over it.
+- **Diary** — everything you've rated by date or by score; rate your imported
+  history; import Google Takeout (read in the browser, never uploaded).
+- **People and profiles** — follow people, see their favourites and rating
+  spread, and your taste match with them.
+- **Settings** — privacy controls enforced server-side, theme, export, delete.
+- **How it works** — the recommendation method, stated plainly.
+
+## Design system
+
+One stylesheet (`styles/globals.css`). Newsreader for voice, Schibsted Grotesk
+for interface, IBM Plex Mono for figures, all self-hosted. Warm paper and ink
+with a dark "screening room" mode, one accent (projector amber) reserved for
+ratings and focus, hairlines instead of boxes, and no shadows, gradients or
+emoji. The rating control is a strip of ten film-sprocket marks.
 
 ## Getting Started
 
@@ -91,17 +111,19 @@ npm run start
 ## Project Structure
 
 ```
-youtube-rating-app/
-├── components/          # React components
-├── hooks/              # Custom React hooks
-├── pages/              # Next.js pages
-├── pages/api/          # API routes
-├── public/             # Static assets
-├── styles/             # CSS styles
-├── utils/              # Utility functions
-├── next.config.js      # Next.js configuration
-├── package.json        # Dependencies and scripts
-└── vercel.json         # Vercel deployment config
+components/   UI: Layout (masthead/footer), Today, Landing, Entry, Still,
+              RatingStrip, Score, Player, Avatar, Toast
+contexts/     LibraryContext — ratings (DB is the source of truth), imported
+              history, the single rating write path
+lib/          recommend.ts (pure, tested recommender), validation, rateLimit,
+              format (reasons, dates), brand, auth, prisma
+pages/        today (/), watch/[id], search, diary, people, profile/[id],
+              settings, how-it-works, rate (bookmarklet popup)
+pages/api/    rate, recommendations, community, my-ratings, me, profile,
+              privacy, feed, follow, favorites, video-details, youtube/search
+prisma/       schema.prisma (apply with `npx prisma db push`)
+styles/       globals.css — the whole design system
+test/         Vitest unit tests
 ```
 
 ## Privacy & Security

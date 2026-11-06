@@ -1,291 +1,231 @@
-import { useRouter } from 'next/router'
-import { useEffect, useState } from 'react'
-import { socialAPI } from '../../utils/api'
-import { getYouTubeUrl, cleanVideoId } from '../../utils/videoUtils';
+import { useEffect, useMemo, useState } from 'react';
+import Head from 'next/head';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
+import { useSession } from 'next-auth/react';
+import Avatar from '../../components/Avatar';
+import Still from '../../components/Still';
+import { Histogram } from '../../components/Score';
+import { Loading, SignInPrompt } from '../../components/Layout';
+import { useToast } from '../../components/Toast';
+import { useLibrary } from '../../contexts/LibraryContext';
+import { socialAPI } from '../../utils/api';
+import { pearson } from '../../lib/recommend';
+import { plural, spelled } from '../../lib/format';
+import { BRAND } from '../../lib/brand';
 
-export default function ProfilePage() {
-  const router = useRouter()
-  const { id: rawId } = router.query
-  const id = Array.isArray(rawId) ? rawId : rawId
+function tasteMatch(theirRatings, ratingOf) {
+  const mine = [];
+  const theirs = [];
+  for (const r of theirRatings) {
+    const score = ratingOf(r.videoId);
+    if (score == null) continue;
+    mine.push(score);
+    theirs.push(r.score);
+  }
+  if (mine.length < 3) return { common: mine.length, percent: null };
+  const r = pearson(mine, theirs);
+  return { common: mine.length, percent: Math.round(Math.max(0, r) * 100), r };
+}
 
-  const [profile, setProfile] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [ratingFilter, setRatingFilter] = useState('all')
-  const [ratingsPage, setRatingsPage] = useState(1);
-  const ratingsPerPage = 20;
+function matchWords(r) {
+  if (r >= 0.7) return 'Very similar taste';
+  if (r >= 0.4) return 'Similar taste';
+  if (r >= 0.1) return 'Some overlap';
+  return 'Different tastes';
+}
+
+export default function Profile() {
+  const router = useRouter();
+  const { status } = useSession();
+  const lib = useLibrary();
+  const toast = useToast();
+  const id = typeof router.query.id === 'string' ? router.query.id : null;
+
+  const [profile, setProfile] = useState(null);
+  const [error, setError] = useState(null);
+  const [following, setFollowing] = useState(false);
 
   useEffect(() => {
-    if (!id) return
-    loadProfile()
-  }, [id])
+    if (!id || status !== 'authenticated') return;
+    setProfile(null);
+    setError(null);
+    socialAPI
+      .getProfile(id)
+      .then((p) => {
+        setProfile(p);
+        setFollowing((p.followers || []).some((f) => f.followerId === p.viewerId));
+      })
+      .catch(() => setError('We couldn’t find that profile.'));
+  }, [id, status]);
 
-  const loadProfile = async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const data = await socialAPI.getProfile(id)
-      setProfile(data)
-    } catch (err) {
-      console.error(err)
-      setError('Failed to load profile.')
-    } finally {
-      setLoading(false)
-    }
-  }
+  const ratings = useMemo(() => profile?.ratings || [], [profile]);
+  const isMe = !!profile && profile.id === profile.viewerId;
 
-  const handleGoBack = () => {
-    router.back()
-  }
+  const distribution = useMemo(() => {
+    const d = {};
+    for (const r of ratings) d[r.score] = (d[r.score] || 0) + 1;
+    return d;
+  }, [ratings]);
 
-  if (loading) {
-    return (
-      <div className="profile-page-container">
-        <div className="loading-state">
-          <p>Loading profile…</p>
-        </div>
-      </div>
-    )
-  }
-  
+  const average = ratings.length ? ratings.reduce((s, r) => s + r.score, 0) / ratings.length : null;
+  const match = useMemo(() => (profile && !isMe ? tasteMatch(ratings, lib.ratingOf) : null), [profile, isMe, ratings, lib]);
+
+  if (status === 'loading' || (!profile && !error && status === 'authenticated')) return <Loading />;
+  if (status !== 'authenticated') return <SignInPrompt title="Sign in to see profiles." />;
   if (error) {
     return (
-      <div className="profile-page-container">
-        <div className="profile-page-content">
-          <p className="error-message">{error}</p>
+      <div className="page">
+        <div className="empty" style={{ paddingTop: 'var(--s-9)' }}>
+          <h1 className="h1">{error}</h1>
+          <Link href="/people" className="arrow-link">
+            People <span aria-hidden="true">→</span>
+          </Link>
         </div>
       </div>
-    )
-  }
-  
-  if (!profile) {
-    return null
+    );
   }
 
-  if (profile.isPrivate) {
-    return (
-      <div className="profile-page-container">
-        <div className="profile-page-content">
-          <button onClick={handleGoBack} className="btn btn--outline back-button">
-            ← Back to Friends
-          </button>
-          <div className="profile-header">
-            <h2>{profile.name}'s Profile</h2>
-            {profile.avatar && (
-              <img src={profile.avatar} alt={profile.name} className="profile-avatar" />
-            )}
-            {profile.bio && <p className="profile-bio">{profile.bio}</p>}
-          </div>
-          <div className="profile-section">
-            <p className="empty-message">🔒 This profile is private.</p>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  const favs = profile.favourites || []
-  const rated = profile.ratings || []
-  
-  // Filter ratings based on selected filter
-  const filteredRatings = ratingFilter === 'all' 
-    ? rated 
-    : rated.filter(r => {
-        switch (ratingFilter) {
-          case '9-10': return r.score >= 9 && r.score <= 10;
-          case '7-8': return r.score >= 7 && r.score <= 8;
-          case '5-6': return r.score >= 5 && r.score <= 6;
-          case '3-4': return r.score >= 3 && r.score <= 4;
-          case '1-2': return r.score >= 1 && r.score <= 2;
-          default: return true;
-        }
-      });
-
-  // Calculate user stats
-  const totalRatings = rated.length;
-  const averageRating = totalRatings > 0 
-    ? (rated.reduce((sum, r) => sum + r.score, 0) / totalRatings).toFixed(1)
-    : 0;
-
-  // Calculate rating distribution
-  const ratingDistribution = {};
-  for (let i = 1; i <= 10; i++) {
-    ratingDistribution[i] = rated.filter(r => Math.floor(r.score) === i).length;
-  }
-
-  const getVideoUrl = (videoId) => {
-    return getYouTubeUrl(videoId) || `https://www.youtube.com/watch?v=${videoId}`;
+  const toggleFollow = async () => {
+    try {
+      if (following) await socialAPI.unfollowUser(profile.id);
+      else await socialAPI.followUser(profile.id);
+      setFollowing(!following);
+    } catch (e) {
+      toast(e.message, { tone: 'error' });
+    }
   };
 
+  const favourites = (profile.favourites || []).slice(0, 4);
+
   return (
-    <div className="profile-page-container">
-      <div className="profile-page-content">
-        <button onClick={handleGoBack} className="btn btn--outline back-button">
-          ← Back to Friends
-        </button>
-        
-        <div className="profile-header">
-          <h2>{profile.name}'s Profile</h2>
-          {profile.avatar && (
-            <img src={profile.avatar} alt={profile.name} className="profile-avatar" />
-          )}
-          {profile.bio && <p className="profile-bio">{profile.bio}</p>}
-          
-          {/* User Stats */}
-          <div className="profile-stats">
-            <div className="stat-item">
-              <span className="stat-number">{totalRatings}</span>
-              <span className="stat-label">Total Ratings</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-number">{averageRating}</span>
-              <span className="stat-label">Average Score</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-number">{favs.length}</span>
-              <span className="stat-label">Favorites</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="profile-sections">
-          {/* Favorites - Horizontal Layout */}
-          <div className="profile-section">
-            <h3>⭐ Favorites ({favs.length})</h3>
-            {favs.length > 0 ? (
-              <div className="favorites-profile-grid">
-                {favs.map((video, index) => (
-                  <div key={video.id} className="favorite-profile-card">
-                    <div className="favorite-thumbnail-container">
-                      <img src={video.thumbnail} alt={video.title} />
-                      <div className="favorite-rank">#{index + 1}</div>
-                    </div>
-                    <div className="favorite-info">
-                      <h4 className="favorite-title">{video.title}</h4>
-                      <p className="favorite-channel">{video.channel}</p>
-                      <a 
-                        href={`https://www.youtube.com/watch?v=${video.id}`}
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="watch-youtube-link"
-                      >
-                        🎬 Watch on YouTube
-                      </a>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="empty-message">No favorites yet.</p>
-            )}
-          </div>
-
-          {/* Rating Distribution */}
-          {totalRatings > 0 && (
-            <div className="profile-section">
-              <h3>📊 Rating Distribution</h3>
-              <div className="rating-distribution">
-                <p><strong>Average Score: {averageRating}/10</strong></p>
-                <div className="distribution-chart">
-                  {Object.entries(ratingDistribution)
-                    .reverse()
-                    .map(([rating, count]) => (
-                      <div key={rating} className="distribution-bar">
-                        <span className="rating-label">{rating}★</span>
-                        <div className="bar-container">
-                          <div 
-                            className="bar-fill" 
-                            style={{width: `${totalRatings > 0 ? (count/totalRatings)*100 : 0}%`}}
-                          ></div>
-                        </div>
-                        <span className="rating-count">{count}</span>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Ratings with Filter */}
-          <div className="profile-section">
-            <div className="section-header">
-              <h3>📊 Ratings ({filteredRatings.length})</h3>
-              <div className="filter-controls">
-                <label>Filter by rating:</label>
-                <select 
-                  value={ratingFilter} 
-                  onChange={(e) => {
-                    setRatingFilter(e.target.value);
-                    setRatingsPage(1); // Reset to page 1 when filtering
-                  }}
-                  className="form-control filter-select"
-                >
-                  <option value="all">All Ratings</option>
-                  <option value="9-10">9-10 (Excellent)</option>
-                  <option value="7-8">7-8 (Good)</option>
-                  <option value="5-6">5-6 (Okay)</option>
-                  <option value="3-4">3-4 (Poor)</option>
-                  <option value="1-2">1-2 (Terrible)</option>
-                </select>
-              </div>
-            </div>
-            
-            {filteredRatings.length > 0 ? (
-              <>
-                <div className="ratings-list">
-                  {filteredRatings
-                    .slice((ratingsPage - 1) * ratingsPerPage, ratingsPage * ratingsPerPage)
-                    .map((r) => {
-                      const cleanId = cleanVideoId(r.videoId);
-                      return (
-                        <div key={r.id} className="rating-item">
-                          <span className="rating-badge">{r.score}/10</span>
-                          <div className="rating-details">
-                            <strong>{r.videoTitle}</strong><br />
-                            <span className="text-muted">{r.videoChannel}</span>
-                          </div>
-                          <a 
-                            href={getVideoUrl(cleanId || r.videoId)} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="btn btn-sm btn-outline-primary"
-                          >
-                            🎬 Watch Video
-                          </a>
-                        </div>
-                      );
-                    })}
-                </div>
-                
-                {/* Pagination Controls */}
-                {filteredRatings.length > ratingsPerPage && (
-                  <div className="pagination-controls">
-                    <button 
-                      onClick={() => setRatingsPage(ratingsPage - 1)}
-                      disabled={ratingsPage === 1}
-                      className="btn btn--outline btn--sm"
-                    >
-                      ← Previous
-                    </button>
-                    <span className="pagination-info">
-                      Page {ratingsPage} of {Math.ceil(filteredRatings.length / ratingsPerPage)}
-                    </span>
-                    <button 
-                      onClick={() => setRatingsPage(ratingsPage + 1)}
-                      disabled={ratingsPage >= Math.ceil(filteredRatings.length / ratingsPerPage)}
-                      className="btn btn--outline btn--sm"
-                    >
-                      Next →
-                    </button>
-                  </div>
+    <>
+      <Head>
+        <title>{`${profile.name} — ${BRAND.name}`}</title>
+      </Head>
+      <div className="page">
+        <header className="profile-head">
+          <Avatar name={profile.name} src={profile.avatar} size="lg" />
+          <div className="stack">
+            <h1 className="h1">{profile.name}</h1>
+            {profile.bio && <p className="lede">{profile.bio}</p>}
+            {!profile.isPrivate && (
+              <p className="stats">
+                <span>
+                  <b>{ratings.length}</b>rated
+                </span>
+                {average != null && (
+                  <span>
+                    <b>{average.toFixed(1)}</b>average
+                  </span>
                 )}
-              </>
-            ) : (
-              <p className="empty-message">No ratings match the selected filter.</p>
+                <span>
+                  <b>{(profile.following || []).length}</b>following
+                </span>
+                <span>
+                  <b>{(profile.followers || []).length}</b>followers
+                </span>
+              </p>
             )}
           </div>
-        </div>
+          <div>
+            {isMe ? (
+              <Link href="/settings" className="btn btn--ghost">
+                Settings
+              </Link>
+            ) : (
+              <button type="button" className={`btn${following ? ' btn--ghost' : ''}`} onClick={toggleFollow}>
+                {following ? 'Following' : 'Follow'}
+              </button>
+            )}
+          </div>
+        </header>
+
+        {profile.isPrivate ? (
+          <section className="section">
+            <p className="lede">This profile is private.</p>
+          </section>
+        ) : (
+          <>
+            {match && (
+              <section className="section">
+                <div className="match">
+                  <span className="label">You and {profile.name.split(' ')[0]}</span>
+                  {match.percent != null ? (
+                    <>
+                      <p className="h2">
+                        {match.percent}% taste match. <em>{matchWords(match.r)}.</em>
+                      </p>
+                      <p className="prose">From {plural(match.common, 'video')} you’ve both rated.</p>
+                    </>
+                  ) : (
+                    <p className="prose">
+                      {match.common === 0
+                        ? 'You haven’t rated any of the same videos yet.'
+                        : `You’ve rated ${spelled(match.common)} of the same videos. A few more and we can compare your taste.`}
+                    </p>
+                  )}
+                </div>
+              </section>
+            )}
+
+            {favourites.length > 0 && (
+              <section className="section">
+                <div className="section__head">
+                  <h2 className="h2">Favourites</h2>
+                </div>
+                <div className="favourites">
+                  {favourites.map((v) => (
+                    <Link key={v.id} href={`/watch/${v.id}`} className="entry">
+                      <Still id={v.id} title={v.title} />
+                      <span className="entry__title" style={{ fontSize: '1.02rem' }}>
+                        {v.title}
+                      </span>
+                      <span className="entry__by">{v.channel}</span>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {ratings.length > 0 && (
+              <section className="section">
+                <div className="section__head">
+                  <h2 className="h2">How {isMe ? 'you rate' : 'they rate'}</h2>
+                  <span className="meta">{plural(ratings.length, 'rating')}</span>
+                </div>
+                <div style={{ maxWidth: '28rem' }}>
+                  <Histogram distribution={distribution} />
+                </div>
+              </section>
+            )}
+
+            <section className="section">
+              <div className="section__head">
+                <h2 className="h2">Recently rated</h2>
+              </div>
+              {ratings.length === 0 ? (
+                <p className="prose">{isMe ? 'Nothing rated yet.' : 'Nothing rated yet.'}</p>
+              ) : (
+                <div className="rows">
+                  {ratings.slice(0, 20).map((r) => (
+                    <Link key={r.id || r.videoId} href={`/watch/${r.videoId}`} className="row">
+                      <Still id={r.videoId} title={r.videoTitle} size="sm" />
+                      <span className="row__body">
+                        <span className="row__title">{r.videoTitle || 'Untitled video'}</span>
+                        <span className="row__sub">{r.videoChannel}</span>
+                      </span>
+                      <span className="row__end">
+                        <span className="row__score">{r.score}</span>
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </section>
+          </>
+        )}
       </div>
-    </div>
-  )
+    </>
+  );
 }
