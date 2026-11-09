@@ -25,7 +25,7 @@ A social rating site for YouTube videos. The working name is **Matinee**, set in
 - **Icons:** `node scripts/make-icons.js <Letter>` regenerates every icon size and the favicon.
 - **Claude's cloud sandbox:** the Prisma engine download is blocked there.
   - Install with `npm ci --ignore-scripts`.
-  - `typecheck` then reports only `@prisma/client has no exported member PrismaClient`. CI runs `prisma generate` first, so it doesn't see that error.
+  - Then run `npx prisma generate --no-engine`. It builds the client's types without the engine, so `npm run typecheck` and `npx next build` check the real database types, as CI does.
 
 ## Map
 

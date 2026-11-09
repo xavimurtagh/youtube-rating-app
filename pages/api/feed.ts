@@ -37,7 +37,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       select: { id: true, title: true, channel: true, available: true },
     })
     type VideoTitle = { id: string; title: string; channel: string; available: boolean }
-    const byId = new Map<string, VideoTitle>(videos.map((v: VideoTitle) => [v.id, v]))
+    const byId = new Map<string, VideoTitle>(videos.map((v: VideoTitle) => [v.id, v] as const))
     const feed = activities
       .filter((a) => byId.get(a.videoId)?.available !== false)
       .map((a) => {
