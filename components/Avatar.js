@@ -6,7 +6,7 @@ export default function Avatar({ name, src, size = 'md' }) {
   const initial = (name || '?').trim().charAt(0).toUpperCase() || '?';
 
   return (
-    <span className={`avatar${size === 'lg' ? ' avatar--lg' : ''}`} aria-hidden="true">
+    <span className={`avatar${size === 'lg' ? ' avatar--lg' : size === 'sm' ? ' avatar--sm' : ''}`} aria-hidden="true">
       {src && !failed ? (
         <img src={src} alt="" referrerPolicy="no-referrer" onError={() => setFailed(true)} />
       ) : (

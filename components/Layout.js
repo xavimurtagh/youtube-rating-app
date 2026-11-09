@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { signIn, useSession } from 'next-auth/react';
-import { useEffect, useState } from 'react';
 import { useTheme } from 'next-themes';
 import Avatar from './Avatar';
 import { BRAND } from '../lib/brand';
@@ -13,18 +12,23 @@ const NAV = [
   { href: '/people', label: 'People' },
 ];
 
-const THEME_LABEL = { system: 'Auto', light: 'Light', dark: 'Dark' };
-const THEME_NEXT = { system: 'light', light: 'dark', dark: 'system' };
-
-export function ThemeCycle() {
-  const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  if (!mounted) return null;
-  const current = theme || 'system';
+/**
+ * Lights down for the dark "screening room" theme, lights up for paper.
+ * Both labels are rendered and CSS shows the right one from the theme
+ * attribute, so the masthead never shifts while the page hydrates.
+ * Settings keeps the third option: follow the system.
+ */
+export function LightsToggle() {
+  const { resolvedTheme, setTheme } = useTheme();
   return (
-    <button type="button" onClick={() => setTheme(THEME_NEXT[current] || 'system')} aria-label="Change theme">
-      Theme: {THEME_LABEL[current] || 'Auto'}
+    <button type="button" className="lights" onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}>
+      <svg className="lights__mark" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+        <circle cx="8" cy="8" r="6.4" fill="none" stroke="currentColor" strokeWidth="1.2" />
+        <path d="M8 1.6a6.4 6.4 0 0 1 0 12.8z" fill="currentColor" />
+      </svg>
+      <span className="lights__label lights__label--down">Lights down</span>
+      <span className="lights__label lights__label--up">Lights up</span>
+      <span className="sr-only"> (switch theme)</span>
     </button>
   );
 }
@@ -54,6 +58,7 @@ export default function Layout({ children }) {
           )}
 
           <div className="masthead__end">
+            <LightsToggle />
             {status === 'authenticated' && (
               <Link href="/profile/me" aria-label="Your profile">
                 <Avatar name={session.user?.name} src={session.user?.image} />
@@ -76,7 +81,8 @@ export default function Layout({ children }) {
           <div className="footer__links">
             <Link href="/how-it-works">How it works</Link>
             {session && <Link href="/settings">Settings</Link>}
-            <ThemeCycle />
+            <Link href="/privacy">Privacy</Link>
+            <Link href="/terms">Terms</Link>
             <a href={BRAND.supportUrl} rel="noopener noreferrer" target="_blank">
               Support the project
             </a>

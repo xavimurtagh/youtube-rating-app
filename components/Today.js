@@ -2,14 +2,21 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useLibrary } from '../contexts/LibraryContext';
 import { useToast } from './Toast';
-import { FeatureEntry, CardEntry, RowEntry } from './Entry';
+import { FeatureEntry, CardEntry, RowEntry, FriendEntry } from './Entry';
 import RatingStrip, { Meter } from './RatingStrip';
 import Still from './Still';
-import Avatar from './Avatar';
-import { dateline, describeReason, plural, relativeTime, spelled, withArticle } from '../lib/format';
-import { rememberVideos } from '../lib/videoCache';
+import { dateline, describeReason, plural, spelled } from '../lib/format';
+import { rememberProgramme, rememberVideos } from '../lib/videoCache';
 
 const UNLOCK = 10;
+const LOVED = 8;
+
+function greeting(date = new Date()) {
+  const h = date.getHours();
+  if (h >= 5 && h < 12) return 'Good morning';
+  if (h >= 12 && h < 18) return 'Good afternoon';
+  return 'Good evening';
+}
 
 function LegacyBanner() {
   const lib = useLibrary();
@@ -41,14 +48,12 @@ function LegacyBanner() {
   );
 }
 
-function HistoryQuickRate({ items, total, onRate, onSkip }) {
+/** For new members: rate what you've already watched, one tap each. */
+function QuickRate({ items, total, onRate, onSkip }) {
   return (
     <section className="section">
       <div className="section__head">
-        <div className="stack">
-          <h2 className="h2">From your watch history</h2>
-          <p className="prose">You’ve seen these. Rating them teaches your programme what you like.</p>
-        </div>
+        <h2 className="h2">Rate a few you’ve seen</h2>
         {total > items.length && (
           <Link href="/diary?tab=history" className="arrow-link">
             All {total} <span aria-hidden="true">→</span>
@@ -83,41 +88,65 @@ function HistoryQuickRate({ items, total, onRate, onSkip }) {
   );
 }
 
-function Activity({ items }) {
+function StartHere() {
+  return (
+    <section className="section">
+      <div className="doors">
+        <Link href="/diary?tab=import" className="door">
+          <span className="door__title">Import your watch history</span>
+          <span className="prose">From Google Takeout. It stays in your browser.</span>
+        </Link>
+        <Link href="/search" className="door">
+          <span className="door__title">Find a video you’ve seen</span>
+          <span className="prose">Search for it, or paste a YouTube link.</span>
+        </Link>
+      </div>
+    </section>
+  );
+}
+
+function Friends({ items }) {
   return (
     <section className="section">
       <div className="section__head">
-        <h2 className="h2">From people you follow</h2>
-        <Link href="/people" className="arrow-link">
-          People <span aria-hidden="true">→</span>
-        </Link>
+        <h2 className="h2">Friends are loving</h2>
+        {items.length > 0 && (
+          <Link href="/people" className="arrow-link">
+            People <span aria-hidden="true">→</span>
+          </Link>
+        )}
       </div>
-      {items.length === 0 ? (
-        <p className="prose">When people you follow rate something, it shows up here.</p>
-      ) : (
-        <div className="rows">
-          {items.slice(0, 8).map((a) => {
-            const score = a.data && typeof a.data === 'object' ? a.data.score : a.data;
-            const title = (a.data && a.data.title) || 'a video';
-            return (
-              <div key={a.id} className="activity">
-                <Avatar name={a.user?.name} src={a.user?.avatar} />
-                <p className="activity__line">
-                  <strong>{a.user?.name || 'Someone'}</strong> gave{' '}
-                  <Link
-                    href={`/watch/${a.videoId}`}
-                    onClick={() => rememberVideos([{ id: a.videoId, title: a.data?.title, channel: a.data?.channel }])}
-                  >
-                    {title}
-                  </Link>{' '}
-                  {score != null ? withArticle(score) : 'a rating'}.
-                </p>
-                <span className="meta">{relativeTime(a.createdAt)}</span>
-              </div>
-            );
-          })}
+      {items.length > 0 ? (
+        <div className="bill bill--four">
+          {items.map((item) => (
+            <FriendEntry key={item.video.id} item={item} />
+          ))}
         </div>
+      ) : (
+        <p className="prose">
+          When people you follow give something an {LOVED} or higher, it shows up here.{' '}
+          <Link className="link" href="/search?type=people">
+            Find people to follow
+          </Link>
+          .
+        </p>
       )}
+    </section>
+  );
+}
+
+function Picks({ title, recs }) {
+  if (recs.length === 0) return null;
+  return (
+    <section className="section">
+      <div className="section__head">
+        <h2 className="h2">{title}</h2>
+      </div>
+      <div className="bill bill--four">
+        {recs.map((rec) => (
+          <CardEntry key={rec.video.id} rec={rec} />
+        ))}
+      </div>
     </section>
   );
 }
@@ -126,13 +155,19 @@ export default function Today() {
   const lib = useLibrary();
   const toast = useToast();
   const [today, setToday] = useState('');
+  const [hello, setHello] = useState('Hello');
   const [programme, setProgramme] = useState({ state: 'loading', recs: [] });
   const [community, setCommunity] = useState([]);
-  const [activity, setActivity] = useState([]);
+  const [activity, setActivity] = useState(null);
+  const [showMore, setShowMore] = useState(false);
 
   const unlocked = lib.ratedCount >= UNLOCK;
+  const firstName = ((lib.me && lib.me.name) || '').trim().split(/\s+/)[0];
 
-  useEffect(() => setToday(dateline()), []);
+  useEffect(() => {
+    setToday(dateline());
+    setHello(greeting());
+  }, []);
 
   useEffect(() => {
     if (!lib.synced) return;
@@ -146,8 +181,9 @@ export default function Today() {
         else if (!res.ok) setProgramme({ state: 'error', recs: [] });
         else if (body.personalizationDisabled) setProgramme({ state: 'off', recs: [] });
         else {
-          const recs = body.recommendations || [];
+          const recs = (body.recommendations || []).slice(0, 12);
           rememberVideos(recs.map((r) => ({ ...r.video, why: describeReason(r) })));
+          rememberProgramme(recs.map((r) => r.video.id));
           setProgramme({ state: 'ready', recs });
         }
       } catch {
@@ -168,20 +204,20 @@ export default function Today() {
     fetch('/api/feed', { credentials: 'include' })
       .then((r) => (r.ok ? r.json() : []))
       .then((a) => setActivity(Array.isArray(a) ? a : []))
-      .catch(() => {});
+      .catch(() => setActivity([]));
   }, [lib.synced]);
 
   const history = useMemo(
     () =>
       [...lib.history]
         .sort((a, b) => (b.watchCount || 1) - (a.watchCount || 1) || String(b.watchedAt).localeCompare(String(a.watchedAt)))
-        .slice(0, unlocked ? 5 : 8),
-    [lib.history, unlocked]
+        .slice(0, 5),
+    [lib.history]
   );
 
   const communityRecs = useMemo(
     () =>
-      community.map((p) => ({
+      community.slice(0, 4).map((p) => ({
         video: p.video,
         avgRating: p.avgRating,
         recommenderCount: p.ratingCount,
@@ -191,11 +227,32 @@ export default function Today() {
     [community]
   );
 
+  // The latest things friends rated highly, newest first, skipping anything
+  // you've rated or that's already among today's picks.
+  const friends = useMemo(() => {
+    const seen = new Set(programme.recs.map((r) => r.video.id));
+    const out = [];
+    for (const a of activity || []) {
+      const data = a.data && typeof a.data === 'object' ? a.data : {};
+      const score = Number(data.score);
+      if (a.type !== 'rating' || !(score >= LOVED) || seen.has(a.videoId) || lib.ratingOf(a.videoId)) continue;
+      seen.add(a.videoId);
+      out.push({
+        video: { id: a.videoId, title: data.title || 'Untitled video', channel: data.channel || '' },
+        name: (a.user && a.user.name) || 'Someone',
+        avatar: a.user && a.user.avatar,
+        score,
+      });
+      if (out.length === 4) break;
+    }
+    return out;
+  }, [activity, lib, programme.recs]);
+
   const rate = async (video, score) => {
     try {
       await lib.rate(video, score);
       const left = UNLOCK - (lib.ratedCount + 1);
-      toast(left > 0 ? `Rated ${score}. ${spelled(left, { capital: true })} to go.` : `Rated ${score}.`);
+      toast(left > 0 ? `Rated ${score}. ${spelled(left, { capital: true })} to go.` : `Rated ${score}. Your picks are ready.`);
     } catch (e) {
       toast(e.message, { tone: 'error' });
     }
@@ -206,141 +263,118 @@ export default function Today() {
     toast('Skipped.', { action: { label: 'Undo', onClick: () => lib.ignore(video.id, false) } });
   };
 
-  const recs = programme.recs;
+  const { state, recs } = programme;
+  const waiting = !lib.synced || state === 'loading';
   const [feature, ...rest] = recs;
   const also = rest.slice(0, 4);
-  const more = rest.slice(4, 11);
-  const waiting = !lib.synced || programme.state === 'loading';
+  const more = rest.slice(4);
+  const hi = `${hello}${firstName ? `, ${firstName}` : ''}.`;
 
-  let headline = <h1 className="display">Now showing</h1>;
-  let lede = null;
-  if (waiting) {
-    lede = <p className="lede note">Choosing today’s programme…</p>;
-  } else if (programme.state === 'locked') {
-    headline = <h1 className="h1">Your programme starts at ten ratings.</h1>;
-    lede = (
-      <div className="stack">
-        <Meter value={Math.min(lib.ratedCount, UNLOCK)} label={`${lib.ratedCount} of ${UNLOCK} ratings`} />
-        <p className="lede">
-          {spelled(Math.max(0, UNLOCK - lib.ratedCount), { capital: true })} to go. Start with videos you’ve already seen.
-        </p>
+  if (state === 'locked' && !waiting) {
+    const left = Math.max(0, UNLOCK - lib.ratedCount);
+    return (
+      <div className="page">
+        {lib.legacyCount > 0 && <LegacyBanner />}
+        <header className="page-head">
+          <p className="dateline">{today || ' '}</p>
+          <h1 className="h1">{firstName ? `Welcome, ${firstName}.` : 'Welcome.'}</h1>
+          <p className="lede">Rate a few videos you’ve already seen, and your picks start here.</p>
+          <div className="progress">
+            <Meter value={Math.min(lib.ratedCount, UNLOCK)} label={`${lib.ratedCount} of ${UNLOCK} ratings`} />
+            <span className="meta">{left === 1 ? 'One to go' : `${spelled(left, { capital: true })} to go`}</span>
+          </div>
+        </header>
+
+        {history.length > 0 ? (
+          <QuickRate items={history} total={lib.history.length} onRate={rate} onSkip={skip} />
+        ) : (
+          <StartHere />
+        )}
+
+        <Picks title="Or start with these" recs={communityRecs} />
+        {activity && <Friends items={friends} />}
       </div>
     );
-  } else if (programme.state === 'off') {
-    headline = <h1 className="h1">Personal picks are switched off.</h1>;
+  }
+
+  let lede = null;
+  if (waiting) lede = <p className="lede note">Choosing today’s picks…</p>;
+  else if (state === 'off')
     lede = (
       <p className="lede">
-        You’ve turned off personalised recommendations. You can switch them back on in{' '}
+        Personal picks are off. You can turn them back on in{' '}
         <Link className="link" href="/settings">
           Settings
         </Link>
         .
       </p>
     );
-  } else if (programme.state === 'error') {
-    lede = <p className="lede">We couldn’t load today’s programme. Try again in a moment.</p>;
-  } else if (recs.length === 0) {
-    lede = <p className="lede">Nothing new to show today. As more people rate, your programme fills in.</p>;
-  } else {
-    lede = (
-      <p className="lede">
-        {spelled(Math.min(recs.length, 12), { capital: true })} videos chosen for you today, each with the reason it’s here.
-      </p>
-    );
+  else if (state === 'error') lede = <p className="lede">We couldn’t load today’s picks. Try again in a moment.</p>;
+  else if (recs.length === 0) lede = <p className="lede">Nothing new for you today. Here’s what people are loving.</p>;
+  else {
+    const n = Math.min(recs.length, 5);
+    lede = <p className="lede">{n === 1 ? 'One pick for today.' : `${spelled(n, { capital: true })} picks for today.`}</p>;
   }
 
-  const showCommunity = communityRecs.length > 0 && (programme.state !== 'ready' || recs.length < 6);
+  const fallback = !waiting && (state !== 'ready' || recs.length === 0);
+  const unrated = lib.history.length;
 
   return (
     <div className="page">
       {lib.legacyCount > 0 && <LegacyBanner />}
 
       <header className="page-head">
-        <p className="dateline">{today || ' '}</p>
-        {headline}
+        <p className="dateline">{today || ' '}</p>
+        <h1 className="h1">{hi}</h1>
         {lede}
       </header>
 
-      {!unlocked && history.length > 0 && (
-        <HistoryQuickRate items={history} total={lib.history.length} onRate={rate} onSkip={skip} />
-      )}
-
-      {!unlocked && lib.synced && history.length === 0 && (
-        <section className="section">
-          <div className="doors">
-            <Link href="/diary?tab=import" className="door">
-              <span className="label">Fastest</span>
-              <span className="door__title">Import your YouTube history</span>
-              <span className="prose">Bring in what you’ve watched from Google Takeout. It stays in your browser.</span>
-            </Link>
-            <Link href="/search" className="door">
-              <span className="label">Or</span>
-              <span className="door__title">Search for something you’ve seen</span>
-              <span className="prose">Find a video you remember, watch a little, and rate it.</span>
-            </Link>
-          </div>
-        </section>
-      )}
-
-      {feature && <FeatureEntry rec={feature} n={1} />}
-
-      {also.length > 0 && (
-        <section className="section">
-          <div className="section__head">
-            <h2 className="h2">Also showing</h2>
-          </div>
-          <div className="bill">
-            {also.map((rec, i) => (
-              <CardEntry key={rec.video.id} rec={rec} n={i + 2} />
-            ))}
-          </div>
-        </section>
-      )}
+      {feature && <FeatureEntry rec={feature} />}
+      <Picks title="Also for you" recs={also} />
 
       {more.length > 0 && (
-        <section className="section">
-          <div className="section__head">
-            <h2 className="h2">The rest of the bill</h2>
-          </div>
-          <div className="rows">
-            {more.map((rec, i) => (
-              <RowEntry key={rec.video.id} rec={rec} n={i + 6} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {recs.length > 0 && (
-        <p className="note" style={{ padding: 'var(--s-6) 0 0' }}>
-          That’s today’s programme. Rate what you watch and tomorrow’s will be sharper.{' '}
-          <Link className="link" href="/how-it-works">
-            How these were chosen
-          </Link>
-          .
-        </p>
-      )}
-
-      {showCommunity && (
-        <section className="section">
-          <div className="section__head">
-            <div className="stack">
-              <h2 className="h2">Community favourites</h2>
-              <p className="prose">The best-rated videos here, while we learn your taste.</p>
+        <div className="more">
+          {showMore ? (
+            <div className="rows">
+              {more.map((rec) => (
+                <RowEntry key={rec.video.id} rec={rec} />
+              ))}
             </div>
-          </div>
-          <div className="bill bill--three">
-            {communityRecs.slice(0, 6).map((rec, i) => (
-              <CardEntry key={rec.video.id} rec={rec} n={i + 1} />
-            ))}
-          </div>
-        </section>
+          ) : (
+            <button type="button" className="arrow-link" onClick={() => setShowMore(true)}>
+              {more.length === 1 ? 'One more pick' : `${spelled(more.length, { capital: true })} more picks`}{' '}
+              <span aria-hidden="true">↓</span>
+            </button>
+          )}
+        </div>
       )}
 
-      {unlocked && history.length > 0 && (
-        <HistoryQuickRate items={history} total={lib.history.length} onRate={rate} onSkip={skip} />
-      )}
+      {fallback && <Picks title="Popular here" recs={communityRecs} />}
 
-      {lib.synced && <Activity items={activity} />}
+      {activity && <Friends items={friends} />}
+
+      {!waiting && (
+        <footer className="today-end">
+          {unlocked && unrated > 0 && (
+            <p>
+              You’ve watched {plural(unrated, 'video')} you haven’t rated.{' '}
+              <Link className="link" href="/diary?tab=history">
+                Rate {unrated === 1 ? 'it' : 'them'}
+              </Link>
+              .
+            </p>
+          )}
+          {recs.length > 0 && (
+            <p className="note">
+              That’s today. New picks tomorrow.{' '}
+              <Link className="link" href="/how-it-works">
+                How these are chosen
+              </Link>
+              .
+            </p>
+          )}
+        </footer>
+      )}
     </div>
   );
 }

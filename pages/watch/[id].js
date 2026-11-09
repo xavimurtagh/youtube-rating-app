@@ -9,7 +9,7 @@ import Score, { Histogram } from '../../components/Score';
 import { Loading } from '../../components/Layout';
 import { useToast } from '../../components/Toast';
 import { useLibrary } from '../../contexts/LibraryContext';
-import { recallVideo, rememberVideos } from '../../lib/videoCache';
+import { nextInProgramme, recallVideo, rememberVideos } from '../../lib/videoCache';
 import { formatDuration, plural, withArticle, yearOf } from '../../lib/format';
 import { BRAND } from '../../lib/brand';
 
@@ -28,6 +28,7 @@ export default function Watch() {
   const [stats, setStats] = useState(null);
   const [ended, setEnded] = useState(false);
   const [favourite, setFavourite] = useState(null);
+  const [next, setNext] = useState(null);
   const ratingRef = useRef(null);
 
   useEffect(() => {
@@ -35,6 +36,7 @@ export default function Watch() {
     setDetails(null);
     setStats(null);
     setCached(valid ? recallVideo(id) : null);
+    setNext(valid ? nextInProgramme(id) : null);
   }, [id, valid]);
 
   const loadStats = useCallback(() => {
@@ -160,6 +162,19 @@ export default function Watch() {
   };
 
   const prompt = ended && !mine;
+  const signedIn = status === 'authenticated';
+  const rated = stats && stats.totalRatings > 0;
+  // Members see what everyone thought after they've rated, so the crowd
+  // doesn't nudge their own score. Visitors who can't rate see it straight away.
+  const reveal = rated && (mine || !signedIn);
+
+  let heading = 'How was it?';
+  if (prompt) heading = 'That’s the end. How was it?';
+  else if (mine) heading = `You gave it ${withArticle(mine)}.`;
+
+  let hint = null;
+  if (!signedIn) hint = 'Sign in to rate it.';
+  else if (!mine) hint = rated ? 'Rate it to see what everyone else thought.' : 'No one here has rated it yet.';
 
   return (
     <>
@@ -172,7 +187,6 @@ export default function Watch() {
           <Player id={id} title={title} onEnded={onEnded} />
         </div>
         <div className="theatre__caption">
-          <span>Playing from YouTube</span>
           <a href={`https://www.youtube.com/watch?v=${id}`} target="_blank" rel="noopener noreferrer">
             Watch on YouTube ↗
           </a>
@@ -184,26 +198,21 @@ export default function Watch() {
           <div className="watch__main">
             <h1 className="h1">{title}</h1>
             {metaLine && <p className="meta">{metaLine}</p>}
-            {why && (
-              <div className="why">
-                <span className="label">Why it’s on your programme</span>
-                <p>{why}</p>
-              </div>
-            )}
+            {why && <p className="watch__why">{why}</p>}
           </div>
 
           <aside className="watch__aside">
             <div ref={ratingRef} className={`panel${prompt ? ' panel--prompt' : ''}`}>
-              <span className="label">{prompt ? 'That’s the end' : 'Your rating'}</span>
-              {prompt && <p className="h3">How was it?</p>}
+              <p className="h3">{heading}</p>
               <RatingStrip value={mine} onChange={onRate} size="lg" label={`Rate ${title}`} />
-              <p className="setting__desc">
-                {mine
-                  ? `You gave it ${withArticle(mine)}. Tap another mark to change it.`
-                  : 'Rate it once you’ve watched. One tap, from one to ten.'}
-              </p>
+              {hint && <p className="note">{hint}</p>}
               {mine && (
-                <div>
+                <div className="panel__actions">
+                  {signedIn && favourite !== null && (
+                    <button type="button" className="textbtn" onClick={toggleFavourite} aria-pressed={favourite}>
+                      {favourite ? 'In your favourites' : 'Add to favourites'}
+                    </button>
+                  )}
                   <button type="button" className="textbtn textbtn--danger" onClick={onRemove}>
                     Remove rating
                   </button>
@@ -211,27 +220,20 @@ export default function Watch() {
               )}
             </div>
 
-            <div className="panel">
-              <span className="label">Community</span>
-              {stats && stats.totalRatings > 0 ? (
-                <>
-                  <Score value={stats.averageRating} caption={plural(stats.totalRatings, 'rating')} />
-                  <Histogram distribution={stats.ratingDistribution} mine={mine} />
-                </>
-              ) : (
-                <p className="setting__desc">No one here has rated this yet. You could be the first.</p>
-              )}
-            </div>
-
-            {status === 'authenticated' && favourite !== null && (
+            {reveal && (
               <div className="panel">
-                <span className="label">Favourites</span>
-                <div>
-                  <button type="button" className="textbtn" onClick={toggleFavourite}>
-                    {favourite ? 'In your favourites — remove' : 'Add to your favourites'}
-                  </button>
-                </div>
+                <Score value={stats.averageRating} size="sm" caption={`from ${plural(stats.totalRatings, 'rating')} here`} />
+                <Histogram distribution={stats.ratingDistribution} mine={mine} />
               </div>
+            )}
+
+            {next && (
+              <Link href={`/watch/${next.id}`} className="next">
+                <span className="meta">
+                  Next pick · {next.position} of {next.total}
+                </span>
+                <span className="next__title">{next.title || 'Untitled video'}</span>
+              </Link>
             )}
           </aside>
         </div>

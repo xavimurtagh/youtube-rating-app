@@ -23,21 +23,28 @@ describe('describeReason', () => {
       recommenderCount: 3,
       avgRating: 8.7,
     })
-    expect(s).toBe('Sam, an 82% taste match, gave it a 9. Two other people with similar taste rated it highly too.')
+    expect(s).toBe('Sam, your 82% taste match, gave it a 9. Two others like you rated it highly too.')
+  })
+  it('keeps to one sentence in the short form', () => {
+    const s = describeReason(
+      { because: { kind: 'neighbour', name: 'Sam', similarity: 82, rating: 9 }, recommenderCount: 3 },
+      { short: true }
+    )
+    expect(s).toBe('Sam, your 82% taste match, gave it a 9.')
   })
   it('omits the "others" clause when only one person recommended it', () => {
     const s = describeReason({ because: { kind: 'neighbour', name: 'Ana', similarity: 64, rating: 10 }, recommenderCount: 1 })
-    expect(s).toBe('Ana, a 64% taste match, gave it a 10.')
+    expect(s).toBe('Ana, your 64% taste match, gave it a 10.')
   })
   it('explains category, channel and community picks without repeating the score', () => {
     expect(describeReason({ because: { kind: 'category', category: 'Education' }, avgRating: 8.9 })).toBe(
-      'Education is one of your best-rated categories.'
+      'You rate Education videos highly.'
     )
     expect(describeReason({ because: { kind: 'channel', channel: 'Kurzgesagt' }, avgRating: 9.1 })).toBe(
-      'Kurzgesagt is one of your best-rated channels.'
+      'You rate Kurzgesagt highly.'
     )
     expect(describeReason({ source: 'popular', avgRating: 9.3, recommenderCount: 14 })).toBe(
-      'One of the best-rated videos here.'
+      'A favourite with people here.'
     )
   })
   it('falls back to the server reason', () => {

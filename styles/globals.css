@@ -385,7 +385,51 @@ button {
   margin-left: auto;
   display: flex;
   align-items: center;
-  gap: var(--s-4);
+  gap: var(--s-5);
+}
+
+/* Lights down / lights up: the theme switch. Both labels are in the markup;
+   the theme attribute decides which one shows. */
+.lights {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: var(--sans);
+  font-size: 0.86rem;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: color 0.2s var(--ease);
+}
+
+.lights:hover {
+  color: var(--ink);
+}
+
+.lights__mark {
+  flex: none;
+}
+
+.lights__label--up,
+[data-theme='dark'] .lights__label--down {
+  display: none;
+}
+
+[data-theme='dark'] .lights__label--up {
+  display: inline;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .lights__label--down {
+    display: none;
+  }
+
+  :root:not([data-theme]) .lights__label--up {
+    display: inline;
+  }
 }
 
 /* ---------- Footer ------------------------------------------------------- */
@@ -504,6 +548,17 @@ button {
   border-bottom: 1px solid var(--rule-2);
   padding-bottom: 2px;
   transition: border-color 0.2s var(--ease);
+}
+
+button.arrow-link {
+  border-width: 0 0 1px;
+  border-style: solid;
+  border-color: var(--rule-2);
+  background: none;
+  padding: 0 0 2px;
+  font-family: var(--sans);
+  color: var(--ink);
+  cursor: pointer;
 }
 
 .arrow-link:hover {
@@ -946,16 +1001,15 @@ a:focus-visible .still img {
 .entry__why {
   font-family: var(--serif);
   font-style: italic;
-  font-size: 1.02rem;
-  line-height: 1.42;
+  font-size: 1rem;
+  line-height: 1.4;
   color: var(--ink-2);
-  border-top: 1px solid var(--rule);
-  padding-top: var(--s-3);
   text-wrap: pretty;
 }
 
 .feature .entry__why {
-  font-size: 1.18rem;
+  font-size: 1.2rem;
+  padding-top: var(--s-2);
 }
 
 .entry__foot {
@@ -1006,10 +1060,70 @@ a.row:hover .row__title {
   gap: var(--s-7) var(--s-6);
 }
 
+.bill--four {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--s-7) var(--s-5);
+  padding-bottom: 0;
+}
+
+.bill--four .entry {
+  gap: var(--s-2);
+}
+
+.bill--four .entry > a:first-child {
+  margin-bottom: var(--s-1);
+}
+
+.bill--four .entry__title {
+  font-size: 1.08rem;
+}
+
+.bill--four .entry__why {
+  font-size: 0.95rem;
+}
+
+.entry__friend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: 0.88rem;
+  color: var(--ink-2);
+}
+
+.entry__friend strong {
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.progress {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-4);
+}
+
+.more {
+  padding: 0 0 var(--s-7);
+}
+
+.today-end {
+  display: grid;
+  gap: var(--s-2);
+  padding-top: var(--s-5);
+  border-top: 1px solid var(--rule);
+  color: var(--ink-2);
+}
+
 /* ---------- Rows (lists, diary, search) ---------------------------------- */
 
 .rows {
   border-top: 1px solid var(--rule);
+}
+
+/* Inside a section the next section's rule closes the list. */
+.section > .rows > .row:last-child {
+  border-bottom: 0;
 }
 
 .row {
@@ -1151,6 +1265,12 @@ a.row:hover .row__title {
   font-size: 2.4rem;
 }
 
+.avatar--sm {
+  width: 22px;
+  height: 22px;
+  font-size: 0.72rem;
+}
+
 /* ---------- Watch -------------------------------------------------------- */
 
 .theatre {
@@ -1180,7 +1300,7 @@ a.row:hover .row__title {
   max-width: 1120px;
   margin: var(--s-3) auto 0;
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: var(--s-4);
   font-family: var(--mono);
   font-size: var(--t-meta);
@@ -1193,7 +1313,7 @@ a.row:hover .row__title {
 
 .watch {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
+  grid-template-columns: minmax(0, 1fr) 360px;
   gap: var(--s-9);
   padding: var(--s-7) 0 0;
 }
@@ -1208,6 +1328,11 @@ a.row:hover .row__title {
   display: grid;
   gap: var(--s-6);
   align-content: start;
+  min-width: 0;
+}
+
+.watch__aside > * {
+  min-width: 0;
 }
 
 .panel {
@@ -1222,21 +1347,49 @@ a.row:hover .row__title {
   border-top-width: 2px;
 }
 
-.why {
-  display: grid;
-  gap: var(--s-2);
+.watch__why {
   max-width: var(--measure);
-  padding: var(--s-4) 0;
-  border-top: 1px solid var(--rule);
-  border-bottom: 1px solid var(--rule);
-}
-
-.why p {
   font-family: var(--serif);
   font-style: italic;
   font-size: 1.2rem;
   line-height: 1.45;
   color: var(--ink-2);
+  text-wrap: pretty;
+}
+
+.panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-5);
+}
+
+.watch__aside .hist {
+  height: 40px;
+}
+
+.next {
+  display: grid;
+  gap: var(--s-1);
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--rule);
+}
+
+.next__title {
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  line-height: 1.25;
+}
+
+.next__title::after {
+  content: ' →';
+  color: var(--ink-3);
+}
+
+.next:hover .next__title {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+  text-decoration-color: var(--rule-2);
 }
 
 /* ---------- Profile ------------------------------------------------------ */
@@ -1363,9 +1516,8 @@ a.row:hover .row__title {
   text-wrap: pretty;
 }
 
-.specimen__why,
 .row__why,
-.why p,
+.watch__why,
 .prose,
 .note {
   text-wrap: pretty;
@@ -1386,19 +1538,28 @@ a.row:hover .row__title {
 
 /* ---------- Landing ------------------------------------------------------ */
 
-.hero {
+.welcome {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
   gap: var(--s-9);
-  align-items: end;
+  align-items: center;
   padding: var(--s-9) 0 var(--s-8);
 }
 
-.hero__copy {
+.welcome__copy {
   display: grid;
   gap: var(--s-6);
 }
 
+.welcome .display {
+  font-size: clamp(2.9rem, 1.4rem + 4.2vw, 5.4rem);
+}
+
+.welcome__copy .lede {
+  max-width: 30rem;
+}
+
+.welcome__actions,
 .hero__actions {
   display: flex;
   flex-wrap: wrap;
@@ -1406,67 +1567,97 @@ a.row:hover .row__title {
   gap: var(--s-5);
 }
 
-/* A miniature printed programme: double rule, numbered bill, a definite end. */
-.specimen {
+/* One example pick, drawn as the app draws it: a title card, the reason,
+   the friends who loved it, and a rating strip you can try. */
+.example {
   display: grid;
-  padding-top: var(--s-4);
-  border-top: 3px double var(--ink);
+  border: 1px solid var(--rule);
+  background: var(--paper);
 }
 
-.specimen__head {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  padding-bottom: var(--s-4);
-}
-
-.specimen__list li {
+.example__card {
+  position: relative;
   display: grid;
-  grid-template-columns: 2.2rem minmax(0, 1fr);
-  gap: var(--s-3);
-  padding: var(--s-4) 0;
-  border-top: 1px solid var(--rule);
+  place-items: center;
+  aspect-ratio: 16 / 9;
+  background: var(--screen);
+  color: var(--screen-ink);
 }
 
-.specimen__title {
+.example__card::after {
+  content: '';
+  position: absolute;
+  left: 20px;
+  bottom: 18px;
+  width: 4px;
+  height: 11px;
+  border-radius: 1px;
+  background: var(--accent);
+}
+
+.example__card-title {
   font-family: var(--serif);
-  font-size: 1.32rem;
-  font-weight: 420;
-  line-height: 1.18;
+  font-style: italic;
+  font-size: clamp(2.4rem, 1.7rem + 2.2vw, 3.6rem);
+  font-weight: 350;
+  letter-spacing: -0.02em;
+}
+
+.example__body {
+  display: grid;
+  gap: var(--s-2);
+  padding: var(--s-5) var(--s-5) var(--s-6);
+}
+
+.example__title {
+  margin-top: var(--s-1);
+  font-family: var(--serif);
+  font-size: 1.4rem;
+  line-height: 1.2;
   letter-spacing: -0.01em;
 }
 
-.specimen__why {
-  margin-top: 6px;
-  font-family: var(--serif);
-  font-style: italic;
-  font-size: 1rem;
-  line-height: 1.4;
+.example__friends {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  margin-top: var(--s-1);
+  font-size: 0.9rem;
   color: var(--ink-2);
 }
 
-.specimen__end {
-  padding-top: var(--s-3);
+.example__faces {
+  display: inline-flex;
+}
+
+.example__faces .avatar {
+  box-shadow: 0 0 0 2px var(--paper);
+}
+
+.example__faces .avatar + .avatar {
+  margin-left: -5px;
+}
+
+.example__rate {
+  display: grid;
+  justify-items: start;
+  gap: var(--s-3);
+  margin-top: var(--s-4);
+  padding-top: var(--s-5);
   border-top: 1px solid var(--rule);
 }
 
-.principles {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--s-7);
+.example__next {
+  color: var(--accent-text);
 }
 
-.principle {
-  display: grid;
-  gap: var(--s-3);
-  align-content: start;
-}
-
-.principle__no {
+.promises {
+  padding-top: var(--s-5);
+  border-top: 1px solid var(--rule);
   font-family: var(--serif);
   font-style: italic;
-  font-size: 1.05rem;
-  color: var(--accent-text);
+  font-size: 1.1rem;
+  color: var(--ink-2);
 }
 
 .steps {
@@ -1490,13 +1681,6 @@ a.row:hover .row__title {
   font-family: var(--mono);
   font-size: var(--t-meta);
   color: var(--ink-3);
-}
-
-.closing {
-  display: grid;
-  justify-items: start;
-  gap: var(--s-5);
-  padding: var(--s-9) 0 0;
 }
 
 /* ---------- Banners, empty states, toasts -------------------------------- */
@@ -1636,13 +1820,18 @@ a.row:hover .row__title {
 /* ---------- Responsive --------------------------------------------------- */
 
 @media (max-width: 1024px) {
-  .hero {
+  .welcome {
     grid-template-columns: 1fr;
     gap: var(--s-7);
     padding-top: var(--s-8);
   }
 
-  .bill--three {
+  .example {
+    max-width: 34rem;
+  }
+
+  .bill--three,
+  .bill--four {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -1664,9 +1853,12 @@ a.row:hover .row__title {
 
   .bill,
   .bill--three,
-  .principles,
   .doors {
     grid-template-columns: 1fr;
+  }
+
+  .bill--four {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .bill {
@@ -1749,6 +1941,42 @@ a.row:hover .row__title {
 
   .steps {
     grid-template-columns: 1fr;
+  }
+
+  /* Picks become a list on phones: still on the left, words on the right. */
+  .bill--four {
+    grid-template-columns: 1fr;
+    gap: var(--s-5);
+  }
+
+  .bill--four .entry {
+    grid-template-columns: 128px minmax(0, 1fr);
+    column-gap: var(--s-4);
+    row-gap: 2px;
+    align-content: start;
+  }
+
+  .bill--four .entry > a:first-child {
+    grid-row: 1 / span 4;
+    margin-bottom: 0;
+  }
+
+  .welcome {
+    padding-top: var(--s-7);
+  }
+
+  .lights__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .lights {
+    min-width: 32px;
+    justify-content: center;
   }
 
   .searchbar {
