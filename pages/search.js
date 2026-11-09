@@ -23,11 +23,15 @@ export default function Search() {
 
   const [query, setQuery] = useState('');
   const [results, setResults] = useState(null);
+  const [local, setLocal] = useState([]);
+  const [limited, setLimited] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     setResults(null);
+    setLocal([]);
+    setLimited(false);
     setError(null);
   }, [type]);
 
@@ -56,17 +60,21 @@ export default function Search() {
     setError(null);
     try {
       if (type === 'videos') {
-        const res = await fetch(`/api/youtube/search?q=${encodeURIComponent(q)}&maxResults=20`);
+        const res = await fetch(`/api/youtube/search?q=${encodeURIComponent(q)}`);
         if (!res.ok) {
           throw new Error(
-            res.status === 403 || res.status === 429
-              ? 'Search is resting for today. Paste a YouTube link to open a video directly.'
+            res.status === 429
+              ? 'You’ve searched a lot in the last hour. Paste a YouTube link to open a video directly, or try again soon.'
               : 'Search didn’t work just now. Try again in a moment.'
           );
         }
         const data = await res.json();
-        const videos = data.videos || [];
-        rememberVideos(videos);
+        const here = Array.isArray(data.local) ? data.local : [];
+        const ids = new Set(here.map((v) => v.id));
+        const videos = (Array.isArray(data.videos) ? data.videos : []).filter((v) => !ids.has(v.id));
+        rememberVideos([...here, ...videos]);
+        setLocal(here);
+        setLimited(!!data.limited);
         setResults(videos);
       } else {
         const people = await socialAPI.searchUsers(q);
@@ -132,32 +140,66 @@ export default function Search() {
           {!error && results === null && (
             <p className="prose">
               {type === 'videos'
-                ? 'Every result opens in the screening room, where you can watch it and rate it. Pasting a YouTube link takes you straight there.'
+                ? 'Search by title or channel, or paste a YouTube link to go straight to the video.'
                 : 'Find friends by name or email. Only people who have chosen to be discoverable appear.'}
             </p>
           )}
 
-          {results && results.length === 0 && <p className="lede">Nothing found for “{query.trim()}”.</p>}
+          {results && type === 'videos' && local.length > 0 && (
+            <section className="results">
+              <h2 className="label">Rated here</h2>
+              <div className="rows">
+                {local.map((v) => {
+                  const mine = lib.ratingOf(v.id);
+                  return (
+                    <Link key={v.id} href={`/watch/${v.id}`} className="row">
+                      <Still id={v.id} title={v.title} />
+                      <span className="row__body">
+                        <span className="row__title">{v.title}</span>
+                        <span className="row__sub">{v.channel}</span>
+                      </span>
+                      <span className="row__end">
+                        {mine ? <span className="row__score">{mine}</span> : <span className="meta">Watch →</span>}
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+          {results && type === 'videos' && limited && results.length === 0 && (
+            <p className="prose">
+              Searching all of YouTube is resting until tomorrow. Paste a YouTube link above to open any video directly.
+            </p>
+          )}
+
+          {results && results.length === 0 && local.length === 0 && !limited && (
+            <p className="lede">Nothing found for “{query.trim()}”.</p>
+          )}
 
           {results && results.length > 0 && type === 'videos' && (
-            <div className="rows">
-              {results.map((v) => {
-                const mine = lib.ratingOf(v.id);
-                return (
-                  <Link key={v.id} href={`/watch/${v.id}`} className="row">
-                    <Still id={v.id} title={v.title} />
-                    <span className="row__body">
-                      <span className="row__title">{v.title}</span>
-                      <span className="row__sub">{[v.channel, yearOf(v.publishedAt)].filter(Boolean).join(' · ')}</span>
-                    </span>
-                    <span className="row__end">
-                      {mine ? <span className="row__score">{mine}</span> : <span className="meta">Watch →</span>}
-                    </span>
-                  </Link>
-                );
-              })}
-            </div>
-          )}
+            <section className="results">
+              {local.length > 0 && <h2 className="label">From YouTube</h2>}
+              <div className="rows">
+                {results.map((v) => {
+                  const mine = lib.ratingOf(v.id);
+                  return (
+                    <Link key={v.id} href={`/watch/${v.id}`} className="row">
+                      <Still id={v.id} title={v.title} />
+                      <span className="row__body">
+                        <span className="row__title">{v.title}</span>
+                        <span className="row__sub">{[v.channel, yearOf(v.publishedAt)].filter(Boolean).join(' · ')}</span>
+                      </span>
+                      <span className="row__end">
+                        {mine ? <span className="row__score">{mine}</span> : <span className="meta">Watch →</span>}
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </section>
+            )}
 
           {results && results.length > 0 && type === 'people' && (
             <div className="rows">

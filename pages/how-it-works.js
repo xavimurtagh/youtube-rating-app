@@ -11,7 +11,7 @@ export default function HowItWorks() {
       <div className="page page--narrow">
         <header className="page-head">
           <p className="label">How it works</p>
-          <h1 className="h1">How your programme is chosen</h1>
+          <h1 className="h1">How your picks are chosen</h1>
           <p className="lede">No secret recipe. Here is exactly what we look at, and what we ignore.</p>
         </header>
 
@@ -21,6 +21,10 @@ export default function HowItWorks() {
             <p>
               One thing: whether you’ll be glad you watched. We measure that with ratings people give after watching,
               and we judge ourselves by how highly you rate the videos we pick for you.
+            </p>
+            <p>
+              Every score you see here comes from members’ ratings, from one to ten. None of it comes from YouTube’s
+              views or likes.
             </p>
           </div>
         </section>
@@ -55,8 +59,8 @@ export default function HowItWorks() {
           <h2 className="h2">What we never use</h2>
           <div className="prose">
             <p>
-              Watch time, clicks, how long you stay in the app, or anything an advertiser pays for. A programme ends,
-              and that’s deliberate.
+              Watch time, clicks, how long you stay in the app, or anything an advertiser pays for. You get a few picks
+              a day and then it ends, and that’s deliberate.
             </p>
           </div>
         </section>

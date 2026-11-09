@@ -14,7 +14,7 @@ const PRIVACY = [
   {
     key: 'allowRecommendations',
     title: 'Personalised recommendations',
-    desc: 'Use your ratings to choose your programme, and to help recommend videos to people with similar taste.',
+    desc: 'Use your ratings to choose your picks and to help choose picks for people with similar taste, who may see your name and score as the reason.',
   },
 ];
 
@@ -199,8 +199,8 @@ export default function Settings() {
             <div className="setting__text">
               <span className="setting__title">Delete everything</span>
               <span className="setting__desc">
-                Permanently removes your ratings, favourites and activity from our servers, and clears this browser. Type
-                “delete” to confirm.
+                Permanently deletes your account, with your ratings, favourites, follows and activity, and clears this
+                browser. Type “delete” to confirm.
               </span>
               <input
                 className="field"

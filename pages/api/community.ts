@@ -25,7 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const [mine, recent] = await Promise.all([
       prisma.rating.findMany({ where: { userId: me.id }, select: { videoId: true } }),
       prisma.rating.findMany({
-        where: { userId: { not: me.id }, user: { allowRecommendations: true } },
+        where: { userId: { not: me.id }, user: { allowRecommendations: true }, video: { available: true } },
         include: { video: true },
         orderBy: { ratedAt: 'desc' },
         take: SCAN_LIMIT,

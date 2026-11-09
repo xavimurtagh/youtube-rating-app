@@ -22,5 +22,11 @@
         }
       ]
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/refresh-videos",
+      "schedule": "23 9 * * *"
+    }
   ]
 }

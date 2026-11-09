@@ -121,19 +121,14 @@ export default async function handler(req, res) {
           }
         });
 
-        // Log the activity. `data` is stored as an object so the social feed
-        // can read `activity.data.score` (and show the title without an extra
-        // lookup, since Activity has no relation to Video).
+        // Log the activity. Only the score is stored: the feed reads titles
+        // from the Video table, which is kept fresh (YouTube's 30-day rule).
         await prisma.activity.create({
           data: {
             userId: me.id,
             type: 'rating',
             videoId: cleanId,
-            data: {
-              score: numericScore,
-              title: video.title || null,
-              channel: video.channel || null
-            },
+            data: { score: numericScore },
           },
         });
           

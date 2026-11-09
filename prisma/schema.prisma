@@ -44,9 +44,15 @@ model Video {
   thumbnail     String?
   category      String?                            // YouTube category name, when known
   isMusic       Boolean   @default(false)
+  // YouTube data must be refreshed within 30 days of being fetched. A daily
+  // job (pages/api/cron/refresh-videos.ts) re-fetches anything older than 25.
+  refreshedAt   DateTime?
+  available     Boolean   @default(true)           // false once YouTube stops serving it
 
   favourites    User[]    @relation("Favourites")
   ratings       Rating[]
+
+  @@index([refreshedAt])
 }
 
 model Rating {
@@ -82,4 +88,15 @@ model Activity {
   createdAt DateTime @default(now())
 
   @@index([userId, createdAt])
+}
+
+/// A day's cache of YouTube search results, keyed by the normalised query.
+/// Each row stands for one search.list call, so counting today's rows also
+/// tells us how much of the daily search budget is spent.
+model SearchCache {
+  query     String   @id
+  results   Json
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
 }

@@ -93,6 +93,20 @@ export default function Layout({ children }) {
   );
 }
 
+/** The agreement YouTube's developer policies require before someone uses the app. */
+export function Consent() {
+  return (
+    <p className="fineprint">
+      By continuing you agree to our <Link href="/terms">Terms</Link> and <Link href="/privacy">Privacy policy</Link>, and
+      to the{' '}
+      <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer">
+        YouTube Terms of Service
+      </a>
+      .
+    </p>
+  );
+}
+
 /** Shown in place of a signed-in page when nobody is signed in. */
 export function SignInPrompt({ title, body }) {
   return (
@@ -102,9 +116,10 @@ export function SignInPrompt({ title, body }) {
         {body && <p className="lede">{body}</p>}
         <div>
           <button type="button" className="btn" onClick={() => signIn('google')}>
-            Sign in with Google
+            Continue with Google
           </button>
         </div>
+        <Consent />
       </div>
     </div>
   );

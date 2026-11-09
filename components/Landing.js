@@ -3,6 +3,7 @@ import { signIn } from 'next-auth/react';
 import RatingStrip from './RatingStrip';
 import Avatar from './Avatar';
 import { withArticle } from '../lib/format';
+import { Consent } from './Layout';
 
 const FRIENDS = ['Sam', 'Priya', 'Jo'];
 
@@ -23,6 +24,7 @@ export default function Landing() {
               Continue with Google
             </button>
           </div>
+          <Consent />
         </div>
 
         <aside className="example" aria-label="An example pick">

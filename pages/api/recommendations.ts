@@ -74,6 +74,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           videoId: { notIn: myVideoIds },
           score: { gte: D.minCandidateScore },
           user: { allowRecommendations: true },
+          video: { available: true },
         },
         include: { video: true, user: { select: { id: true, name: true } } },
       })
@@ -93,6 +94,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           userId: { not: me.id },
           score: { gte: D.minCandidateScore },
           user: { allowRecommendations: true },
+          video: { available: true },
         },
         include: { video: true },
         orderBy: { ratedAt: 'desc' },

@@ -60,8 +60,6 @@ function toVideo(video) {
     description: '',
     thumbnail: video.snippet.thumbnails?.medium?.url || video.snippet.thumbnails?.default?.url,
     publishedAt: video.snippet.publishedAt,
-    viewCount: video.statistics?.viewCount,
-    likeCount: video.statistics?.likeCount,
     duration: video.contentDetails?.duration,
     embeddable: video.status?.embeddable,
     url: `https://www.youtube.com/watch?v=${video.id}`,
@@ -79,7 +77,7 @@ export async function getVideosDetails(videoIds) {
   const found = new Map();
   for (let i = 0; i < ids.length; i += 50) {
     const response = await youtube.videos.list({
-      part: ['snippet', 'statistics', 'contentDetails', 'status'],
+      part: ['snippet', 'contentDetails', 'status'],
       id: ids.slice(i, i + 50)
     });
     for (const item of response.data.items || []) found.set(item.id, toVideo(item));
