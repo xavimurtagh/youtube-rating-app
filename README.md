@@ -1,13 +1,16 @@
 # Matinee
 
-Videos worth your time, and the reasons why. Rate what you watch on YouTube and
-get a short daily programme of videos chosen by people with taste like yours —
-every pick with a plain-language reason. Videos play inside the app through
-YouTube's official embedded player.
+Videos worth your time, and the reasons why. Rate what you watch on YouTube, see
+what your friends are loving, and get a few picks a day from people with taste
+like yours, each with a plain-language reason. Videos play inside the app
+through YouTube's official embedded player.
 
-> "Matinee" is a working name, set in one place (`lib/brand.js`). YouTube's
-> branding guidelines don't allow "YouTube" or "YT" in an app's name, though an
-> app may say it works with YouTube.
+> "Matinee" is a working name, set in `lib/brand.js`, and is being replaced (see
+> `docs/ROADMAP.md`). YouTube's branding guidelines don't allow "YouTube" or "YT"
+> in an app's name or domain, though an app may say it works with YouTube.
+
+Docs: [design guide](docs/DESIGN.md) · [YouTube API use and quota](docs/YOUTUBE_API.md) ·
+[roadmap](docs/ROADMAP.md) · [notes for Claude sessions](CLAUDE.md)
 
 ## What's in it
 
@@ -84,13 +87,18 @@ npm run lint
 CI (GitHub Actions, `.github/workflows/ci.yml`) runs lint, typecheck, tests and
 a production build on every push to `main` and on pull requests.
 
+For design review, `node scripts/screenshots.js 1 all` renders every main
+screen with sample data (all API calls are mocked) while `npm run dev -- -p 3123`
+is running. Screenshots land in `.screenshots/`.
+
 ## Deployment
 
 ### Vercel (Recommended)
 
 1. Connect your GitHub repository to Vercel
-2. Vercel will automatically detect it's a Next.js app
-3. Deploy with default settings
+2. Add the environment variables below, including `CRON_SECRET`
+3. Deploy. `vercel.json` schedules the daily job that refreshes stored YouTube
+   data (`/api/cron/refresh-videos`), which YouTube's 30-day rule requires
 
 ### Manual Deployment
 
@@ -144,7 +152,10 @@ Copy `.env.example` to `.env` and fill in the values:
 | `NEXTAUTH_SECRET` | Secret used to encrypt NextAuth session tokens |
 | `NEXTAUTH_URL` | Base URL of the app (e.g. `http://localhost:3000`) |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth credentials |
-| `YOUTUBE_API_KEY` | Server-side YouTube Data API key (used for search) |
+| `YOUTUBE_API_KEY` | Server-side YouTube Data API key (video details and search) |
+| `CRON_SECRET` | Shared secret for the daily refresh job (Vercel sends it automatically) |
+| `NEXT_PUBLIC_CONTACT_EMAIL` | Contact address shown on the privacy and terms pages |
+| `YOUTUBE_SEARCH_DAILY_CALLS` | Optional. Searches allowed per day across everyone (default 90) |
 
 ## Contributing
 

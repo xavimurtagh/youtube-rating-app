@@ -35,3 +35,6 @@ next-env.d.ts
 
 # prisma
 /lib/generated/prisma
+
+# design-review screenshots (scripts/screenshots.js)
+/.screenshots/
