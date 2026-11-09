@@ -10,7 +10,7 @@ it, and a definite end. A gallery, not a casino.
 | --- | --- | --- |
 | Letterboxd | Restraint; the content is the art | Posters/stills carry the page; the chrome stays quiet |
 | Mubi | Editorial curation, a finite daily pick | "Now showing", the finite programme |
-| Criterion | A collection as identity | Numbering (No. 01), the sense of a canon |
+| Criterion | A collection as identity | The sense of a canon; a short, deliberate selection |
 | Are.na | Calm, no algorithmic pressure | Generous space, nothing shouting |
 | Pitchfork | The score as typography | Ratings set large in the serif: "8.4" |
 | Metrograph | Art-house cinema brand | Paper, ink, one warm accent |
@@ -29,24 +29,29 @@ against them.
 3. **Hairlines, not boxes.** Use the `--rule` tokens. No drop shadows, no
    gradients, no blur, no floating cards. Corners are 2px at most (avatars are
    the only circles).
-4. **No emoji and no icon packs.** Text glyphs (→ ↗ ×) only, sparingly.
+4. **No emoji and no icon packs.** Text glyphs (→ ↗ ↓ ×) only, sparingly. The
+   one drawn mark is the half-filled circle on the Lights toggle.
 5. **One big thing per screen.** A headline, a feature, a title — then quieter
-   material. Avoid uniform grids of identical cards; vary density (feature, a
-   two-up bill, then a numbered list).
-6. **Every recommendation shows its reason**, in italic serif under a hairline:
-   the placard. The score line carries the numbers; the reason never repeats
-   them.
-7. **Finite by design.** No infinite scroll, no autoplay, no red badges or
+   material. Today is: greeting, one feature, a row of four, friends, an end.
+6. **Every recommendation shows its reason**, in italic serif: one short
+   sentence ("Sam, your 82% taste match, gave it a 9."). Cards carry no other
+   numbers: no numbering, no scores.
+7. **Less, until it's needed.** One job per card. No scattered uppercase
+   labels; a heading or a question does the work ("How was it?"). Detail
+   appears when it's useful: the community score shows after you rate, the
+   longer list sits behind "Seven more picks".
+8. **Finite by design.** No infinite scroll, no autoplay, no red badges or
    counters. Things end ("That's it for today").
-8. **Never cover YouTube's player.** Prompts appear beside it.
-9. **Real content in every mock.** Real titles, real lengths, real names —
+9. **Never cover YouTube's player.** Prompts appear beside it.
+10. **Real content in every mock.** Real titles, real lengths, real names —
    never "Lorem ipsum" or "Video title".
 
 ## Voice
 
 - Sentence case everywhere. Plain, specific, warm. No exclamation marks.
 - Never: "AI-powered", "unlock", "supercharge", "seamless", "journey", "elevate".
-- Spell out small numbers in prose ("Twelve videos chosen for you").
+- Spell out small numbers in prose ("Five picks for today", "Six to go").
+- Greet people by name, once: "Good evening, Alex."
 - Say what happened: "Saved. You gave it an 8." — not "Success!"
 - Empty states invite, they don't apologise: "Nothing rated yet. Start with your
   watch history."
@@ -82,7 +87,8 @@ width `--measure` 37rem.
 
 ## Review loop
 
-Before shipping a screen: render it at 1440px and 390px, in light and dark;
+Before shipping a screen: render it at 1440px and 390px, in light and dark
+(`node scripts/screenshots.js 1 all`);
 compare it against the references above; read it against the rules and the
 voice; fix; repeat. Accessibility is part of the review: AA contrast, a visible
 amber focus ring, a keyboard path to every action, and `prefers-reduced-motion`
