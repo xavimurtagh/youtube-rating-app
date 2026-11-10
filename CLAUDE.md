@@ -90,6 +90,13 @@ A social rating site for YouTube videos. The working name is **Matinee**, set in
 - Imported Takeout history stays in the browser.
 - If what's collected or shared changes, update `/privacy`.
 
+**Security**
+- Never write video metadata sent by a browser onto a shared `Video` row; create rows with `ensureVideo` (`lib/videos.ts`).
+- Validate every video id with `cleanVideoId`, cap every string, and return generic error messages (log the detail).
+- Every write route sits behind `middleware.ts` (same-origin check) and a rate limit; anything that spends YouTube quota needs a signed-in member and a budget (`lib/budget.ts`).
+- Private profiles: never named or scored in pick reasons, no activity in feeds, no follower lists.
+- Security headers and the CSP live in `next.config.js`; test new third-party hosts against them.
+
 ## Working conventions
 
 - Work on the branch the session gives you, and commit with clear messages.

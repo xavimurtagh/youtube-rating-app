@@ -8,7 +8,7 @@ export default function Privacy() {
   return (
     <LegalPage
       title="Privacy"
-      updated="9 November 2026"
+      updated="10 November 2026"
       intro={`What ${n} keeps, why, and how to remove it. In short: we keep what you choose to add, we never see your password, your imported watch history stays in your browser, and you can delete everything at any time.`}
     >
       <section>
@@ -40,10 +40,12 @@ export default function Privacy() {
           <li>To show your diary, profile and ratings, as your privacy settings allow.</li>
           <li>
             To choose picks. With personalised recommendations on, your ratings help choose picks for you and for
-            people with similar taste, who may see your name and score as the reason for a pick (for example, “Sam,
-            your 82% taste match, gave it a 9”). Turn this off in Settings and your ratings are left out.
+            people with similar taste. If your profile is public, they may see your name and score as the reason
+            for a pick (for example, “Sam, your 82% taste match, gave it a 9”); if it’s private, you appear only as
+            “someone with similar taste”, without your score. Turn recommendations off in Settings and your ratings
+            are left out.
           </li>
-          <li>To show people who follow you what you’ve rated, if Show activity is on.</li>
+          <li>To show people who follow you what you’ve rated, if Show activity is on and your profile is public.</li>
           <li>
             We don’t sell your data or use it for advertising. Videos play in YouTube’s player, which may show
             YouTube’s own ads.

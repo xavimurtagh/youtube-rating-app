@@ -32,6 +32,13 @@ describe('describeReason', () => {
     )
     expect(s).toBe('Sam, your 82% taste match, gave it a 9.')
   })
+  it('never names someone whose profile is private', () => {
+    const s = describeReason(
+      { because: { kind: 'neighbour', name: null, similarity: 82, rating: null }, recommenderCount: 1 },
+      { short: true }
+    )
+    expect(s).toBe('Someone with an 82% taste match rated it highly.')
+  })
   it('omits the "others" clause when only one person recommended it', () => {
     const s = describeReason({ because: { kind: 'neighbour', name: 'Ana', similarity: 64, rating: 10 }, recommenderCount: 1 })
     expect(s).toBe('Ana, your 64% taste match, gave it a 10.')

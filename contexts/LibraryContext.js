@@ -82,6 +82,19 @@ export function LibraryProvider({ children }) {
       try {
         const email = session?.user?.email || '';
         const owner = localStorage.getItem(OWNER_KEY);
+        if (owner && owner !== email) {
+          // Someone else used this browser before: drop their imported history,
+          // skips and cached ratings before loading this account's.
+          saveVideos([]);
+          saveIgnored([]);
+          saveRatings({});
+          localStorage.removeItem(LEGACY_KEY);
+          localStorage.removeItem(MIGRATED_KEY);
+          videosRef.current = [];
+          setVideos([]);
+          setIgnored([]);
+          setRatings({});
+        }
         const local = loadRatings();
 
         const [{ rows, next }, meRes] = await Promise.all([
@@ -92,9 +105,7 @@ export function LibraryProvider({ children }) {
 
         // Ratings that exist only in this browser (from before accounts, or a
         // failed save) can be offered for upload, but only to their owner.
-        if (owner && owner !== email) {
-          localStorage.removeItem(LEGACY_KEY);
-        } else if (!localStorage.getItem(MIGRATED_KEY)) {
+        if (!localStorage.getItem(MIGRATED_KEY)) {
           const serverIds = new Set(rows.map((r) => r.videoId));
           const onlyLocal = Object.fromEntries(Object.entries(local).filter(([id]) => !serverIds.has(id)));
           if (Object.keys(onlyLocal).length > 0) {

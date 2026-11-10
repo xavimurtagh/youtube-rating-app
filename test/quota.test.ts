@@ -21,3 +21,11 @@ describe('startOfPacificDay', () => {
     expect(startOfPacificDay(now).toISOString()).toBe('2026-11-08T08:00:00.000Z')
   })
 })
+
+describe('pacificDayKey', () => {
+  it('names the quota day in Los Angeles', async () => {
+    const { pacificDayKey } = await import('../lib/quota')
+    expect(pacificDayKey(new Date('2026-11-10T07:30:00Z'))).toBe('2026-11-09')
+    expect(pacificDayKey(new Date('2026-11-10T08:30:00Z'))).toBe('2026-11-10')
+  })
+})

@@ -2,6 +2,8 @@ import { NextApiRequest, NextApiResponse } from 'next'
 import { prisma } from '../../lib/prisma'
 import { getUser } from '../../lib/auth'
 import { enforceRateLimit } from '../../lib/rateLimit'
+import { ensureVideo } from '../../lib/videos'
+import { cleanVideoId } from '../../utils/videoUtils'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const me = await getUser(req, res)
@@ -17,7 +19,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     // GET - Load user's favorites
     if (req.method === 'GET') {
-      console.log('Loading favorites for user:', me.id)
       
       const user = await prisma.user.findUnique({
         where: { id: me.id },
@@ -34,7 +35,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       })
 
       const favorites = user?.favourites || []
-      console.log('Found favorites:', favorites.length)
       
       // Return favorites in the format expected by frontend
       const formattedFavorites = favorites.map(fav => ({
@@ -52,31 +52,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (req.method === 'POST') {
       // Accept both naming conventions (videoTitle/title, etc.) so either
       // caller works.
-      const { videoId } = req.body
-      const title = req.body.videoTitle ?? req.body.title
-      const channel = req.body.videoChannel ?? req.body.channel
-      const thumbnail = req.body.videoThumbnail ?? req.body.thumbnail
-
+      const videoId = cleanVideoId(req.body?.videoId)
       if (!videoId) {
-        return res.status(400).json({ error: 'Missing videoId' })
+        return res.status(400).json({ error: 'Missing or invalid videoId' })
       }
 
-      // Ensure video exists with proper field mapping
-      await prisma.video.upsert({
-        where: { id: videoId },
-        create: {
-          id: videoId,
-          title: title || 'Unknown Video',
-          channel: channel || 'Unknown Channel',
-          thumbnail: thumbnail || null
-        },
-        update: {
-          // Only update if we have better data
-          ...(title && { title }),
-          ...(channel && { channel }),
-          ...(thumbnail && { thumbnail })
-        }
+      // Client metadata is only a hint for a brand-new row (see lib/videos.ts).
+      const exists = await ensureVideo(videoId, {
+        title: req.body.videoTitle ?? req.body.title,
+        channel: req.body.videoChannel ?? req.body.channel,
+        thumbnail: req.body.videoThumbnail ?? req.body.thumbnail,
       })
+      if (exists === 'missing') {
+        return res.status(404).json({ error: 'That video isn’t available on YouTube.' })
+      }
 
       // Add to user's favorites
       await prisma.user.update({
@@ -86,7 +75,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       })
 
-      console.log('Successfully added to favorites')
       return res.status(200).json({ success: true, videoId })
     }
 
@@ -94,7 +82,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (req.method === 'DELETE') {
       // Extract videoId from either body or URL path
       let videoId = req.body?.videoId
-      
+
       if (!videoId && req.url) {
         // Extract from URL like /api/favorites/VIDEO_ID
         const urlParts = req.url.split('/')
@@ -106,11 +94,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       }
 
+      videoId = cleanVideoId(videoId)
       if (!videoId) {
-        return res.status(400).json({ error: 'Missing videoId' })
+        return res.status(400).json({ error: 'Missing or invalid videoId' })
       }
-
-      console.log('Removing from favorites:', videoId)
 
       await prisma.user.update({
         where: { id: me.id },
@@ -119,7 +106,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       })
 
-      console.log('Successfully removed from favorites')
       return res.status(200).json({ success: true, videoId })
     }
 
@@ -128,6 +114,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   } catch (error) {
     console.error('Favorites API error:', error)
-    return res.status(500).json({ error: 'Internal server error', details: error.message })
+    return res.status(500).json({ error: 'Something went wrong updating your favourites.' })
   }
 }

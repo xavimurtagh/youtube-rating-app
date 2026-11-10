@@ -22,7 +22,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             name: true,
             avatar: true,
             bio: true,
-            ratings: { select: { id: true } }
+            publicProfile: true,
+            _count: { select: { ratings: true } }
           }
         }
       }
@@ -33,7 +34,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       name: f.followee.name,
       avatar: f.followee.avatar,
       bio: f.followee.bio,
-      totalRatings: f.followee.ratings.length,
+      totalRatings: f.followee.publicProfile ? f.followee._count.ratings : null,
       followedAt: f.createdAt
     }));
 

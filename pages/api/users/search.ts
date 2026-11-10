@@ -9,7 +9,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // Use NextAuth session
     const me = await getUser(req, res);
     if (!me) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -19,46 +18,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return;
     }
 
-    const { q } = req.query;
-    if (!q || typeof q !== 'string') {
-      return res.status(400).json({ error: 'Search query required' });
+    const raw = typeof req.query.q === 'string' ? req.query.q.trim().slice(0, 100) : '';
+    if (raw.length < 2) {
+      return res.status(400).json({ error: 'Type at least two characters' });
     }
 
-    // Rest stays the same...
+    // An email address only matches exactly, so nobody can work out someone's
+    // address a letter at a time. Names match anywhere.
+    const match = raw.includes('@')
+      ? { email: { equals: raw, mode: 'insensitive' as const } }
+      : { name: { contains: raw, mode: 'insensitive' as const } };
+
     const users = await prisma.user.findMany({
-      where: {
-        AND: [
-          { id: { not: me.id } },
-          { discoverable: true },
-          {
-            OR: [
-              { name: { contains: q, mode: 'insensitive' } },
-              { email: { contains: q, mode: 'insensitive' } }
-            ]
-          }
-        ]
-      },
+      where: { id: { not: me.id }, discoverable: true, ...match },
       select: {
         id: true,
         name: true,
         avatar: true,
         bio: true,
-        ratings: { select: { id: true } },
-        followers: { 
-          where: { followerId: me.id },
-          select: { id: true }
-        }
+        publicProfile: true,
+        _count: { select: { ratings: true } },
+        followers: { where: { followerId: me.id }, select: { id: true } },
       },
-      take: 20
+      take: raw.includes('@') ? 1 : 20,
     });
 
-    const formattedUsers = users.map(user => ({
+    const formattedUsers = users.map((user) => ({
       id: user.id,
       name: user.name,
       avatar: user.avatar,
       bio: user.bio,
-      totalRatings: user.ratings.length,
-      isFollowing: user.followers.length > 0
+      // Private profiles don't reveal how much they rate.
+      totalRatings: user.publicProfile ? user._count.ratings : null,
+      isFollowing: user.followers.length > 0,
     }));
 
     res.status(200).json(formattedUsers);

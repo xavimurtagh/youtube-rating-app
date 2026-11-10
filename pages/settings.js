@@ -10,11 +10,11 @@ import { BRAND } from '../lib/brand';
 const PRIVACY = [
   { key: 'discoverable', title: 'Discoverable', desc: 'Others can find you by name or email in search.' },
   { key: 'publicProfile', title: 'Public profile', desc: 'Others can see your ratings and favourites on your profile.' },
-  { key: 'showActivity', title: 'Show activity', desc: 'People who follow you see your ratings in their programme.' },
+  { key: 'showActivity', title: 'Show activity', desc: 'People who follow you see what you rate highly. Needs a public profile.' },
   {
     key: 'allowRecommendations',
     title: 'Personalised recommendations',
-    desc: 'Use your ratings to choose your picks and to help choose picks for people with similar taste, who may see your name and score as the reason.',
+    desc: 'Use your ratings to choose your picks and to help choose picks for people with similar taste. With a public profile they may see your name and score as the reason; with a private one, you stay anonymous.',
   },
 ];
 
@@ -128,7 +128,15 @@ export default function Settings() {
               <span className="setting__title">{session.user?.name}</span>
               <span className="setting__desc">{session.user?.email}</span>
             </div>
-            <button type="button" className="btn btn--small btn--ghost" onClick={() => signOut({ callbackUrl: '/' })}>
+            <button
+              type="button"
+              className="btn btn--small btn--ghost"
+              onClick={() => {
+                // Leave nothing personal behind on a shared computer.
+                lib.clearLocal();
+                signOut({ callbackUrl: '/' });
+              }}
+            >
               Sign out
             </button>
           </div>

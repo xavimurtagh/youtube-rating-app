@@ -20,15 +20,16 @@ export interface RatingLite {
   video?: VideoLite | null
 }
 
+/** publicProfile false means the person may be counted but never named. */
 export interface NeighbourRating {
   videoId: string
   score: number
-  user: { id?: string; name: string }
+  user: { id?: string; name: string; publicProfile?: boolean }
 }
 
 export interface Neighbour {
   userId: string
-  user: { id?: string; name: string }
+  user: { id?: string; name: string; publicProfile?: boolean }
   /** Significance-weighted correlation — used for ranking and weighting. */
   similarity: number
   /** Raw Pearson correlation in [-1, 1] — used for display. */
@@ -47,7 +48,8 @@ export type RecommendationSource = 'similar_users' | 'channel' | 'category' | 'p
 
 /** Structured explanation, so the interface can write a precise sentence. */
 export type Because =
-  | { kind: 'neighbour'; name: string; similarity: number; rating: number }
+  /** name and rating are null when the neighbour's profile is private. */
+  | { kind: 'neighbour'; name: string | null; similarity: number; rating: number | null }
   | { kind: 'category'; category: string }
   | { kind: 'channel'; channel: string }
   | { kind: 'community' }
@@ -170,7 +172,7 @@ export function scoreCollaborative(
     simSum: number
     scoreSum: number
     count: number
-    reasons: { user: string; rating: number; similarity: number }[]
+    reasons: { user: string; named: boolean; rating: number; similarity: number }[]
   }>()
 
   for (const r of candidates) {
@@ -189,6 +191,7 @@ export function scoreCollaborative(
     v.count += 1
     v.reasons.push({
       user: neighbour.user.name,
+      named: neighbour.user.publicProfile !== false,
       rating: r.score,
       similarity: Math.round(neighbour.correlation * 100),
     })
@@ -207,8 +210,10 @@ export function scoreCollaborative(
       avgRating: round1(avgRating),
       recommenderCount: v.count,
       source: 'similar_users',
-      reason: similarUsersReason(v.reasons, avgRating),
-      because: { kind: 'neighbour', name: lead.user, similarity: lead.similarity, rating: lead.rating },
+      reason: similarUsersReason(v.reasons.length),
+      because: lead.named
+        ? { kind: 'neighbour', name: lead.user, similarity: lead.similarity, rating: lead.rating }
+        : { kind: 'neighbour', name: null, similarity: lead.similarity, rating: null },
     })
   }
 
@@ -217,17 +222,12 @@ export function scoreCollaborative(
     .slice(0, opts.maxRecommendations)
 }
 
-function similarUsersReason(
-  reasons: { user: string; rating: number; similarity: number }[],
-  avgRating: number
-): string {
-  const top = reasons
-    .slice()
-    .sort((a, b) => b.rating * b.similarity - a.rating * a.similarity)
-    .slice(0, 3)
-    .map(r => `${r.user} (${r.similarity}% similar) rated it ${r.rating}/10`)
-    .join(', ')
-  return `Users with similar taste gave this an average of ${round1(avgRating)}/10. ${top}`
+// Plain text for older clients. It never names anyone: the structured
+// `because` decides who may be named.
+function similarUsersReason(count: number): string {
+  return count === 1
+    ? 'Someone with taste like yours rated this highly.'
+    : `${count} people with taste like yours rated this highly.`
 }
 
 /** The set of values (channels or categories) the user rates at/above `minAvg`. */

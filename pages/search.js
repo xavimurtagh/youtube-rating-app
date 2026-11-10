@@ -210,7 +210,7 @@ export default function Search() {
                     <Link href={`/profile/${p.id}`} className="row__title">
                       {p.name}
                     </Link>
-                    <span className="row__sub">{p.bio || plural(p.totalRatings || 0, 'rating')}</span>
+                    <span className="row__sub">{p.bio || (p.totalRatings == null ? 'Private profile' : plural(p.totalRatings, 'rating'))}</span>
                   </div>
                   <button type="button" className={`btn btn--small${p.isFollowing ? ' btn--ghost' : ''}`} onClick={() => follow(p)}>
                     {p.isFollowing ? 'Following' : 'Follow'}

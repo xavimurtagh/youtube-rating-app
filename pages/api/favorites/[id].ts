@@ -17,8 +17,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     if (req.method === 'DELETE') {
-      console.log('Removing favorite:', videoId, 'for user:', me.id)
-
       await prisma.user.update({
         where: { id: me.id },
         data: {
@@ -35,6 +33,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   } catch (error) {
     console.error('Delete favorite error:', error)
-    return res.status(500).json({ error: 'Internal server error', details: error.message })
+    return res.status(500).json({ error: 'Something went wrong updating your favourites.' })
   }
 }

@@ -46,6 +46,8 @@ model Video {
   isMusic       Boolean   @default(false)
   // YouTube data must be refreshed within 30 days of being fetched. A daily
   // job (pages/api/cron/refresh-videos.ts) re-fetches anything older than 25.
+  duration      String?                            // ISO 8601, e.g. PT18M40S
+  publishedAt   DateTime?
   refreshedAt   DateTime?
   available     Boolean   @default(true)           // false once YouTube stops serving it
 
@@ -99,4 +101,14 @@ model SearchCache {
   createdAt DateTime @default(now())
 
   @@index([createdAt])
+}
+
+/// Atomic counters for daily budgets, such as YouTube searches per day and
+/// per member. Keys include the Pacific date; the daily job clears old rows.
+model UsageCounter {
+  key       String   @id
+  count     Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@index([updatedAt])
 }
