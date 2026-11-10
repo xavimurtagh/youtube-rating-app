@@ -8,19 +8,12 @@ export const authOptions = {
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     })
   ],
-  callbacks: {
-    async jwt({ token, account }) {
-      if (account) {
-        token.accessToken = account.access_token
-        token.refreshToken = account.refresh_token
-      }
-      return token
-    },
-    async session({ session, token }) {
-      session.accessToken = token.accessToken
-      session.refreshToken = token.refreshToken
-      return session
-    },
+  // Note: we intentionally do not forward the Google access/refresh tokens to
+  // the client session. The app authenticates users with Google but does not
+  // call the YouTube Data API on their behalf, so exposing those tokens to the
+  // browser would be an unnecessary risk.
+  pages: {
+    error: '/auth/error',
   },
   secret: process.env.NEXTAUTH_SECRET,
   debug: process.env.NODE_ENV === 'development',

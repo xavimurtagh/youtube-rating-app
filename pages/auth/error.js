@@ -1,90 +1,39 @@
-import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
+import { signIn } from 'next-auth/react';
+import { BRAND } from '../../lib/brand';
+
+const MESSAGES = {
+  Configuration: 'Sign-in isn’t configured correctly on our side. We’re sorry; please try again later.',
+  AccessDenied: 'Access was denied. If you closed the Google window, you can simply try again.',
+  Verification: 'That sign-in link has expired or has already been used.',
+};
 
 export default function AuthError() {
   const router = useRouter();
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    if (router.query.error) {
-      setError(router.query.error);
-    }
-  }, [router.query.error]);
-
-  const getErrorMessage = (errorCode) => {
-    switch (errorCode) {
-      case 'Configuration':
-        return 'There is a problem with the server configuration.';
-      case 'AccessDenied':
-        return 'Access was denied. You may have cancelled the login process.';
-      case 'Verification':
-        return 'The verification token has expired or has already been used.';
-      default:
-        return 'An unknown error occurred during authentication.';
-    }
-  };
+  const code = typeof router.query.error === 'string' ? router.query.error : '';
 
   return (
     <>
       <Head>
-        <title>Authentication Error - YouTube Rating App</title>
+        <title>{`Sign-in problem — ${BRAND.name}`}</title>
       </Head>
-      
-      <div className="container">
-        <div className="auth-error-page">
-          <div className="error-content">
-            <div className="error-icon">⚠️</div>
-            <h1>Authentication Error</h1>
-            <p className="error-message">{getErrorMessage(error)}</p>
-            
-            <div className="error-actions">
-              <Link href="/" className="btn btn--primary">
-                Return Home
-              </Link>
-              <button 
-                onClick={() => router.back()} 
-                className="btn btn--secondary"
-              >
-                Go Back
-              </button>
-            </div>
+      <div className="page">
+        <div className="empty" style={{ paddingTop: 'var(--s-9)' }}>
+          <p className="label">Sign-in problem</p>
+          <h1 className="h1">That didn’t work.</h1>
+          <p className="lede">{MESSAGES[code] || 'Something went wrong while signing you in.'}</p>
+          <div className="hero__actions">
+            <button type="button" className="btn" onClick={() => signIn('google', { callbackUrl: '/' })}>
+              Try again
+            </button>
+            <Link href="/" className="arrow-link">
+              Back to the start <span aria-hidden="true">→</span>
+            </Link>
           </div>
         </div>
       </div>
-      
-      <style jsx>{`
-        .auth-error-page {
-          min-height: 80vh;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        
-        .error-content {
-          text-align: center;
-          max-width: 500px;
-          padding: var(--space-32);
-        }
-        
-        .error-icon {
-          font-size: 4rem;
-          margin-bottom: var(--space-24);
-        }
-        
-        .error-message {
-          margin: var(--space-16) 0 var(--space-32) 0;
-          color: var(--color-text-secondary);
-        }
-        
-        .error-actions {
-          display: flex;
-          gap: var(--space-16);
-          justify-content: center;
-          flex-wrap: wrap;
-        }
-      `}</style>
     </>
   );
 }

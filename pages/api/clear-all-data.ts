@@ -15,38 +15,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    console.log('Clearing all data for user:', me.id)
-
-    // Use a transaction to ensure all data is cleared together
+    // Deleting is complete: ratings, activity, follows in both directions,
+    // favourites, then the account itself. Signing in again starts afresh.
     await prisma.$transaction(async (tx) => {
-      // Clear user's ratings
-      await tx.rating.deleteMany({
-        where: { userId: me.id }
-      })
-
-      // Clear user's activity
-      await tx.activity.deleteMany({
-        where: { userId: me.id }
-      })
-
-      // Clear user's favourites
-      await tx.user.update({
-        where: { id: me.id },
-          data: {
-            favourites: { set:[] }
-          }
-      })
-
-      // Optionally clear the user account entirely
-      // Uncomment the line below if you want to delete the user account too
-      // await tx.User.delete({ where: { id: me.id } })
+      await tx.rating.deleteMany({ where: { userId: me.id } })
+      await tx.activity.deleteMany({ where: { userId: me.id } })
+      await tx.follow.deleteMany({ where: { OR: [{ followerId: me.id }, { followeeId: me.id }] } })
+      await tx.user.update({ where: { id: me.id }, data: { favourites: { set: [] } } })
+      await tx.user.delete({ where: { id: me.id } })
     })
 
-    console.log('Successfully cleared all user data')
-    return res.status(200).json({ success: true, message: 'All data cleared successfully' })
-
+    return res.status(200).json({ success: true })
   } catch (error) {
-    console.error('Clear all data error:', error)
-    return res.status(500).json({ error: 'Failed to clear data', details: error.message })
+    console.error('Delete account error:', error)
+    return res.status(500).json({ error: 'Could not delete your data. Nothing was removed.' })
   }
 }

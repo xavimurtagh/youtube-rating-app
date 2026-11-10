@@ -8,16 +8,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // Use NextAuth session instead of JWT
     const me = await getUser(req, res);
     if (!me) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    // Rest of your feed logic stays the same
     const activities = await prisma.activity.findMany({
       where: {
         user: {
+          showActivity: true,
           followers: { some: { followerId: me.id } }
         }
       },
@@ -30,7 +29,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       take: 50
     });
 
-    res.status(200).json(activities);
+    // Titles come from the Video table (refreshed within 30 days), not from
+    // the activity row; activity for videos YouTube no longer serves is dropped.
+    const ids = Array.from(new Set(activities.map((a: { videoId: string }) => a.videoId)))
+    const videos = await prisma.video.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, title: true, channel: true, available: true },
+    })
+    type VideoTitle = { id: string; title: string; channel: string; available: boolean }
+    const byId = new Map<string, VideoTitle>(videos.map((v: VideoTitle) => [v.id, v] as const))
+    const feed = activities
+      .filter((a) => byId.get(a.videoId)?.available !== false)
+      .map((a) => {
+        const v = byId.get(a.videoId)
+        const data = a.data && typeof a.data === 'object' && !Array.isArray(a.data) ? a.data : {}
+        return { ...a, data: { ...data, title: v?.title ?? null, channel: v?.channel ?? null } }
+      })
+
+    res.status(200).json(feed);
   } catch (error) {
     console.error('Feed error:', error);
     res.status(500).json({ error: 'Internal server error' });

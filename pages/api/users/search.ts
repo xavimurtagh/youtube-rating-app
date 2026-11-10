@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '../../../lib/prisma';
 import { getUser } from '../../../lib/auth';
+import { enforceRateLimit } from '../../../lib/rateLimit';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -14,6 +15,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
+    if (!enforceRateLimit(req, res, { id: `search:${me.id}`, limit: 30, windowMs: 60_000 })) {
+      return;
+    }
+
     const { q } = req.query;
     if (!q || typeof q !== 'string') {
       return res.status(400).json({ error: 'Search query required' });
@@ -24,6 +29,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       where: {
         AND: [
           { id: { not: me.id } },
+          { discoverable: true },
           {
             OR: [
               { name: { contains: q, mode: 'insensitive' } },
@@ -35,7 +41,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       select: {
         id: true,
         name: true,
-        email: true,
         avatar: true,
         bio: true,
         ratings: { select: { id: true } },
@@ -50,7 +55,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const formattedUsers = users.map(user => ({
       id: user.id,
       name: user.name,
-      email: user.email,
       avatar: user.avatar,
       bio: user.bio,
       totalRatings: user.ratings.length,

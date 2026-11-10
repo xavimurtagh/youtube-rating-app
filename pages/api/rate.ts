@@ -2,6 +2,8 @@ import { NextApiRequest, NextApiResponse } from 'next'
 import { prisma } from '../../lib/prisma'
 import { getUser } from '../../lib/auth'
 import { cleanVideoId } from '../../utils/videoUtils';
+import { parseScore } from '../../lib/validation';
+import { enforceRateLimit } from '../../lib/rateLimit';
 
 // Add retry utility
 async function withRetry(operation, maxRetries = 3, delay = 1000) {
@@ -52,15 +54,26 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Unauthorized' })
   }
 
+  if (!enforceRateLimit(req, res, { id: `rate:${me.id}`, limit: 60, windowMs: 60_000 })) {
+    return
+  }
+
   try {
 
     triggerCleanupIfNeeded();
     
     if (req.method === 'POST') {
       const { video, score } = req.body
-      
-      if (!video?.id || score === undefined) {
+
+      if (!video?.id || score === undefined || score === null) {
         return res.status(400).json({ error: 'Missing video or score' })
+      }
+
+      // Validate the score: it must be an integer between 1 and 10
+      // (the Rating.score column is an Int, and the UI only offers 1-10).
+      const numericScore = parseScore(score)
+      if (numericScore === null) {
+        return res.status(400).json({ error: 'Score must be a number between 1 and 10' })
       }
 
       // Clean the video ID
@@ -68,14 +81,6 @@ export default async function handler(req, res) {
       if (!cleanId) {
         return res.status(400).json({ error: 'Invalid video ID format' });
       }
-    
-      // Update video object with clean ID
-      const cleanVideo = {
-        ...video,
-        id: cleanId
-      };
-
-      console.log('Rating video:', cleanId, 'with score:', score);
 
       // Use retry logic for database operations
       const result = await withRetry(async () => {
@@ -86,12 +91,14 @@ export default async function handler(req, res) {
             id: cleanId,
             title: video.title || 'Unknown Video',
             channel: video.channel || 'Unknown Channel',
-            thumbnail: video.thumbnail || null
+            thumbnail: video.thumbnail || null,
+            category: video.category || null
           },
           update: {
             ...(video.title && { title: video.title }),
             ...(video.channel && { channel: video.channel }),
-            ...(video.thumbnail && { thumbnail: video.thumbnail })
+            ...(video.thumbnail && { thumbnail: video.thumbnail }),
+            ...(video.category && { category: video.category })
           }
         });
 
@@ -106,26 +113,27 @@ export default async function handler(req, res) {
           create: {
             userId: me.id,
             videoId: cleanId,
-            score: parseFloat(score)
+            score: numericScore
           },
           update: {
-            score: parseFloat(score)
+            score: numericScore,
+            ratedAt: new Date()
           }
         });
 
-        // Log the activity
+        // Log the activity. Only the score is stored: the feed reads titles
+        // from the Video table, which is kept fresh (YouTube's 30-day rule).
         await prisma.activity.create({
           data: {
             userId: me.id,
             type: 'rating',
             videoId: cleanId,
-            data: parseFloat(score),
+            data: { score: numericScore },
           },
         });
           
       });
 
-      console.log('Rating saved successfully');
       return res.status(200).json({ success: true, rating: result });
     }
 
