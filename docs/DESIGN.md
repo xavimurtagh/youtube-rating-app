@@ -40,8 +40,10 @@ against them.
    labels; a heading or a question does the work ("How was it?"). Detail
    appears when it's useful: the community score shows after you rate, the
    longer list sits behind "Seven more picks".
-8. **Finite by design.** No infinite scroll, no autoplay, no red badges or
-   counters. Things end ("That's it for today").
+8. **Nothing endless by default.** Picks come first and are complete in
+   themselves; members can keep browsing, but more loads only when they ask
+   ("Show more"). No infinite scroll, no autoplay, no red badges or counters,
+   and nothing that rewards watching more.
 9. **Never cover YouTube's player.** Prompts appear beside it.
 10. **Real content in every mock.** Real titles, real lengths, real names —
    never "Lorem ipsum" or "Video title".

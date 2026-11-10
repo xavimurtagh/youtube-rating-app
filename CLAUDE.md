@@ -11,7 +11,7 @@ A social rating site for YouTube videos. The working name is **Matinee**, set in
 - Members rate videos from 1 to 10 and follow friends.
 - Each day they get a few picks, each with a plain-language reason, such as "Sam, your 82% taste match, gave it a 9".
 - Videos play in YouTube's embedded player inside the app.
-- There's no autoplay and no endless feed: a day's picks end.
+- Picks come first; members can then browse as long as they like. More loads only when asked for: no autoplay and no infinite scroll, and every item says why it's there.
 
 ## Stack and commands
 
