@@ -21,6 +21,9 @@ export const SEARCH_DAILY_CALLS = Number(process.env.YOUTUBE_SEARCH_DAILY_CALLS 
 /** Stored video details are refreshed once they are this old (policy limit: 30). */
 export const REFRESH_AFTER_DAYS = 25
 
+/** YouTube searches one member may trigger per Pacific day (cache hits are free). */
+export const SEARCH_PER_MEMBER_DAILY = Number(process.env.YOUTUBE_SEARCH_PER_MEMBER || 15)
+
 /** One cache key per meaningfully different query. */
 export function normaliseQuery(q: string): string {
   return q.normalize('NFKC').trim().toLowerCase().replace(/\s+/g, ' ').slice(0, 120)
@@ -38,4 +41,9 @@ export function startOfPacificDay(now: Date = new Date()): Date {
   const get = (type: string) => Number(parts.find((p) => p.type === type)?.value || 0)
   const elapsed = ((get('hour') * 60 + get('minute')) * 60 + get('second')) * 1000 + now.getUTCMilliseconds()
   return new Date(now.getTime() - elapsed)
+}
+
+/** The current YouTube quota day as YYYY-MM-DD in Los Angeles, for counter keys. */
+export function pacificDayKey(now: Date = new Date()): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Los_Angeles' }).format(now)
 }

@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { prisma } from '../../lib/prisma'
 import { getUser } from '../../lib/auth'
+import { enforceRateLimit } from '../../lib/rateLimit'
 import {
   RECOMMEND_DEFAULTS as D,
   computeNeighbours,
@@ -25,15 +26,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!me) {
       return res.status(401).json({ error: 'Unauthorized' })
     }
+    if (!enforceRateLimit(req, res, { id: `recommendations:${me.id}`, limit: 20, windowMs: 60_000 })) {
+      return
+    }
 
     // Respect the user's own personalization preference.
     if (!me.allowRecommendations) {
       return res.status(200).json({ recommendations: [], personalizationDisabled: true })
     }
 
+    // Bounded work per request: the most recent 1,000 ratings are plenty to
+    // find neighbours. (A nightly precompute replaces this at scale.)
     const myRatings = await prisma.rating.findMany({
       where: { userId: me.id },
       include: { video: true },
+      orderBy: { ratedAt: 'desc' },
+      take: 1000,
     })
 
     if (myRatings.length < MIN_RATINGS_REQUIRED) {
@@ -54,7 +62,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         videoId: { in: myVideoIds },
         user: { allowRecommendations: true },
       },
-      include: { user: { select: { id: true, name: true } } },
+      include: { user: { select: { id: true, name: true, publicProfile: true } } },
+      take: 20000,
     })
 
     const ratingsByUser = new Map<string, NeighbourRating[]>()
@@ -77,8 +86,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           video: { available: true },
         },
         include: { video: true, user: { select: { id: true, name: true } } },
+        orderBy: { score: 'desc' },
+        take: 5000,
       })
-      const candLite: CandidateRating[] = candidates.map(c => ({
+      // Anything rated outside the most recent 1,000 is still excluded here.
+      const allMine = new Set(
+        (await prisma.rating.findMany({ where: { userId: me.id }, select: { videoId: true } })).map(r => r.videoId)
+      )
+      const candLite: CandidateRating[] = candidates.filter(c => !allMine.has(c.videoId)).map(c => ({
         userId: c.userId,
         videoId: c.videoId,
         score: c.score,

@@ -56,7 +56,8 @@ export default async function handler(
             score: true,
             video: { select: { title: true, channel: true } }
           },
-          orderBy: { ratedAt: 'desc' }
+          orderBy: { ratedAt: 'desc' },
+          take: 500
         },
         followers: {
           select: {
@@ -87,8 +88,9 @@ export default async function handler(
         viewerId: me.id,
         favourites: [],
         ratings: [],
-        followers: user.followers,
-        following: user.following,
+        // Only the viewer's own follow, so the button works; no lists of ids.
+        followers: user.followers.filter((f) => f.followerId === me.id),
+        following: [],
       });
     }
 

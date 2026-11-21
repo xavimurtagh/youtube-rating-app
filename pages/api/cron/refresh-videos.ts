@@ -32,17 +32,36 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   let refreshed = 0
   let unavailable = 0
+  let failedBatches = 0
   let stoppedEarly: string | null = null
 
-  for (let i = 0; i < stale.length; i += BATCH) {
-    const ids = stale.slice(i, i + BATCH).map((v: { id: string }) => v.id)
+  // Ids that can't be YouTube videos (left by older code) are retired at once.
+  const VALID = /^[A-Za-z0-9_-]{11}$/
+  const invalid = stale.map((v: { id: string }) => v.id).filter((id: string) => !VALID.test(id))
+  if (invalid.length > 0) {
+    await prisma.video.updateMany({
+      where: { id: { in: invalid } },
+      data: { available: false, title: 'Unavailable video', channel: '', thumbnail: null, refreshedAt: new Date() },
+    })
+    unavailable += invalid.length
+  }
+  const valid = stale.map((v: { id: string }) => v.id).filter((id: string) => VALID.test(id))
+
+  for (let i = 0; i < valid.length; i += BATCH) {
+    const ids = valid.slice(i, i + BATCH)
     let found: Map<string, any>
     try {
       found = await getVideosDetails(ids)
     } catch (error: any) {
-      // Out of quota or YouTube unreachable: try again tomorrow.
-      stoppedEarly = String(error?.message || error)
-      break
+      const message = String(error?.message || error)
+      if (/quota/i.test(message)) {
+        // Out of quota: everything else waits for tomorrow.
+        stoppedEarly = message
+        break
+      }
+      // Anything else affects this batch only.
+      failedBatches++
+      continue
     }
     const now = new Date()
     await prisma.$transaction(
@@ -57,6 +76,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               channel: v.channel,
               thumbnail: v.thumbnail || null,
               ...(v.category ? { category: v.category } : {}),
+              duration: v.duration || null,
+              publishedAt: v.publishedAt ? new Date(v.publishedAt) : null,
               refreshedAt: now,
             },
           })
@@ -72,10 +93,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const twoDaysAgo = new Date(Date.now() - 2 * 24 * 3600 * 1000)
   const { count: searchesCleared } = await prisma.searchCache.deleteMany({ where: { createdAt: { lt: twoDaysAgo } } })
+  const { count: countersCleared } = await prisma.usageCounter.deleteMany({
+    where: { updatedAt: { lt: new Date(Date.now() - 3 * 24 * 3600 * 1000) } },
+  })
 
   // Older activity rows carried a copy of the video title; the feed now reads
   // titles from the refreshed Video table, so drop the copies.
   const activityCleaned = await prisma.$executeRaw`UPDATE "Activity" SET data = (data::jsonb - 'title' - 'channel') WHERE data::jsonb ? 'title' OR data::jsonb ? 'channel'`
 
-  return res.status(200).json({ checked: stale.length, refreshed, unavailable, searchesCleared, activityCleaned, stoppedEarly })
+  return res
+    .status(200)
+    .json({ checked: stale.length, refreshed, unavailable, failedBatches, searchesCleared, countersCleared, activityCleaned, stoppedEarly })
 }

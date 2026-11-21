@@ -2,7 +2,8 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import { prisma } from '../../../lib/prisma'
 import { getUser } from '../../../lib/auth'
 import { enforceRateLimit } from '../../../lib/rateLimit'
-import { normaliseQuery, startOfPacificDay, SEARCH_CACHE_HOURS, SEARCH_DAILY_CALLS } from '../../../lib/quota'
+import { normaliseQuery, pacificDayKey, SEARCH_CACHE_HOURS, SEARCH_DAILY_CALLS, SEARCH_PER_MEMBER_DAILY } from '../../../lib/quota'
+import { spend } from '../../../lib/budget'
 import { searchVideos } from '../../../utils/youtube'
 
 /**
@@ -10,7 +11,9 @@ import { searchVideos } from '../../../utils/youtube'
  * (search.list has its own quota bucket), so this route:
  * - is for signed-in members only, with a per-person hourly limit;
  * - answers repeat queries from a 24-hour cache;
- * - stops calling YouTube once the day's search budget is spent;
+ * - gives each member a small daily allowance of YouTube searches, and stops
+ *   calling YouTube once the site's daily budget is spent (both counted
+ *   atomically in the database, so bursts can't slip past);
  * - always includes matching videos already rated here, which cost nothing.
  */
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -49,8 +52,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(200).json({ local, videos: cached.results, cached: true })
     }
 
-    const callsToday = await prisma.searchCache.count({ where: { createdAt: { gte: startOfPacificDay() } } })
-    if (callsToday >= SEARCH_DAILY_CALLS) {
+    const day = pacificDayKey()
+    const allowed =
+      (await spend(`search:${me.id}:${day}`, SEARCH_PER_MEMBER_DAILY)) && (await spend(`search:${day}`, SEARCH_DAILY_CALLS))
+    if (!allowed) {
       return res.status(200).json({ local, videos: cached ? cached.results : [], limited: true })
     }
 

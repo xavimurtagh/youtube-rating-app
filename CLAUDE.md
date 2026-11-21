@@ -11,7 +11,7 @@ A social rating site for YouTube videos. The working name is **Matinee**, set in
 - Members rate videos from 1 to 10 and follow friends.
 - Each day they get a few picks, each with a plain-language reason, such as "Sam, your 82% taste match, gave it a 9".
 - Videos play in YouTube's embedded player inside the app.
-- There's no autoplay and no endless feed: a day's picks end.
+- Picks come first; members can then browse as long as they like. More loads only when asked for: no autoplay and no infinite scroll, and every item says why it's there.
 
 ## Stack and commands
 
@@ -89,6 +89,13 @@ A social rating site for YouTube videos. The working name is **Matinee**, set in
 - Enforce the four privacy flags on the server: `discoverable`, `publicProfile`, `showActivity`, `allowRecommendations`.
 - Imported Takeout history stays in the browser.
 - If what's collected or shared changes, update `/privacy`.
+
+**Security**
+- Never write video metadata sent by a browser onto a shared `Video` row; create rows with `ensureVideo` (`lib/videos.ts`).
+- Validate every video id with `cleanVideoId`, cap every string, and return generic error messages (log the detail).
+- Every write route sits behind `middleware.ts` (same-origin check) and a rate limit; anything that spends YouTube quota needs a signed-in member and a budget (`lib/budget.ts`).
+- Private profiles: never named or scored in pick reasons, no activity in feeds, no follower lists.
+- Security headers and the CSP live in `next.config.js`; test new third-party hosts against them.
 
 ## Working conventions
 

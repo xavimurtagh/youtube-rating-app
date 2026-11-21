@@ -17,6 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       where: {
         user: {
           showActivity: true,
+          publicProfile: true,
           followers: { some: { followerId: me.id } }
         }
       },

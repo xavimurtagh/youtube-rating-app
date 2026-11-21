@@ -18,7 +18,7 @@ function PersonRow({ person, action }) {
         <Link href={`/profile/${person.id}`} className="row__title">
           {person.name}
         </Link>
-        <span className="row__sub">{person.bio || plural(person.totalRatings || 0, 'rating')}</span>
+        <span className="row__sub">{person.bio || (person.totalRatings == null ? 'Private profile' : plural(person.totalRatings, 'rating'))}</span>
       </div>
       {action}
     </div>

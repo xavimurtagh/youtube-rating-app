@@ -4,18 +4,15 @@ import { getUser } from '../../lib/auth'
 import { cleanVideoId } from '../../utils/videoUtils';
 import { parseScore } from '../../lib/validation';
 import { enforceRateLimit } from '../../lib/rateLimit';
+import { ensureVideo, isConnectionError } from '../../lib/videos';
 
-// Add retry utility
-async function withRetry(operation, maxRetries = 3, delay = 1000) {
+// Retry only when the database was briefly unreachable; bad input fails at once.
+async function withRetry(operation, maxRetries = 3, delay = 500) {
   for (let i = 0; i < maxRetries; i++) {
     try {
       return await operation();
     } catch (error) {
-      console.log(`Attempt ${i + 1} failed:`, error.message);
-      
-      if (i === maxRetries - 1) throw error;
-      
-      // Wait before retrying, with exponential backoff
+      if (i === maxRetries - 1 || !isConnectionError(error)) throw error;
       await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, i)));
     }
   }
@@ -82,25 +79,14 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Invalid video ID format' });
       }
 
-      // Use retry logic for database operations
+      // The Video row is shared by everyone, so the client's title and channel
+      // are only hints for a brand-new row and never overwrite existing data.
+      const exists = await withRetry(() => ensureVideo(cleanId, video));
+      if (exists === 'missing') {
+        return res.status(404).json({ error: 'That video isn’t available on YouTube.' });
+      }
+
       const result = await withRetry(async () => {
-        // Ensure video exists first
-        await prisma.video.upsert({
-          where: { id: cleanId },
-          create: {
-            id: cleanId,
-            title: video.title || 'Unknown Video',
-            channel: video.channel || 'Unknown Channel',
-            thumbnail: video.thumbnail || null,
-            category: video.category || null
-          },
-          update: {
-            ...(video.title && { title: video.title }),
-            ...(video.channel && { channel: video.channel }),
-            ...(video.thumbnail && { thumbnail: video.thumbnail }),
-            ...(video.category && { category: video.category })
-          }
-        });
 
         // Create or update rating
         await prisma.rating.upsert({
@@ -138,22 +124,21 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'DELETE') {
-      const { videoId } = req.body
-      
+      const videoId = cleanVideoId(req.body?.videoId)
+
       if (!videoId) {
-        return res.status(400).json({ error: 'Missing videoId' })
+        return res.status(400).json({ error: 'Missing or invalid videoId' })
       }
 
-      console.log('Deleting rating for video:', videoId);
-
       const result = await withRetry(async () => {
-        // Delete the rating
+        // Delete the rating, and the activity that announced it to followers
         const deletedRating = await prisma.rating.deleteMany({
           where: {
             userId: me.id,
             videoId: videoId
           }
         });
+        await prisma.activity.deleteMany({ where: { userId: me.id, videoId, type: 'rating' } });
 
         // Also remove from favorites if it exists
         await prisma.user.update({
@@ -164,8 +149,7 @@ export default async function handler(req, res) {
             }
           }
         }).catch(() => {
-          // Ignore error if video wasn't in favorites
-          console.log('Video was not in favorites');
+          // It wasn't a favourite; nothing to undo.
         });
 
         return deletedRating;
@@ -184,17 +168,9 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error('Rating API error:', error);
     
-    // Handle specific database errors
-    if (error.code === 'P1001' || error.message.includes("Can't reach database")) {
-      return res.status(503).json({ 
-        error: 'Database temporarily unavailable. Please try again.',
-        retryable: true
-      });
+    if (isConnectionError(error)) {
+      return res.status(503).json({ error: 'Saving is unavailable for a moment. Please try again.', retryable: true });
     }
-    
-    return res.status(500).json({ 
-      error: 'Internal server error', 
-      details: error.message 
-    });
+    return res.status(500).json({ error: 'Something went wrong saving that rating.' });
   }
 }
