@@ -21,6 +21,7 @@ A social rating site for YouTube videos. The working name is **Matinee**, set in
 - **Design review:**
   - Run `npm run dev -- -p 3123`, then `node scripts/screenshots.js 1 all` (or a comma-separated list of scenarios).
   - Every `/api` call is mocked with sample data, and the output goes to `.screenshots/`.
+  - Scenarios can set a fake date (`clock`), so the poll can be shown in each phase. `SHOTS_FULL=1` captures phone scenarios full-length.
   - Look at the shots before calling UI work done.
 - **Icons:** `node scripts/make-icons.js <Letter>` regenerates every icon size and the favicon.
 - **Claude's cloud sandbox:** the Prisma engine download is blocked there.
@@ -31,12 +32,15 @@ A social rating site for YouTube videos. The working name is **Matinee**, set in
 
 - `pages/`:
   - `index`: shows the landing page, or Today when signed in.
-  - `watch/[id]`, `search`, `people`, `settings`, `how-it-works`, `privacy`, `terms`.
+  - `watch/[id]`, `search`, `people`, `settings`, `how-it-works`, `privacy`, `terms`, `security`.
+  - `saved`: watch later, with "Got 20 minutes?", the reel, and length and mood filters. `share`: the Android share target.
+  - `polls`, `polls/[slug]` (nominations, then the ballot), `polls/[slug]/results` (public, server-rendered).
   - `diary`: tabs for rated, history and import.
   - `profile/[id]`: `me` works as the id.
   - `rate`: the bookmarklet popup.
 - `pages/api/`:
   - `rate`, `my-ratings`, `recommendations`, `community`, `feed`, `favorites`, `privacy`, `profile/[id]`, `me`.
+  - `saved`, `moods`, `polls/[slug]` (plus `nominate`, `moderate`, `results`), `human` (the Turnstile pass), `security-txt`.
   - `follow`, `followers`, `following`, `users/search`.
   - `video-details`, `video/[id]/stats`.
   - `youtube/search`: cached and on a budget.
@@ -47,17 +51,21 @@ A social rating site for YouTube videos. The working name is **Matinee**, set in
   - `Today`, `Landing`, `Legal`.
   - `Entry`: `FeatureEntry`, `CardEntry`, `RowEntry`, `FriendEntry`.
   - `Player`, `RatingStrip` (with `Meter`), `Score` (with `Histogram`), `Still`, `Avatar`, `Toast`.
+  - `SaveButton`, `MoodTap`, `Poll` (phase line, nomination slots, ballot, results), `Human` (the "are you a person?" check and `useSignIn`).
 - `contexts/LibraryContext.js`: the client's view of your ratings.
   - The database is the source of truth.
   - localStorage holds only the imported Takeout history and a cache.
 - `lib/`:
   - `recommend.ts`: user-to-user Pearson with significance weighting, structured `because` reasons, and Bayesian community favourites.
   - `format.js`: `describeReason`, `withArticle` ("an 8"), and dates.
-  - `quota.ts`: the search budget and Pacific-day helpers.
+  - `quota.ts`: the search and lookup budgets, and Pacific-day helpers. `budget.ts`: atomic daily counters, `spendLookup`.
   - `videoCache.js`: per-tab video cache and today's pick order.
   - `brand.js`: name, disclaimer, contact.
+  - `polls.ts`: poll definitions, phases, eligibility, the ballot and results maths (client-safe). `pollStore.ts`, `pollView.ts`: the database side.
+  - `saved.ts`, `moods.ts`: filters, "Got N minutes?", the crowd's moods (client-safe).
+  - `account.ts`: which account a Google sign-in belongs to. `human.ts`: Turnstile and signed passes. `rateLimit.ts`: limits shared through Upstash Redis. `flags.ts`: rating bursts. `admin.ts`.
 - `styles/globals.css`: the whole design system, with tokens at the top and both themes. There are no CSS modules and no Tailwind.
-- `test/`: Vitest unit tests for the recommender, formatting, quota, Takeout parsing, rate limiting and validation.
+- `test/`: Vitest unit tests for the recommender, formatting, quota, budgets, Takeout parsing, rate limiting, validation, polls, Saved, moods, accounts and the human check.
 
 ## Rules that matter
 
@@ -88,12 +96,16 @@ A social rating site for YouTube videos. The working name is **Matinee**, set in
 **Privacy**
 - Enforce the four privacy flags on the server: `discoverable`, `publicProfile`, `showActivity`, `allowRecommendations`.
 - Imported Takeout history stays in the browser.
+- Saves and moods follow the same flags: friends' saves only from public profiles with Show activity on; moods only as a crowd of three or more.
 - If what's collected or shared changes, update `/privacy`.
 
 **Security**
-- Never write video metadata sent by a browser onto a shared `Video` row; create rows with `ensureVideo` (`lib/videos.ts`).
+- Accounts are matched on Google's permanent id (`User.googleId`), never on the email address alone (`lib/account.ts`).
+- Never write video metadata sent by a browser onto a shared `Video` row; create rows with `ensureVideo` (`lib/videos.ts`), which spends one of the member's daily lookups.
 - Validate every video id with `cleanVideoId`, cap every string, and return generic error messages (log the detail).
-- Every write route sits behind `middleware.ts` (same-origin check) and a rate limit; anything that spends YouTube quota needs a signed-in member and a budget (`lib/budget.ts`).
+- Every write route sits behind `middleware.ts` (same-origin check) and a rate limit (`await enforceRateLimit`, shared across instances when Upstash is configured); anything that spends YouTube quota needs a signed-in member and a budget (`lib/budget.ts`).
+- New accounts and rating bursts go through the human check when Turnstile is configured (`lib/human.ts`).
+- Poll nominees' scores are sealed on the server until the results (`sealedFor` in `lib/pollStore.ts`); never show running results.
 - Private profiles: never named or scored in pick reasons, no activity in feeds, no follower lists.
 - Security headers and the CSP live in `next.config.js`; test new third-party hosts against them.
 

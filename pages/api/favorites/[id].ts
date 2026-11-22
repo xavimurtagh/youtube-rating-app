@@ -1,6 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { prisma } from '../../../lib/prisma'
 import { getUser } from '../../../lib/auth'
+import { enforceRateLimit } from '../../../lib/rateLimit'
+import { cleanVideoId } from '../../../utils/videoUtils'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const me = await getUser(req, res)
@@ -9,9 +11,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(401).json({ error: 'Unauthorized' })
   }
 
-  const { id: videoId } = req.query
+  if (!(await enforceRateLimit(req, res, { id: `favorites:${me.id}`, limit: 60, windowMs: 60_000 }))) {
+    return
+  }
 
-  if (!videoId || typeof videoId !== 'string') {
+  const videoId = cleanVideoId(Array.isArray(req.query.id) ? req.query.id[0] : req.query.id)
+  if (!videoId) {
     return res.status(400).json({ error: 'Missing or invalid videoId' })
   }
 
@@ -23,8 +28,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           favourites: { disconnect: { id: videoId } }
         }
       })
-
-      console.log('Successfully removed from favorites')
       return res.status(200).json({ success: true, videoId })
     }
 

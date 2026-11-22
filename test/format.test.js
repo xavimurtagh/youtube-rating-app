@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { describeReason, withArticle, formatDuration, spelled, plural, stillUrls } from '../lib/format.js'
+import { describeReason, withArticle, formatDuration, spelled, plural, stillUrls, durationSeconds, minutesLabel, runningTime } from '../lib/format.js'
 
 describe('withArticle', () => {
   it('uses "an" for numbers read with a leading vowel sound', () => {
@@ -86,5 +86,28 @@ describe('stillUrls', () => {
     expect(stillUrls('dQw4w9WgXcQ', 'lg')[0]).toContain('/maxresdefault.jpg')
     expect(stillUrls('dQw4w9WgXcQ', 'lg').at(-1)).toContain('/hqdefault.jpg')
     expect(stillUrls('dQw4w9WgXcQ', 'sm')[0]).toContain('/mqdefault.jpg')
+  })
+})
+
+describe('durationSeconds / minutesLabel / runningTime', () => {
+  it('reads ISO 8601 lengths', () => {
+    expect(durationSeconds('PT18M40S')).toBe(1120)
+    expect(durationSeconds('PT2H18M17S')).toBe(8297)
+    expect(durationSeconds('P1DT1S')).toBe(86401)
+    expect(durationSeconds('nonsense')).toBeNull()
+    expect(durationSeconds(null)).toBeNull()
+  })
+  it('says a length the way people do', () => {
+    expect(minutesLabel(20)).toBe('1 min')
+    expect(minutesLabel(17 * 60 + 4)).toBe('17 min')
+    expect(minutesLabel(110 * 60)).toBe('1 h 50')
+    expect(minutesLabel(61 * 60)).toBe('1 h 01')
+    expect(minutesLabel(120 * 60)).toBe('2 h')
+    expect(minutesLabel(null)).toBeNull()
+  })
+  it('totals a running time', () => {
+    expect(runningTime(52 * 60)).toBe('52 min')
+    expect(runningTime(272 * 60)).toBe('4 h 32 min')
+    expect(runningTime(180 * 60)).toBe('3 h')
   })
 })

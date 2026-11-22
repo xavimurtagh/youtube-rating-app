@@ -26,6 +26,18 @@ This file records what's decided and what's next, so any session can pick up fro
 - **The community score is hidden until you rate**, so the crowd doesn't anchor your score. Signed-out visitors see it.
 - **Theme:** a "Lights down / Lights up" switch in the masthead, and Auto in Settings.
 - **Quota:** apply early, and stay inside the default allowances until it's granted. See `docs/YOUTUBE_API.md`.
+- **Poll rules, filled in while building it** (Nov 2026; the owner can overturn any of these, most are one line in `lib/polls.ts`):
+  - Anything published on YouTube in 2026 can be nominated. Dates are UK days (UTC in December).
+  - Each video appears on the ballot once, in the category where most people nominated it (ties go to the earlier category).
+  - An account counts if it's a week old at the end of the phase and has ten ratings: for nominations, at the start of voting (15 December); for votes, at the close (so accounts made from 25 December don't count). Nominations from new members show as pending until then.
+  - During nominations a nominee shows "On the ballot" or "Needs one more nomination", never who nominated it.
+  - The ballot is decided once, when voting opens, and the results are frozen when it closes: a rating changed after the close doesn't count.
+  - Members' scores for nominees are sealed on the server from the start of voting until the results, on the watch page too.
+  - Results rank by a Bayesian average (prior weight 5, the poll's mean) and show the winner and four runners-up; a nominee needs five counted ratings.
+- **Saved and moods** (Nov 2026):
+  - Rating a saved video takes it out of Saved; it's in the diary now.
+  - Friends' saves ("Sam saved this too", "You both want to watch") follow the Show activity setting, like ratings.
+  - Moods: up to two per person, only after rating; shown and used in filters once three people agree.
 
 ## Now
 
@@ -33,10 +45,18 @@ This file records what's decided and what's next, so any session can pick up fro
    1. Change `lib/brand.js`, `public/site.webmanifest`, the README and the docs.
    2. Run `node scripts/make-icons.js <Letter>`.
    3. Change the domain and the Google consent screen.
-2. **Polls.** Nominations open on 1 December. See below.
-3. **Security hardening** from the November review (tracked privately), then the quota application.
+2. **Polls: built.** Nominations open on 1 December. Before then:
+   1. Run `npx prisma db push` (new tables, and `User.googleId`).
+   2. Set `ADMIN_EMAILS` in Vercel.
+   3. Check the categories, blurbs and dates in `lib/polls.ts`.
+3. **Security hardening: the code is done** (shared rate limits, YouTube lookup budgets, accounts tied to Google's id, the "are you a person?" check, security.txt, Dependabot and CodeQL). Still for the owner, in settings rather than code:
+   - Set `UPSTASH_REDIS_REST_*` and the Turnstile keys in Vercel, then redeploy.
+   - Turn on GitHub secret scanning with push protection, Dependabot alerts and security updates, and private vulnerability reporting. Leave CodeQL's "default setup" off: the workflow in `.github/workflows/codeql.yml` replaces it.
+   - Then the quota application.
 
 ### Polls
+
+Built (Nov 2026): `/polls`, `/polls/[slug]`, `/polls/[slug]/results`, defined in `lib/polls.ts`. The rules filled in while building it are under Decided. Still to do: an Open Graph image for the results, the monthly chart, and themed polls.
 
 "The [Name] Poll: the best of YouTube in 2026". It's modelled on the Goodreads Choice Awards (categories, nominations, then voting), but every vote is an ordinary 1–10 rating, so the poll also fills the recommender with ratings of the same videos.
 
@@ -59,13 +79,14 @@ This file records what's decided and what's next, so any session can pick up fro
 - Rate-limit sign-ups.
 - Flag sudden bursts of ratings on one video.
 
-**Model (sketch):**
-- `Poll`: slug, title, year, `opensAt`, `votingAt`, `closesAt`, `publishedAt`.
+**Model** (as built; `prisma/schema.prisma`):
+- `Poll`: slug, title, year, `opensAt`, `votingAt`, `closesAt`, `publishedAt`, the eligible publish window, and when the ballot and results were frozen.
 - `PollCategory`: `pollId`, slug, title, blurb, order.
-- `PollEntry`: `categoryId`, `videoId`, unique on (category, video).
+- `PollEntry`: `categoryId`, `videoId`, unique on (category, video), with `onBallot` and `removedAt` (an admin took it off).
 - `PollNomination`: `userId`, `entryId`, unique on (user, entry).
+- `PollResult`: the frozen ranking. Only ids and scores; titles come from `Video`.
 - Votes are `Rating` rows. Phase comes from the dates.
-- Admins are set by an `ADMIN_EMAILS` env var.
+- Admins are set by an `ADMIN_EMAILS` env var. They can take entries off the ballot, clear burst flags, and preview results once voting closes.
 
 **Pages:**
 - `/polls`
@@ -78,6 +99,8 @@ This file records what's decided and what's next, so any session can pick up fro
 
 ### Saved: watch later, from anywhere
 
+Built (Nov 2026): `/saved` with "Got 20 minutes?", the running-time reel, length and mood filters, sorting, "Sam saved this too" and "You both want to watch" on profiles; Save on the watch page and on every card; paste a link; Android share target (`/share`). Still to do: the iOS Shortcut, the browser extension button, type and topic filters, Takeout's Watch Later import, and a "Got 20 minutes?" shelf on Today.
+
 - **How to save:**
   - a Save button on every video, everywhere;
   - paste a link;
@@ -87,6 +110,8 @@ This file records what's decided and what's next, so any session can pick up fro
 - **Sort and filter:** by length, mood, type, topic and date saved. Seeing a friend save it too ("Sam saved this too"), and "You both want to watch" on a friend's profile.
 
 ### "Got 20 minutes?" and other filters
+
+Length and mood are built, on Saved (`lib/saved.ts`, `lib/moods.ts`, the mood tap after rating). Next: type and topic, and the same bar on Today's shelves, Diary, Explore and rankings.
 
 One filter bar, used on Today's shelves, Saved, Diary, Explore and rankings:
 - **Length:** under 10 minutes, 10–20, 20–45, 45 and over, or "fits in N minutes".
@@ -153,6 +178,14 @@ One filter bar, used on Today's shelves, Saved, Diary, Explore and rankings:
 1. Web app now, installable as a PWA, with Android share-to-save.
 2. A browser extension at about 1,000 members (Chrome, Edge, Firefox, Safari): rate, save and see members' score on youtube.com, beside the player, never over it.
 3. Native iOS and Android once retention holds. The first reasons for native apps are the iOS share extension (save or rate from the YouTube app) and a "today's pick" widget.
+
+### Security, next round
+
+- Follow requests for private profiles. This needs a decision first: today a private profile shows nobody anything, and approved followers would change that.
+- A stricter Content Security Policy with nonces.
+- Next.js 15 or 16 (14 is out of support) and the latest NextAuth.
+- Pin the CI actions to exact commit SHAs (Dependabot then keeps them current).
+- An AI security review on every pull request, and a professional test once there's revenue.
 
 ## Later
 

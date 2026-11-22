@@ -2,16 +2,19 @@
 
 // Content Security Policy: only our own scripts plus YouTube's player API,
 // YouTube's player in frames, and images from YouTube and Google avatars.
-// 'unsafe-inline' for scripts covers next-themes' small no-flash script; the
-// next step is a nonce-based policy (see the roadmap). Development needs eval.
+// Cloudflare Turnstile (the "are you a person?" check) is allowed only when a
+// site key is configured. 'unsafe-inline' for scripts covers next-themes'
+// small no-flash script; the next step is a nonce-based policy (see the
+// roadmap). Development needs eval.
 const dev = process.env.NODE_ENV !== 'production';
+const turnstile = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ? ' https://challenges.cloudflare.com' : '';
 const csp = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${dev ? " 'unsafe-eval'" : ''} https://www.youtube.com https://s.ytimg.com`,
+  `script-src 'self' 'unsafe-inline'${dev ? " 'unsafe-eval'" : ''} https://www.youtube.com https://s.ytimg.com${turnstile}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://i.ytimg.com https://*.googleusercontent.com",
   "font-src 'self' data:",
-  "frame-src https://www.youtube-nocookie.com https://www.youtube.com",
+  `frame-src https://www.youtube-nocookie.com https://www.youtube.com${turnstile}`,
   `connect-src 'self'${dev ? ' ws: wss:' : ''}`,
   "media-src 'self'",
   "object-src 'none'",
@@ -36,6 +39,10 @@ const nextConfig = {
   poweredByHeader: false,
   async headers() {
     return [{ source: '/(.*)', headers: securityHeaders }];
+  },
+  async rewrites() {
+    // RFC 9116: where security researchers look for a contact.
+    return [{ source: '/.well-known/security.txt', destination: '/api/security-txt' }];
   },
 };
 

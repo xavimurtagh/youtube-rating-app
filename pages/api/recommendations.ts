@@ -26,7 +26,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!me) {
       return res.status(401).json({ error: 'Unauthorized' })
     }
-    if (!enforceRateLimit(req, res, { id: `recommendations:${me.id}`, limit: 20, windowMs: 60_000 })) {
+    if (!(await enforceRateLimit(req, res, { id: `recommendations:${me.id}`, limit: 20, windowMs: 60_000 }))) {
       return
     }
 

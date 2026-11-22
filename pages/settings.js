@@ -10,7 +10,11 @@ import { BRAND } from '../lib/brand';
 const PRIVACY = [
   { key: 'discoverable', title: 'Discoverable', desc: 'Others can find you by name or email in search.' },
   { key: 'publicProfile', title: 'Public profile', desc: 'Others can see your ratings and favourites on your profile.' },
-  { key: 'showActivity', title: 'Show activity', desc: 'People who follow you see what you rate highly. Needs a public profile.' },
+  {
+    key: 'showActivity',
+    title: 'Show activity',
+    desc: 'People who follow you see what you rate highly and what you save. Needs a public profile.',
+  },
   {
     key: 'allowRecommendations',
     title: 'Personalised recommendations',
@@ -84,6 +88,7 @@ export default function Settings() {
     const data = {
       exportedAt: new Date().toISOString(),
       ratings: lib.ratedList.map((r) => ({ videoId: r.video.id, title: r.video.title, channel: r.video.channel, score: r.score, ratedAt: r.ratedAt })),
+      saved: Object.entries(lib.saved).map(([id, savedAt]) => ({ videoId: id, title: lib.videoById.get(id)?.title || null, savedAt })),
       history: lib.videos.filter((v) => v.watchedAt),
       privacy,
     };
@@ -193,11 +198,11 @@ export default function Settings() {
           </a>
         </Group>
 
-        <Group title="Your data" intro="Your ratings, favourites and follows live in our database. Imported history stays in this browser.">
+        <Group title="Your data" intro="Your ratings, saves, favourites and follows live in our database. Imported history stays in this browser.">
           <div className="setting">
             <div className="setting__text">
               <span className="setting__title">Export</span>
-              <span className="setting__desc">Download your ratings and history as a JSON file.</span>
+              <span className="setting__desc">Download your ratings, saved videos and history as a JSON file.</span>
             </div>
             <button type="button" className="btn btn--small btn--ghost" onClick={exportData}>
               Export
@@ -207,8 +212,8 @@ export default function Settings() {
             <div className="setting__text">
               <span className="setting__title">Delete everything</span>
               <span className="setting__desc">
-                Permanently deletes your account, with your ratings, favourites, follows and activity, and clears this
-                browser. Type “delete” to confirm.
+                Permanently deletes your account, with your ratings, favourites, saves, moods, poll nominations,
+                follows and activity, and clears this browser. Type “delete” to confirm.
               </span>
               <input
                 className="field"

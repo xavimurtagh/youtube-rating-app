@@ -6,7 +6,7 @@ import { enforceRateLimit } from '../../../lib/rateLimit';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.query;
   
-  if (typeof id !== 'string') {
+  if (typeof id !== 'string' || !id || id.length > 64) {
     return res.status(400).json({ error: 'Invalid user ID' });
   }
 
@@ -17,7 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    if (!enforceRateLimit(req, res, { id: `follow:${me.id}`, limit: 30, windowMs: 60_000 })) {
+    if (!(await enforceRateLimit(req, res, { id: `follow:${me.id}`, limit: 30, windowMs: 60_000 }))) {
       return;
     }
 
@@ -82,9 +82,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(404).json({ error: 'User not found' });
     }
     
-    res.status(500).json({ 
-      error: 'Internal server error', 
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined 
-    });
+    res.status(500).json({ error: 'Internal server error' });
   }
 }

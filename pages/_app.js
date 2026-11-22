@@ -10,6 +10,7 @@ import { SessionProvider } from 'next-auth/react';
 import { ThemeProvider } from 'next-themes';
 import Layout from '../components/Layout';
 import { ToastProvider } from '../components/Toast';
+import { HumanProvider } from '../components/Human';
 import { LibraryProvider } from '../contexts/LibraryContext';
 import { BRAND } from '../lib/brand';
 
@@ -20,14 +21,16 @@ export default function App({ Component, pageProps: { session, ...pageProps } })
     <SessionProvider session={session}>
       <ThemeProvider attribute="data-theme" defaultTheme="system" enableSystem themes={['light', 'dark']} disableTransitionOnChange>
         <ToastProvider>
-          <LibraryProvider>
-            <Head>
-              <title>{BRAND.title}</title>
-              <meta name="description" content={BRAND.description} />
-              <meta name="viewport" content="width=device-width, initial-scale=1" />
-            </Head>
-            {Component.bare ? page : <Layout>{page}</Layout>}
-          </LibraryProvider>
+          <HumanProvider>
+            <LibraryProvider>
+              <Head>
+                <title>{BRAND.title}</title>
+                <meta name="description" content={BRAND.description} />
+                <meta name="viewport" content="width=device-width, initial-scale=1" />
+              </Head>
+              {Component.bare ? page : <Layout>{page}</Layout>}
+            </LibraryProvider>
+          </HumanProvider>
         </ToastProvider>
       </ThemeProvider>
     </SessionProvider>

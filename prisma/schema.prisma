@@ -16,6 +16,11 @@ datasource db {
 model User {
   id             String   @id @default(uuid())
   email          String   @unique
+  // Google's permanent account id (the OpenID "sub"). Accounts are matched on
+  // this, not the email address: if a work domain lapses, whoever takes over
+  // the address must not inherit the account. Null only for accounts created
+  // before it was recorded; it's filled in at their next sign-in.
+  googleId       String?  @unique
   name           String
   avatar         String?          // URL
   bio            String?          @db.VarChar(280)
@@ -24,7 +29,7 @@ model User {
   // Privacy controls (enforced server-side).
   discoverable         Boolean @default(true)  // appear in user search
   publicProfile        Boolean @default(true)  // others can view your ratings/favorites
-  showActivity         Boolean @default(true)  // your ratings appear in followers' feeds
+  showActivity         Boolean @default(true)  // your ratings and saves appear to followers
   allowRecommendations Boolean @default(true)  // use your ratings to personalize recommendations
 
   favourites     Video[] @relation("Favourites")
@@ -32,6 +37,9 @@ model User {
   followers      Follow[] @relation("Followee")
   following      Follow[] @relation("Follower")
   activities     Activity[]
+  saved          SavedVideo[]
+  moods          MoodTag[]
+  nominations    PollNomination[]
 
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -53,6 +61,9 @@ model Video {
 
   favourites    User[]    @relation("Favourites")
   ratings       Rating[]
+  saved         SavedVideo[]
+  moods         MoodTag[]
+  pollEntries   PollEntry[]
 
   @@index([refreshedAt])
 }
@@ -67,6 +78,7 @@ model Rating {
   ratedAt   DateTime @default(now())
 
   @@unique([userId, videoId])
+  @@index([videoId, ratedAt])   // burst checks and poll results
 }
 
 model Follow {
@@ -90,6 +102,133 @@ model Activity {
   createdAt DateTime @default(now())
 
   @@index([userId, createdAt])
+}
+
+/// A video someone wants to watch later. Only ids are stored here: titles,
+/// lengths and stills come from the Video table, which the daily job keeps
+/// within YouTube's 30-day rule. Rating a saved video removes it from Saved.
+model SavedVideo {
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  video     Video    @relation(fields: [videoId], references: [id])
+  videoId   String
+  savedAt   DateTime @default(now())
+  source    String   @db.VarChar(16)   // watch | card | link | share | poll
+
+  @@id([userId, videoId])
+  @@index([videoId])
+}
+
+/// One member's one-tap description of a video after rating it, up to two
+/// per video. Moods show to others only once three or more people agree.
+model MoodTag {
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  video     Video    @relation(fields: [videoId], references: [id])
+  videoId   String
+  mood      String   @db.VarChar(24)
+  createdAt DateTime @default(now())
+
+  @@id([userId, videoId, mood])
+  @@index([videoId])
+}
+
+/// A members' poll, such as the year's best. Its phase comes from the dates:
+/// nominations from opensAt, voting from votingAt until closesAt, results from
+/// publishedAt. Polls are defined in lib/polls.ts and copied here on first use.
+model Poll {
+  id            String    @id @default(uuid())
+  slug          String    @unique
+  title         String
+  year          Int
+  opensAt       DateTime
+  votingAt      DateTime
+  closesAt      DateTime
+  publishedAt   DateTime
+  // Videos published on YouTube in this window are eligible (null: any).
+  eligibleFrom  DateTime?
+  eligibleUntil DateTime?
+  // Set once, when voting opens and when it closes, so the ballot and the
+  // results can't shift afterwards.
+  ballotFrozenAt  DateTime?
+  resultsFrozenAt DateTime?
+  categories    PollCategory[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model PollCategory {
+  id          String   @id @default(uuid())
+  poll        Poll     @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  pollId      String
+  slug        String
+  title       String
+  blurb       String
+  order       Int
+  maxSeconds  Int?     // e.g. 600 for "Short (under 10 minutes)"
+  minSeconds  Int?
+  entries     PollEntry[]
+  results     PollResult[]
+
+  @@unique([pollId, slug])
+}
+
+/// A video nominated in a category. Votes aren't stored here: they're ordinary
+/// Rating rows, so a rating given before the poll counts too.
+model PollEntry {
+  id          String    @id @default(uuid())
+  category    PollCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId  String
+  video       Video     @relation(fields: [videoId], references: [id])
+  videoId     String
+  removedAt   DateTime? // taken off the ballot by an admin
+  onBallot    Boolean?  // decided when voting opens; null until then
+  createdAt   DateTime  @default(now())
+  nominations PollNomination[]
+
+  @@unique([categoryId, videoId])
+  @@index([videoId])
+}
+
+model PollNomination {
+  id        String    @id @default(uuid())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  entry     PollEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  entryId   String
+  createdAt DateTime  @default(now())
+
+  @@unique([userId, entryId])
+  @@index([entryId])
+}
+
+/// Results frozen when voting closes, so later changes to ratings can't move
+/// them. Only scores and ids: titles still come from the Video table.
+model PollResult {
+  id          String   @id @default(uuid())
+  category    PollCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId  String
+  videoId     String
+  rank        Int?     // null: fewer counted ratings than the minimum
+  score       Float    // Bayesian average used for ranking
+  average     Float    // plain average of counted ratings
+  count       Int      // counted ratings
+  computedAt  DateTime @default(now())
+
+  @@unique([categoryId, videoId])
+}
+
+/// Something held for a person to look at, such as a sudden burst of ratings
+/// on one video. Rankings and poll results show admins what's flagged.
+model ReviewFlag {
+  id          String    @id @default(uuid())
+  kind        String    @db.VarChar(32)   // "rating-burst"
+  videoId     String
+  data        Json?
+  createdAt   DateTime  @default(now())
+  resolvedAt  DateTime?
+
+  @@index([kind, videoId, createdAt])
 }
 
 /// A day's cache of YouTube search results, keyed by the normalised query.

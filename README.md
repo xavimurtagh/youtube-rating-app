@@ -23,6 +23,12 @@ Docs: [design guide](docs/DESIGN.md) · [YouTube API use and quota](docs/YOUTUBE
   video ends, the rating prompt appears beside the player, never over it.
 - **Diary** — everything you've rated by date or by score; rate your imported
   history; import Google Takeout (read in the browser, never uploaded).
+- **Saved** (`/saved`) — watch later, from anywhere: Save on every video, paste
+  a link, or share from the YouTube app on Android. "Got 20 minutes?" picks the
+  best fit; filter by length and by mood (members' one-tap moods after rating).
+- **The poll** (`/polls`) — the year's best, chosen by members: nominate up to
+  three per category, then rate the nominees. Every vote is a rating; scores
+  stay sealed until the results.
 - **People and profiles** — follow people, see their favourites and rating
   spread, and your taste match with them.
 - **Settings** — privacy controls enforced server-side, theme, export, delete.
@@ -140,7 +146,7 @@ test/         Vitest unit tests
 - Your **imported Google Takeout watch history is processed in your browser** and is not uploaded
 - **Account data you create — ratings, favorites, and follows — is stored server-side** in a PostgreSQL database, tied to your Google account, so it can sync across devices and power the social and recommendation features
 - You can export your local data or permanently delete your server-side data at any time from the Privacy Dashboard
-- Security headers (X-Frame-Options, X-Content-Type-Options, Referrer-Policy) are configured in `vercel.json`
+- Security headers and the Content Security Policy are configured in `next.config.js`; see [SECURITY.md](SECURITY.md) for reporting problems and [docs/INCIDENT.md](docs/INCIDENT.md) for what to do on a bad day
 
 ### Environment variables
 
@@ -154,8 +160,12 @@ Copy `.env.example` to `.env` and fill in the values:
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth credentials |
 | `YOUTUBE_API_KEY` | Server-side YouTube Data API key (video details and search) |
 | `CRON_SECRET` | Shared secret for the daily refresh job (Vercel sends it automatically) |
-| `NEXT_PUBLIC_CONTACT_EMAIL` | Contact address shown on the privacy and terms pages |
+| `NEXT_PUBLIC_CONTACT_EMAIL` | Contact address shown on the privacy, terms and security pages and in `/.well-known/security.txt` |
+| `ADMIN_EMAILS` | Comma-separated admins, who can take poll entries off the ballot |
+| `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | Recommended. Rate limits shared by every server instance |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` | Recommended. The "are you a person?" check on new accounts and rating bursts |
 | `YOUTUBE_SEARCH_DAILY_CALLS` | Optional. Searches allowed per day across everyone (default 90) |
+| `YOUTUBE_LOOKUPS_PER_MEMBER` / `YOUTUBE_LOOKUPS_DAILY` | Optional. `videos.list` calls per member and site-wide per day (400 / 8,000) |
 
 ## Contributing
 

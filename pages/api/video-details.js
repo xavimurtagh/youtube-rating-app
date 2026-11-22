@@ -4,6 +4,8 @@ import { getUser } from '../../lib/auth';
 import { cleanVideoId } from '../../utils/videoUtils';
 import { enforceRateLimit, clientIp } from '../../lib/rateLimit';
 import { REFRESH_AFTER_DAYS } from '../../lib/quota';
+import { spendLookup } from '../../lib/budget';
+import { detailsData } from '../../lib/videos';
 
 const MAX_IDS = 50;
 
@@ -40,7 +42,7 @@ export default async function handler(req, res) {
 
   const me = await getUser(req, res);
   const limitId = me ? `video-details:${me.id}` : `video-details:ip:${clientIp(req)}`;
-  if (!enforceRateLimit(req, res, { id: limitId, limit: 60, windowMs: 60 * 1000 })) return;
+  if (!(await enforceRateLimit(req, res, { id: limitId, limit: 60, windowMs: 60 * 1000 }))) return;
 
   try {
     const rows = await prisma.video.findMany({ where: { id: { in: ids } } });
@@ -55,8 +57,10 @@ export default async function handler(req, res) {
       else if (row && row.available === false) result.set(id, { id, found: false });
     }
 
+    // Asking YouTube spends one of the member's daily lookups (one call
+    // covers up to 50 ids); once they're gone, what we hold is the answer.
     const toFetch = ids.filter((id) => !result.has(id));
-    if (me && toFetch.length > 0) {
+    if (me && toFetch.length > 0 && (await spendLookup(me.id))) {
       const found = await getVideosDetails(toFetch); // one call, 1 quota unit, up to 50 ids
       const now = new Date();
       await Promise.all(
@@ -78,16 +82,7 @@ export default async function handler(req, res) {
           }
           if (!byId.has(id)) return null; // only rows members have rated or saved are stored
           const data = v
-            ? {
-                title: v.title,
-                channel: v.channel,
-                thumbnail: v.thumbnail || null,
-                ...(v.category ? { category: v.category } : {}),
-                duration: v.duration || null,
-                publishedAt: v.publishedAt ? new Date(v.publishedAt) : null,
-                available: true,
-                refreshedAt: now,
-              }
+            ? detailsData(v, now)
             : { available: false, title: 'Unavailable video', channel: '', thumbnail: null, refreshedAt: now };
           return prisma.video.update({ where: { id }, data }).catch(() => null);
         })

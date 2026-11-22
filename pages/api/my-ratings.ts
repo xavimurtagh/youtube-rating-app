@@ -22,7 +22,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         videoId: true,
         score: true,
         ratedAt: true,
-        video: { select: { title: true, channel: true, thumbnail: true, category: true } }
+        video: { select: { title: true, channel: true, thumbnail: true, category: true, duration: true, publishedAt: true } }
       },
       orderBy: { ratedAt: 'desc' }
     });

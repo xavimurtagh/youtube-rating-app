@@ -8,7 +8,8 @@
 //
 // Env: SHOTS_BASE (default http://localhost:3123), SHOTS_DIR (default
 // .screenshots/), STANDINS_DIR (optional folder of photos to use as stills;
-// without it, stills are flat placeholder tones).
+// without it, stills are flat placeholder tones), SHOTS_FULL=1 (capture
+// phone-sized scenarios full-length too, not just the first screen).
 const { chromium, devices } = require('playwright');
 const fs = require('fs');
 const path = require('path');
@@ -97,8 +98,15 @@ const MINE = [
   ['mine0000013', 'A Day at the Bottom of the Ocean', 'BBC Earth', 8, '2026-09-28T20:30:00Z'],
   ['mine0000014', 'Exponential Growth and Epidemics', '3Blue1Brown', 9, '2026-09-21T16:00:00Z'],
 ];
-const MY_RATINGS = (n) => MINE.slice(0, n).map(([id, title, channel, score, ratedAt]) => ({
-  videoId: id, score, ratedAt, video: { title, channel, thumbnail: null, category: null },
+// Publish dates and lengths for the poll's "your 8s and above from 2026" (sample data).
+const MINE_DETAILS = {
+  mine0000001: ['2026-03-02', 'PT8M23S'], mine0000002: ['2026-04-28', 'PT17M5S'], mine0000003: ['2026-06-14', 'PT24M20S'],
+  mine0000005: ['2026-05-11', 'PT9M45S'], mine0000007: ['2026-08-19', 'PT14M47S'], mine0000008: ['2026-02-07', 'PT27M2S'],
+  mine0000012: ['2026-09-30', 'PT9M23S'], mine0000014: ['2026-10-02', 'PT23M1S'],
+};
+const MY_RATINGS = (n, extra = []) => [...MINE.slice(0, n), ...extra].map(([id, title, channel, score, ratedAt]) => ({
+  videoId: id, score, ratedAt,
+  video: { title, channel, thumbnail: null, category: null, publishedAt: MINE_DETAILS[id]?.[0] || '2019-01-01', duration: MINE_DETAILS[id]?.[1] || 'PT12M0S' },
 }));
 
 const HISTORY = [
@@ -152,8 +160,14 @@ const SAM = {
     ['mine0000014', 8], ['linegoesup1', 10], ['arrivalsp01', 8], ['planesfast1', 7], ['theegg00001', 9], ['catstables1', 6],
     ['khruangbin1', 9], ['synchroniz1', 8], ['mine0000009', 5], ['artofcode01', 8],
   ].map(([id, score], i) => ({ id: `r${i}`, videoId: id, score, videoTitle: video(id).title, videoChannel: video(id).channel })),
-  followers: [{ followerId: 'u-me' }, { followerId: 'u-ines' }, { followerId: 'u-maya' }],
-  following: [{ followeeId: 'u-me' }, { followeeId: 'u-theo' }],
+  followerCount: 3,
+  followingCount: 2,
+  isFollowing: true,
+  bothSaved: [
+    { id: 'friendpix01', title: 'How Pixar Writes a Story', channel: 'Lessons from the Screenplay' },
+    { id: 'saved000005', title: 'In Search of a Flat Earth', channel: 'Folding Ideas' },
+    { id: 'saved000001', title: 'Bob Ross - Island in the Wilderness (Season 29 Episode 1)', channel: 'Bob Ross' },
+  ],
 };
 
 const PEOPLE = [
@@ -165,6 +179,114 @@ const PEOPLE = [
 
 const STATS = { averageRating: 9.1, totalRatings: 37, ratingDistribution: { 10: 12, 9: 14, 8: 7, 7: 3, 6: 1 } };
 
+const daysAgo = (d) => new Date(Date.now() - d * 86400000 - 3 * 3600000).toISOString();
+
+// Saved: [id, title, channel, duration, saved days ago, moods, friends who saved it, members' smoothed score]
+const SAVED = [
+  ['friendpix01', 'How Pixar Writes a Story', 'Lessons from the Screenplay', 'PT17M4S', 1, ['thought-provoking'], ['Sam Okafor'], 9.1],
+  ['friendsr711', 'The Engineering of the SR-71 Blackbird', 'Real Engineering', 'PT21M9S', 2, ['mind-blowing'], ['Theo Lindqvist'], 8.8],
+  ['comm0000001', 'Why Rockets Are So Loud', 'Real Engineering', 'PT12M18S', 3, ['mind-blowing'], [], 9.0],
+  ['saved000001', 'Bob Ross - Island in the Wilderness (Season 29 Episode 1)', 'Bob Ross', 'PT26M47S', 4, ['calming', 'cosy'], ['Ines Halloran'], 8.6],
+  ['saved000002', 'Primitive Technology: Tiled Roof Hut', 'Primitive Technology', 'PT11M2S', 6, ['calming'], [], 8.7],
+  ['saved000003', 'Japanese Breakfast: Tiny Desk Concert', 'NPR Music', 'PT16M2S', 8, ['cosy', 'moving'], ['Ines Halloran', 'Maya Chen'], 8.4],
+  ['saved000004', 'Who’s Afraid of Modern Art?', 'Jacob Geller', 'PT28M14S', 9, ['thought-provoking'], [], 8.9],
+  ['saved000005', 'In Search of a Flat Earth', 'Folding Ideas', 'PT37M23S', 12, ['funny', 'thought-provoking'], ['Sam Okafor'], 8.8],
+  ['saved000006', 'Disney’s FastPass: A Complicated History', 'Defunctland', 'PT1H49M45S', 15, ['funny'], [], 9.2],
+  ['saved000007', 'The Marvel Symphonic Universe', 'Every Frame a Painting', 'PT13M15S', 18, [], [], 8.5],
+  ['saved000008', 'Fred again.. | Boiler Room London', 'Boiler Room', 'PT1H0M31S', 21, ['intense'], ['Theo Lindqvist'], 8.3],
+  ['catstables1', 'Why Cats Push Things Off Tables', 'SciShow', 'PT4M58S', 25, ['funny'], [], 7.6],
+];
+const seconds = (iso) => { const m = /PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/.exec(iso); return (+m[1] || 0) * 3600 + (+m[2] || 0) * 60 + (+m[3] || 0); };
+const MOOD_WORDS = { calming: 'calming', funny: 'funny', 'mind-blowing': 'mind-blowing', moving: 'moving', cosy: 'cosy', intense: 'intense', 'thought-provoking': 'thought-provoking', 'slow-burn': 'slow burn' };
+const moodLineOf = (moods) => (moods.length === 0 ? null : moods.length === 1 ? `Mostly ${MOOD_WORDS[moods[0]]}` : `${MOOD_WORDS[moods[0]][0].toUpperCase()}${MOOD_WORDS[moods[0]].slice(1)} and ${MOOD_WORDS[moods[1]]}`);
+const SAVED_ITEMS = SAVED.map(([id, title, channel, duration, d, moods, friends, likely]) => ({
+  id, title, channel, duration, seconds: seconds(duration), publishedAt: '2026-01-01', savedAt: daysAgo(d), source: 'card',
+  moods: moods.map((m, i) => ({ mood: m, share: i ? 0.38 : 0.64 })), moodLine: moodLineOf(moods), likely, friends,
+}));
+for (const [id, title, channel, duration] of SAVED) if (!V[id]) V[id] = [title, channel, null, duration, '2026-03-01'];
+
+// The poll. Real videos with sample dates, so the layouts can be judged.
+const POLL = {
+  slug: '2026', title: 'The best of YouTube in 2026', year: 2026,
+  opensAt: '2026-12-01T00:00:00Z', votingAt: '2026-12-15T00:00:00Z', closesAt: '2027-01-01T00:00:00Z', publishedAt: '2027-01-15T12:00:00Z',
+  eligibleFrom: '2026-01-01T00:00:00Z', eligibleUntil: '2027-01-01T00:00:00Z',
+  rules: { nominationsPerCategory: 3, nominationsToBallot: 2, minAccountDays: 7, minRatings: 10, priorWeight: 5, minCountedRatings: 5, runnersUp: 4 },
+};
+const CATS = [
+  ['video-essay', 'Video essay', 'An argument you couldn’t stop thinking about.', null],
+  ['live-performance', 'Live performance', 'Sessions, sets and concerts that felt like being in the room.', null],
+  ['explainer', 'Explainer', 'Science, maths and technology, made clear at last.', null],
+  ['documentary', 'Documentary and long-form', 'Deep dives worth every minute, however many there are.', null],
+  ['short', 'Short', 'Under ten minutes, and not a second wasted.', 599],
+];
+const NV = {
+  essay000001: ['Who’s Afraid of Modern Art?', 'Jacob Geller', 'PT28M14S'],
+  essay000002: ['In Search of a Flat Earth', 'Folding Ideas', 'PT37M23S'],
+  essay000003: ['The Marvel Symphonic Universe', 'Every Frame a Painting', 'PT13M15S'],
+  essay000004: ['The Spielberg Oner', 'Every Frame a Painting', 'PT5M49S'],
+  khruangbin1: ['Khruangbin — Full Performance (Live on KEXP)', 'KEXP', 'PT25M3S'],
+  tinydesk001: ['Mac Miller: Tiny Desk Concert', 'NPR Music', 'PT16M2S'],
+  friendpaak1: ['Anderson .Paak & The Free Nationals: Tiny Desk Concert', 'NPR Music', 'PT15M51S'],
+  boiler00001: ['Fred again.. | Boiler Room London', 'Boiler Room', 'PT1H0M31S'],
+  neuralnet01: ['But what is a neural network?', '3Blue1Brown', 'PT18M40S'],
+  synchroniz1: ['The Surprising Secret of Synchronization', 'Veritasium', 'PT20M57S'],
+  planesfast1: ['Why Planes Don’t Fly Faster', 'Wendover Productions', 'PT14M2S'],
+  fastpass001: ['Disney’s FastPass: A Complicated History', 'Defunctland', 'PT1H49M45S'],
+  linegoesup1: ['Line Goes Up — The Problem With NFTs', 'Folding Ideas', 'PT2H18M17S'],
+  plagiarism1: ['Plagiarism and You(Tube)', 'hbomberguy', 'PT3H50M15S'],
+  theegg00001: ['The Egg — A Short Story', 'Kurzgesagt – In a Nutshell', 'PT7M54S'],
+  catstables1: ['Why Cats Push Things Off Tables', 'SciShow', 'PT4M58S'],
+  dust0000001: ['What Is Dust?', 'Kurzgesagt – In a Nutshell', 'PT6M41S'],
+};
+for (const [id, [title, channel, duration]] of Object.entries(NV)) if (!V[id]) V[id] = [title, channel, null, duration, '2026-06-01'];
+const nominee = (id, extra = {}) => ({ videoId: id, title: NV[id][0], channel: NV[id][1], duration: NV[id][2], publishedAt: '2026-06-01T00:00:00Z', available: true, ...extra });
+const ballot = (id) => nominee(id, {});
+const NOMINATIONS = {
+  'video-essay': { mine: [nominee('essay000001', { status: 'ballot' })], entries: [nominee('essay000002', { status: 'needs', needs: 1 }), nominee('essay000004', { status: 'needs', needs: 2 }), nominee('essay000003', { status: 'ballot' })] },
+  'live-performance': { mine: [nominee('khruangbin1', { status: 'ballot' }), nominee('tinydesk001', { status: 'needs', needs: 1 })], entries: [nominee('boiler00001', { status: 'needs', needs: 1 }), nominee('friendpaak1', { status: 'ballot' })] },
+  explainer: { mine: [], entries: [nominee('synchroniz1', { status: 'needs', needs: 1 }), nominee('planesfast1', { status: 'needs', needs: 2 }), nominee('neuralnet01', { status: 'ballot' })] },
+  documentary: { mine: [nominee('fastpass001', { status: 'ballot' })], entries: [nominee('plagiarism1', { status: 'needs', needs: 1 }), nominee('linegoesup1', { status: 'elsewhere', elsewhere: 'Video essay' })] },
+  short: { mine: [], entries: [nominee('catstables1', { status: 'needs', needs: 1 }), nominee('theegg00001', { status: 'ballot' })] },
+};
+const BALLOT = {
+  'video-essay': ['essay000002', 'essay000001', 'linegoesup1', 'essay000003'],
+  'live-performance': ['friendpaak1', 'boiler00001', 'khruangbin1', 'tinydesk001'],
+  explainer: ['synchroniz1', 'neuralnet01', 'planesfast1'],
+  documentary: ['plagiarism1', 'fastpass001'],
+  short: ['dust0000001', 'theegg00001', 'catstables1'],
+};
+// Ballot videos the sample member has rated (the strip shows them).
+const VOTED = [
+  ['essay000001', NV.essay000001[0], NV.essay000001[1], 9, '2026-12-16T20:00:00Z'],
+  ['khruangbin1', NV.khruangbin1[0], NV.khruangbin1[1], 10, '2026-12-17T21:00:00Z'],
+  ['tinydesk001', NV.tinydesk001[0], NV.tinydesk001[1], 8, '2026-12-17T21:30:00Z'],
+  ['neuralnet01', NV.neuralnet01[0], NV.neuralnet01[1], 9, '2026-12-18T19:00:00Z'],
+];
+const pollView = (phase) => ({
+  poll: { ...POLL, phase },
+  admin: false,
+  standing: { ratingCount: 14, counts: true, tooNew: false, ratingsNeeded: 0, countsFrom: '2026-10-01T00:00:00Z' },
+  categories: CATS.map(([slug, title, blurb, maxSeconds]) => ({
+    slug, title, blurb, maxSeconds, minSeconds: null,
+    mine: phase === 'nominations' ? NOMINATIONS[slug].mine : [],
+    entries: phase === 'upcoming' ? [] : phase === 'nominations' ? NOMINATIONS[slug].entries : BALLOT[slug].map(ballot),
+  })),
+});
+const RESULTS = {
+  poll: { ...POLL, phase: 'results' }, ready: true, preview: false, countedRatings: 1284,
+  categories: [
+    ['video-essay', [['essay000002', 9.3, 61], ['essay000001', 9.1, 48], ['linegoesup1', 9.0, 77], ['essay000003', 8.7, 39]]],
+    ['live-performance', [['khruangbin1', 9.4, 52], ['friendpaak1', 9.2, 66], ['boiler00001', 8.9, 31], ['tinydesk001', 8.8, 44]]],
+    ['explainer', [['neuralnet01', 9.5, 83], ['synchroniz1', 9.0, 58], ['planesfast1', 8.4, 29]]],
+    ['documentary', [['fastpass001', 9.2, 47], ['plagiarism1', 9.1, 55]]],
+    ['short', [['theegg00001', 9.0, 72], ['dust0000001', 8.6, 25], ['catstables1', 7.9, 21]]],
+  ].map(([slug, rows]) => {
+    const [, title, blurb] = CATS.find((c) => c[0] === slug);
+    const ranked = rows.map(([id, score, count], i) => ({ rank: i + 1, videoId: id, title: NV[id][0], channel: NV[id][1], duration: NV[id][2], publishedAt: '2026-06-01T00:00:00Z', available: true, score, count }));
+    return { slug, title, blurb, winner: ranked[0], runnersUp: ranked.slice(1), unranked: 0 };
+  }),
+};
+
 const SEARCH = {
   videos: ['kurosawa001', 'arrivalsp01', 'linegoesup1', 'mine0000005', 'mine0000012', 'mine0000010'].map((id, i) => ({
     ...video(id), publishedAt: ['2015-03-20', '2017-02-08', '2022-01-21', '2016-06-29', '2014-12-02', '2019-11-25'][i],
@@ -172,7 +294,7 @@ const SEARCH = {
 };
 
 // ---------- routing ----------
-async function wire(context, { signedIn = true, ratedCount = 14, locked = false }) {
+async function wire(context, { signedIn = true, ratedCount = 14, locked = false, phase = 'upcoming', sealed = false, voted = false, savedEmpty = false }) {
   const SESSION = signedIn ? { user: { name: 'Alex Moreau', email: 'alex@example.com', image: null }, expires: '2099-01-01T00:00:00.000Z' } : {};
   // Registered first: Playwright gives later routes priority, so the specific
   // stubs below override this catch-all block.
@@ -199,20 +321,33 @@ async function wire(context, { signedIn = true, ratedCount = 14, locked = false 
     const json = (body, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
     if (p === '/api/auth/session') return json(SESSION);
     if (p.startsWith('/api/auth/')) return json({});
-    if (p === '/api/my-ratings') return json(MY_RATINGS(ratedCount));
+    if (p === '/api/my-ratings') return json(MY_RATINGS(ratedCount, voted ? VOTED : []));
+    if (p === '/api/saved') {
+      if (url.searchParams.get('ids')) return json({ ids: savedEmpty ? [] : SAVED_ITEMS.map((v) => ({ videoId: v.id, savedAt: v.savedAt })) });
+      if (route.request().method() === 'GET') return json({ items: savedEmpty ? [] : SAVED_ITEMS });
+      return json({ saved: true });
+    }
+    if (p === '/api/moods') return json({ myMoods: ['funny'], moods: [{ mood: 'funny', share: 0.71, count: 12 }], moodLine: 'Mostly funny' });
+    if (p === '/api/human') return json({ ok: true, skipped: true });
+    if (p === '/api/polls/2026') return json(pollView(phase));
+    if (p === '/api/polls/2026/nominate') return json(pollView('nominations'));
+    if (p === '/api/polls/2026/results') return json(RESULTS);
     if (p === '/api/me') return json({ id: 'u-me', name: 'Alex Moreau', avatar: null, bio: null });
     if (p === '/api/recommendations') return locked ? json({ error: 'Need at least 10 ratings', userRatingCount: ratedCount }, 400) : json({ recommendations: RECS });
     if (p === '/api/community') return json(COMMUNITY);
     if (p === '/api/feed') return json(FEED);
     if (p === '/api/video-details') {
       const ids = JSON.parse(route.request().postData() || '{}').videoIds || [];
-      return json({ videos: ids.map((id) => { const v = video(id); const d = V[id]; return { ...v, found: true, duration: d ? d[3] : 'PT9M12S', publishedAt: d ? d[4] : '2020-05-01', embeddable: true }; }) });
+      return json({ videos: ids.map((id) => { const v = video(id); const d = V[id]; const m = MINE_DETAILS[id]; return { ...v, found: true, duration: m ? m[1] : d ? d[3] : 'PT9M12S', publishedAt: m ? m[0] : d ? d[4] : '2020-05-01', embeddable: true }; }) });
     }
-    if (/^\/api\/video\/[^/]+\/stats$/.test(p)) return json(STATS);
+    if (/^\/api\/video\/[^/]+\/stats$/.test(p)) {
+      if (sealed) return json({ sealed: { poll: '2026', year: 2026, category: 'Video essay', until: POLL.publishedAt }, averageRating: null, totalRatings: null, ratingDistribution: {}, moods: [], moodLine: null, myMoods: [] });
+      return json({ ...STATS, sealed: null, moods: [{ mood: 'funny', share: 0.71, count: 12 }], moodLine: 'Mostly funny', myMoods: ['funny'] });
+    }
     if (p === '/api/favorites') return json([]);
     if (p === '/api/privacy') return json({ discoverable: true, publicProfile: true, showActivity: true, allowRecommendations: true });
     if (p === '/api/profile/u-sam') return json(SAM);
-    if (p === '/api/profile/me') return json({ ...SAM, id: 'u-me', name: 'Alex Moreau', bio: 'Mostly film essays and live music.', ratings: MY_RATINGS(14).map((r, i) => ({ id: `m${i}`, videoId: r.videoId, score: r.score, videoTitle: r.video.title, videoChannel: r.video.channel })) });
+    if (p === '/api/profile/me') return json({ ...SAM, id: 'u-me', name: 'Alex Moreau', bio: 'Mostly film essays and live music.', isFollowing: false, bothSaved: [], ratings: MY_RATINGS(14).map((r, i) => ({ id: `m${i}`, videoId: r.videoId, score: r.score, videoTitle: r.video.title, videoChannel: r.video.channel })) });
     if (p === '/api/following') return json(PEOPLE);
     if (p === '/api/followers') return json(PEOPLE.slice(0, 3));
     if (p === '/api/youtube/search') return json({ local: SEARCH.videos.slice(0, 2), videos: SEARCH.videos.slice(2) });
@@ -249,6 +384,30 @@ const SCENARIOS = {
   'search-light': { path: '/search', theme: 'light', wait: '.searchbar', act: async (page) => { await page.fill('#q', 'film essays'); await page.click('button[type=submit]'); await page.waitForSelector('.rows .row'); } },
   'privacy-light': { path: '/privacy', theme: 'light', wait: '.legal' },
   'watch-rated': { path: '/watch/mine0000001', theme: 'light', wait: '.watch' },
+  'saved-light': { path: '/saved', theme: 'light', wait: '.minutes__pick' },
+  'saved-dark': { path: '/saved', theme: 'dark', wait: '.minutes__pick' },
+  'saved-calming': { path: '/saved', theme: 'light', wait: '.minutes__pick', act: async (page) => { await page.click('.filters__row:nth-child(2) .chip:first-child'); await page.waitForTimeout(400); } },
+  'saved-empty': { path: '/saved', theme: 'light', savedEmpty: true, wait: '.empty' },
+  'saved-mobile': { path: '/saved', theme: 'light', wait: '.minutes__pick', mobile: true },
+  'share-light': { path: '/share?text=Watch%20this%20https%3A%2F%2Fyoutu.be%2Fsaved000002', theme: 'light', wait: '.share' },
+  'polls-light': { path: '/polls', theme: 'light', wait: '.poll-card' },
+  'poll-upcoming': { path: '/polls/2026', theme: 'light', phase: 'upcoming', wait: '.contents' },
+  'poll-upcoming-dark': { path: '/polls/2026', theme: 'dark', phase: 'upcoming', wait: '.contents' },
+  'poll-nominations': { path: '/polls/2026', theme: 'light', phase: 'nominations', clock: '2026-12-05T18:00:00Z', wait: '.slots' },
+  'poll-nominations-dark': { path: '/polls/2026', theme: 'dark', phase: 'nominations', clock: '2026-12-05T18:00:00Z', wait: '.slots' },
+  'poll-nominate-open': { path: '/polls/2026', theme: 'light', phase: 'nominations', clock: '2026-12-05T18:00:00Z', wait: '.slots', act: async (page) => { await page.click('#video-essay .slot__empty:not([disabled])'); await page.waitForSelector('.nominate'); } },
+  'poll-incoming': { path: '/polls/2026?nominate=mine0000001', theme: 'light', phase: 'nominations', clock: '2026-12-05T18:00:00Z', wait: '.incoming' },
+  'poll-nominations-mobile': { path: '/polls/2026', theme: 'light', phase: 'nominations', clock: '2026-12-05T18:00:00Z', wait: '.slots', mobile: true },
+  'poll-voting': { path: '/polls/2026', theme: 'light', phase: 'voting', voted: true, clock: '2026-12-20T18:00:00Z', wait: '.ballot-row' },
+  'poll-voting-dark': { path: '/polls/2026', theme: 'dark', phase: 'voting', voted: true, clock: '2026-12-20T18:00:00Z', wait: '.ballot-row' },
+  'poll-voting-mobile': { path: '/polls/2026', theme: 'dark', phase: 'voting', voted: true, clock: '2026-12-20T18:00:00Z', wait: '.ballot-row', mobile: true },
+  'poll-results': { path: '/polls/2026/results', theme: 'light', clock: '2027-01-16T18:00:00Z', wait: '.winner' },
+  'poll-results-dark': { path: '/polls/2026/results', theme: 'dark', clock: '2027-01-16T18:00:00Z', wait: '.winner' },
+  'poll-results-mobile': { path: '/polls/2026/results', theme: 'light', clock: '2027-01-16T18:00:00Z', wait: '.winner', mobile: true },
+  'watch-moods': { path: '/watch/mine0000001', theme: 'light', wait: '.tags' },
+  'watch-nominate': { path: '/watch/mine0000001', theme: 'dark', clock: '2026-12-05T18:00:00Z', wait: '.next--poll' },
+  'watch-sealed': { path: '/watch/essay000001', theme: 'light', sealed: true, clock: '2026-12-20T18:00:00Z', wait: '.watch__poll' },
+  'today-december': { path: '/', theme: 'light', history: true, clock: '2026-12-05T18:00:00Z', wait: '.poll-line' },
   'landing-mobile': { path: '/', signedIn: false, theme: 'light', wait: '.welcome', mobile: true },
   'today-mobile': { path: '/', theme: 'light', history: true, wait: '.feature', mobile: true },
   'watch-mobile': { path: '/watch/kurosawa001', theme: 'dark', why: true, wait: '.watch', mobile: true },
@@ -263,6 +422,7 @@ const SCENARIOS = {
     await wire(context, sc);
     await prime(context, sc);
     const page = await context.newPage();
+    if (sc.clock) await page.clock.setFixedTime(new Date(sc.clock));
     page.on('pageerror', (e) => console.log(`[${name}] pageerror:`, e.message));
     page.on('console', (m) => { if (m.type() === 'error') console.log(`[${name}] console:`, m.text().slice(0, 200)); });
     try {
@@ -280,7 +440,7 @@ const SCENARIOS = {
       await page.evaluate(() => document.fonts.ready);
       await page.waitForTimeout(600);
       const file = path.join(OUT, `${name}${DSF > 1 ? '@2x' : ''}.png`);
-      await page.screenshot({ path: file, fullPage: !sc.mobile });
+      await page.screenshot({ path: file, fullPage: !sc.mobile || process.env.SHOTS_FULL === '1' });
       console.log('shot', file);
     } catch (e) {
       console.log(`[${name}] FAILED:`, e.message.split('\n')[0]);

@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import { signIn, useSession } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import Still from '../components/Still';
 import RatingStrip from '../components/RatingStrip';
 import { useLibrary } from '../contexts/LibraryContext';
+import { useSignIn } from '../components/Human';
 import { cleanVideoId } from '../utils/videoUtils';
 import { withArticle } from '../lib/format';
 import { BRAND } from '../lib/brand';
@@ -14,6 +15,7 @@ export default function QuickRate() {
   const router = useRouter();
   const { status } = useSession();
   const lib = useLibrary();
+  const signIn = useSignIn();
   const [saved, setSaved] = useState(null);
   const [error, setError] = useState(null);
 
@@ -51,7 +53,7 @@ export default function QuickRate() {
         ) : status !== 'authenticated' ? (
           <div className="stack">
             <p className="lede">Sign in once, and this window will remember you.</p>
-            <button type="button" className="btn" onClick={() => signIn('google')}>
+            <button type="button" className="btn" onClick={() => signIn()}>
               Sign in with Google
             </button>
           </div>

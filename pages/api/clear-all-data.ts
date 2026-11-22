@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { prisma } from '../../lib/prisma'
 import { getUser } from '../../lib/auth'
+import { enforceRateLimit } from '../../lib/rateLimit'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const me = await getUser(req, res)
@@ -14,12 +15,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
+  if (!(await enforceRateLimit(req, res, { id: `delete-account:${me.id}`, limit: 5, windowMs: 60_000 }))) return
+
   try {
-    // Deleting is complete: ratings, activity, follows in both directions,
-    // favourites, then the account itself. Signing in again starts afresh.
+    // Deleting is complete: ratings, activity, saves, mood taps, poll
+    // nominations, follows in both directions, favourites, then the account
+    // itself. Signing in again starts afresh.
     await prisma.$transaction(async (tx) => {
       await tx.rating.deleteMany({ where: { userId: me.id } })
       await tx.activity.deleteMany({ where: { userId: me.id } })
+      await tx.savedVideo.deleteMany({ where: { userId: me.id } })
+      await tx.moodTag.deleteMany({ where: { userId: me.id } })
+      await tx.pollNomination.deleteMany({ where: { userId: me.id } })
       await tx.follow.deleteMany({ where: { OR: [{ followerId: me.id }, { followeeId: me.id }] } })
       await tx.user.update({ where: { id: me.id }, data: { favourites: { set: [] } } })
       await tx.user.delete({ where: { id: me.id } })

@@ -1,16 +1,17 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { loadVideos, saveVideos, loadRatings, saveRatings, loadIgnored, saveIgnored } from '../utils/localStorage';
+import { useHuman } from '../components/Human';
 
 /**
  * The user's library: videos they know about (imported history + anything
  * they've rated), their ratings, and the videos they've chosen to skip.
  *
  * Data model: when signed in, the database is the source of truth for
- * ratings. They're loaded once per session from /api/my-ratings and every
- * change goes through /api/rate first; localStorage is only a fast cache and
- * the staging area for imported Google Takeout history, which never leaves the
- * browser.
+ * ratings and for Saved. They're loaded once per session from /api/my-ratings
+ * and /api/saved, and every change goes through the API first; localStorage
+ * is only a fast cache and the staging area for imported Google Takeout
+ * history, which never leaves the browser.
  */
 
 const LibraryContext = createContext(null);
@@ -23,9 +24,16 @@ const MAX_IMPORT = 5000;
 const compact = (obj) => Object.fromEntries(Object.entries(obj).filter(([, v]) => v != null && v !== ''));
 const videoPayload = (v) => compact({ id: v.id, title: v.title, channel: v.channel, thumbnail: v.thumbnail, category: v.category });
 
+async function failure(res, fallback) {
+  const body = await res.json().catch(() => ({}));
+  return new Error(body.error || fallback);
+}
+
 export function LibraryProvider({ children }) {
   const { data: session, status } = useSession();
+  const human = useHuman();
   const [videos, setVideos] = useState([]);
+  const [saved, setSaved] = useState({});
   const [ratings, setRatings] = useState({});
   const [ignored, setIgnored] = useState([]);
   const [ready, setReady] = useState(false);
@@ -35,8 +43,10 @@ export function LibraryProvider({ children }) {
 
   const videosRef = useRef(videos);
   const ratingsRef = useRef(ratings);
+  const savedRef = useRef(saved);
   videosRef.current = videos;
   ratingsRef.current = ratings;
+  savedRef.current = saved;
 
   // Load what this browser already has.
   useEffect(() => {
@@ -97,11 +107,19 @@ export function LibraryProvider({ children }) {
         }
         const local = loadRatings();
 
-        const [{ rows, next }, meRes] = await Promise.all([
+        const [{ rows, next }, meRes, savedRes] = await Promise.all([
           loadFromServer(),
           fetch('/api/me', { credentials: 'include' }),
+          fetch('/api/saved?ids=1', { credentials: 'include' }).catch(() => null),
         ]);
         if (cancelled) return;
+
+        if (savedRes && savedRes.ok) {
+          const body = await savedRes.json().catch(() => ({}));
+          if (!cancelled && Array.isArray(body.ids)) {
+            setSaved(Object.fromEntries(body.ids.map((x) => [x.videoId, x.savedAt])));
+          }
+        }
 
         // Ratings that exist only in this browser (from before accounts, or a
         // failed save) can be offered for upload, but only to their owner.
@@ -150,15 +168,27 @@ export function LibraryProvider({ children }) {
       upsertVideos([videoPayload(video)]);
 
       try {
-        const res = await fetch('/api/rate', {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ video: videoPayload(video), score }),
-        });
-        if (!res.ok) {
-          const body = await res.json().catch(() => ({}));
-          throw new Error(body.error || 'Could not save your rating');
+        const post = () =>
+          fetch('/api/rate', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ video: videoPayload(video), score }),
+          });
+        let res = await post();
+        // Rating in a sudden burst: one quick check that it's a person, then again.
+        if (res.status === 428) {
+          await human('rate');
+          res = await post();
+        }
+        if (!res.ok) throw await failure(res, 'Could not save your rating');
+        // Rated means watched: it leaves Saved (the server has done the same).
+        if (savedRef.current[id]) {
+          setSaved((prev) => {
+            const next = { ...prev };
+            delete next[id];
+            return next;
+          });
         }
       } catch (error) {
         setRatings((prev) => {
@@ -171,8 +201,56 @@ export function LibraryProvider({ children }) {
         throw error;
       }
     },
+    [status, upsertVideos, human]
+  );
+
+  /** Save a video for later, from anywhere. `source` says where it was saved from. */
+  const save = useCallback(
+    async (video, source = 'card') => {
+      if (status !== 'authenticated') throw new Error('Sign in to save videos');
+      const id = video.id;
+      setSaved((prev) => ({ ...prev, [id]: new Date().toISOString() }));
+      upsertVideos([videoPayload(video)]);
+      try {
+        const res = await fetch('/api/saved', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ videoId: id, source, video: videoPayload(video) }),
+        });
+        if (!res.ok) throw await failure(res, 'Could not save that video');
+      } catch (error) {
+        setSaved((prev) => {
+          const next = { ...prev };
+          delete next[id];
+          return next;
+        });
+        throw error;
+      }
+    },
     [status, upsertVideos]
   );
+
+  const unsave = useCallback(async (id) => {
+    const previous = savedRef.current[id];
+    setSaved((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+    try {
+      const res = await fetch('/api/saved', {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoId: id }),
+      });
+      if (!res.ok) throw await failure(res, 'Could not remove that video');
+    } catch (error) {
+      if (previous) setSaved((prev) => ({ ...prev, [id]: previous }));
+      throw error;
+    }
+  }, []);
 
   const unrate = useCallback(async (id) => {
     const previous = ratingsRef.current[id];
@@ -304,6 +382,7 @@ export function LibraryProvider({ children }) {
     setVideos([]);
     setRatings({});
     setIgnored([]);
+    setSaved({});
   }, []);
 
   const value = useMemo(() => {
@@ -336,6 +415,11 @@ export function LibraryProvider({ children }) {
       },
       rate,
       unrate,
+      saved,
+      savedCount: Object.keys(saved).length,
+      isSaved: (id) => !!saved[id],
+      save,
+      unsave,
       ignore,
       importHistory,
       upsertVideos,
@@ -345,7 +429,7 @@ export function LibraryProvider({ children }) {
       dismissLegacy,
       clearLocal,
     };
-  }, [ready, synced, me, videos, ratings, ignored, rate, unrate, ignore, importHistory, upsertVideos, legacy, migrateLegacy, dismissLegacy, clearLocal]);
+  }, [ready, synced, me, videos, ratings, saved, ignored, rate, unrate, save, unsave, ignore, importHistory, upsertVideos, legacy, migrateLegacy, dismissLegacy, clearLocal]);
 
   return <LibraryContext.Provider value={value}>{children}</LibraryContext.Provider>;
 }
