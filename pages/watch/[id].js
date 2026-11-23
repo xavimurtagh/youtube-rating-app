@@ -2,18 +2,32 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { useSession, signIn } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import Player from '../../components/Player';
 import RatingStrip from '../../components/RatingStrip';
 import Score, { Histogram } from '../../components/Score';
+import SaveButton from '../../components/SaveButton';
+import MoodTap from '../../components/MoodTap';
 import { Loading } from '../../components/Layout';
 import { useToast } from '../../components/Toast';
+import { useSignIn } from '../../components/Human';
 import { useLibrary } from '../../contexts/LibraryContext';
 import { nextInProgramme, recallVideo, rememberVideos } from '../../lib/videoCache';
 import { formatDuration, plural, withArticle, yearOf } from '../../lib/format';
+import { currentPoll, phaseOf, pollDay, pollName } from '../../lib/polls';
 import { BRAND } from '../../lib/brand';
 
 const VALID_ID = /^[a-zA-Z0-9_-]{11}$/;
+
+/** The poll that's taking nominations now, if this video could be one. */
+function nominatable(video) {
+  const poll = currentPoll();
+  if (!poll || phaseOf(poll) !== 'nominations' || !video.publishedAt) return null;
+  const at = new Date(video.publishedAt).getTime();
+  if (poll.eligibleFrom && at < new Date(poll.eligibleFrom).getTime()) return null;
+  if (poll.eligibleUntil && at >= new Date(poll.eligibleUntil).getTime()) return null;
+  return poll;
+}
 
 export default function Watch() {
   const router = useRouter();
@@ -22,6 +36,7 @@ export default function Watch() {
   const { status } = useSession();
   const lib = useLibrary();
   const toast = useToast();
+  const signIn = useSignIn();
 
   const [details, setDetails] = useState(null);
   const [cached, setCached] = useState(null);
@@ -41,7 +56,7 @@ export default function Watch() {
 
   const loadStats = useCallback(() => {
     if (!valid) return;
-    fetch(`/api/video/${id}/stats`)
+    fetch(`/api/video/${id}/stats`, { credentials: 'include' })
       .then((r) => (r.ok ? r.json() : null))
       .then((s) => s && setStats(s))
       .catch(() => {});
@@ -110,17 +125,15 @@ export default function Watch() {
   const title = video.title || 'Untitled video';
   const mine = lib.ratingOf(id);
   const metaLine = [video.channel, yearOf(video.publishedAt), formatDuration(video.duration)].filter(Boolean).join(' · ');
+  const payload = { id, title: video.title, channel: video.channel, thumbnail: video.thumbnail, category: video.category };
 
   const onRate = async (score) => {
     if (status !== 'authenticated') {
-      signIn('google');
+      signIn();
       return;
     }
     try {
-      await lib.rate(
-        { id, title: video.title, channel: video.channel, thumbnail: video.thumbnail, category: video.category },
-        score
-      );
+      await lib.rate(payload, score);
       setEnded(false);
       toast(`Saved. You gave it ${withArticle(score)}.`);
       loadStats();
@@ -140,33 +153,49 @@ export default function Watch() {
   };
 
   const toggleFavourite = async () => {
-    const next = !favourite;
-    setFavourite(next);
+    const want = !favourite;
+    setFavourite(want);
     try {
       const res = await fetch('/api/favorites', {
-        method: next ? 'POST' : 'DELETE',
+        method: want ? 'POST' : 'DELETE',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(
-          next
+          want
             ? { videoId: id, videoTitle: video.title, videoChannel: video.channel, videoThumbnail: video.thumbnail }
             : { videoId: id }
         ),
       });
       if (!res.ok) throw new Error('Could not update favourites');
-      toast(next ? 'Added to your favourites.' : 'Removed from your favourites.');
+      toast(want ? 'Added to your favourites.' : 'Removed from your favourites.');
     } catch (e) {
-      setFavourite(!next);
+      setFavourite(!want);
       toast(e.message, { tone: 'error' });
+    }
+  };
+
+  const share = async () => {
+    const url = `${window.location.origin}/watch/${id}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title, url });
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      toast('Link copied.');
+    } catch {
+      // Cancelled, or the clipboard isn't available: nothing to say.
     }
   };
 
   const prompt = ended && !mine;
   const signedIn = status === 'authenticated';
-  const rated = stats && stats.totalRatings > 0;
+  const sealed = stats && stats.sealed;
+  const rated = stats && !sealed && stats.totalRatings > 0;
   // Members see what everyone thought after they've rated, so the crowd
   // doesn't nudge their own score. Visitors who can't rate see it straight away.
-  const reveal = rated && (mine || !signedIn);
+  const reveal = (rated || (stats && stats.moodLine)) && (mine || !signedIn);
+  const nominate = signedIn && mine >= 8 ? nominatable(video) : null;
 
   let heading = 'How was it?';
   if (prompt) heading = 'That’s the end. How was it?';
@@ -174,6 +203,7 @@ export default function Watch() {
 
   let hint = null;
   if (!signedIn) hint = 'Sign in to rate it.';
+  else if (!mine && sealed) hint = 'Your rating is your vote.';
   else if (!mine) hint = rated ? 'Rate it to see what everyone else thought.' : 'No one here has rated it yet.';
 
   return (
@@ -199,6 +229,15 @@ export default function Watch() {
             <h1 className="h1">{title}</h1>
             {metaLine && <p className="meta">{metaLine}</p>}
             {why && <p className="watch__why">{why}</p>}
+            {sealed && (
+              <p className="watch__poll">
+                Nominated for <em>{sealed.category}</em> in{' '}
+                <Link className="link" href={`/polls/${sealed.poll}`}>
+                  {pollName(BRAND.name)} {sealed.year}
+                </Link>
+                .
+              </p>
+            )}
           </div>
 
           <aside className="watch__aside">
@@ -206,25 +245,65 @@ export default function Watch() {
               <p className="h3">{heading}</p>
               <RatingStrip value={mine} onChange={onRate} size="lg" label={`Rate ${title}`} />
               {hint && <p className="note">{hint}</p>}
-              {mine && (
-                <div className="panel__actions">
-                  {signedIn && favourite !== null && (
-                    <button type="button" className="textbtn" onClick={toggleFavourite} aria-pressed={favourite}>
-                      {favourite ? 'In your favourites' : 'Add to favourites'}
-                    </button>
-                  )}
+              <div className="panel__actions">
+                {!mine && <SaveButton video={payload} source="watch" label="Save for later" />}
+                <button type="button" className="textbtn" onClick={share}>
+                  Share
+                </button>
+                {mine && signedIn && favourite !== null && (
+                  <button type="button" className="textbtn" onClick={toggleFavourite} aria-pressed={favourite}>
+                    {favourite ? 'In your favourites' : 'Add to favourites'}
+                  </button>
+                )}
+                {mine && (
                   <button type="button" className="textbtn textbtn--danger" onClick={onRemove}>
                     Remove rating
                   </button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
+
+            {nominate && (
+              <Link href={`/polls/${nominate.slug}?nominate=${id}`} className="next next--poll">
+                <span className="meta">
+                  {pollName(BRAND.name)} · nominations close {pollDay(nominate.votingAt, { lastDay: true })}
+                </span>
+                <span className="next__title">You loved it. Nominate it</span>
+              </Link>
+            )}
+
+            {sealed && mine && (
+              <div className="panel">
+                <p className="note">
+                  Members’ scores for nominees stay sealed until the results on {pollDay(sealed.until)}, so nobody
+                  votes with the crowd.
+                </p>
+              </div>
+            )}
 
             {reveal && (
               <div className="panel">
-                <Score value={stats.averageRating} size="sm" caption={`from ${plural(stats.totalRatings, 'rating')} here`} />
-                <Histogram distribution={stats.ratingDistribution} mine={mine} />
+                {rated && (
+                  <>
+                    <Score value={stats.averageRating} size="sm" caption={`from ${plural(stats.totalRatings, 'rating')} here`} />
+                    <Histogram distribution={stats.ratingDistribution} mine={mine} />
+                  </>
+                )}
+                {stats.moodLine && (
+                  <p className="mood-line">
+                    {stats.moodLine}
+                    <span className="meta"> · members’ moods</span>
+                  </p>
+                )}
               </div>
+            )}
+
+            {mine && signedIn && stats && (
+              <MoodTap
+                videoId={id}
+                initial={stats.myMoods || []}
+                onSaved={(body) => setStats((s) => ({ ...s, moods: body.moods, moodLine: body.moodLine, myMoods: body.myMoods }))}
+              />
             )}
 
             {next && (

@@ -19,7 +19,7 @@ The only way to raise either bucket is the **YouTube API Services audit and quot
 
 | Call | Where | Parts | Cost |
 | --- | --- | --- | --- |
-| `videos.list` | `pages/api/video-details.js` (watch page), `pages/api/cron/refresh-videos.ts` (daily refresh) | `snippet`, `contentDetails`, `status` | 1 unit per 50 ids |
+| `videos.list` | `pages/api/video-details.js` (watch, share and poll pages), `lib/videos.ts` `ensureVideo` (the first time a video is rated, saved, favourited or nominated), `pages/api/cron/refresh-videos.ts` (daily refresh) | `snippet`, `contentDetails`, `status` | 1 unit per 50 ids |
 | `search.list` | `pages/api/youtube/search.ts` | `snippet` | 1 search call |
 
 We never request `statistics`, never use OAuth scopes for YouTube, and never read anyone's YouTube account. Sign-in is Google with `openid email profile` only.
@@ -33,8 +33,9 @@ We never request `statistics`, never use OAuth scopes for YouTube, and never rea
   - videos already rated here are always shown first, at no cost;
   - pasting a YouTube link opens the video without any search.
 - **Video details**:
-  - one batched call per page view;
-  - limited to 60 per minute per IP;
+  - one batched call per page view, and only for signed-in members (visitors get what we hold);
+  - limited to 60 per minute per member or IP;
+  - every `videos.list` call made for a member (a page view, or the first rating, save, favourite or nomination of a video we don't hold) spends one of their daily lookups: 400 per member and 8,000 site-wide by default (`YOUTUBE_LOOKUPS_PER_MEMBER`, `YOUTUBE_LOOKUPS_DAILY`), counted atomically in `UsageCounter`;
   - Takeout imports are parsed in the browser and make no API calls.
 
 ## Compliance map
@@ -46,12 +47,12 @@ We never request `statistics`, never use OAuth scopes for YouTube, and never rea
 | Link to the YouTube Terms of Service; users agree to be bound by them | `/terms`, plus the consent line under every sign-in button (`Consent` in `components/Layout.js`) |
 | Privacy policy: shown prominently, says we use YouTube API Services, links to the Google Privacy Policy, explains collection, sharing, cookies and contact | `/privacy`, linked in the footer of every page |
 | Users agree to the privacy policy before use | Consent line under the sign-in buttons |
-| Stored API data is refreshed or deleted within 30 days | Daily cron `pages/api/cron/refresh-videos.ts` (refreshes after 25 days, strips data from removed videos); each watch-page lookup also counts as a refresh; search cache kept for 1 day; the feed reads titles from the refreshed `Video` table |
-| No derived metrics from API data | No views or likes are fetched, stored or shown. All scores come from members' 1–10 ratings and are labelled "from N ratings here" |
+| Stored API data is refreshed or deleted within 30 days | Daily cron `pages/api/cron/refresh-videos.ts` (refreshes after 25 days, strips data from removed videos, deletes videos nothing refers to any more); each watch-page lookup also counts as a refresh; search cache kept for 1 day. Saved lists, moods, poll entries, nominations and poll results store only video ids: titles, lengths and dates are always read from the refreshed `Video` table |
+| No derived metrics from API data | No views or likes are fetched, stored or shown. All scores come from members' 1–10 ratings and are labelled "from N ratings here". Poll results rank members' counted ratings only, and say so. Length and publish date are used only to filter (Saved's length filter, the poll's eligibility), never to score |
 | Our own metrics are disclosed as ours | `/how-it-works` and `/terms`: "Every score … comes from members' ratings" |
 | Embedded player: at least 200×200, unmodified, no overlays, Referer sent | `components/Player.js` (IFrame API, full-width 16:9, privacy-enhanced host, no overlays); `Referrer-Policy: strict-origin-when-cross-origin` in `vercel.json` |
-| No incentives for watching, liking or subscribing | No streaks, badges or rewards for watching. Keep it that way (also any future leaderboards: reward taste, not volume) |
-| Users can delete their data | Settings → Delete everything (deletes the account, ratings, follows, favourites, activity) |
+| No incentives for watching, liking or subscribing | No streaks, badges or rewards for watching. The poll asks members to rate only what they've watched and gives nothing for voting. Keep it that way (also any future leaderboards: reward taste, not volume) |
+| Users can delete their data | Settings → Delete everything (deletes the account, ratings, saves, moods, nominations, follows, favourites, activity) |
 
 ## Before you apply
 
@@ -79,7 +80,7 @@ We never request `statistics`, never use OAuth scopes for YouTube, and never rea
 > - videos.list (snippet, contentDetails, status): to show a video's title, channel, length and category on its page, and to check that it can be embedded.
 > - search.list (snippet): when a member searches for a video to rate.
 >
-> We store the video ID, title, channel name, thumbnail URL and category alongside members' ratings. We refresh them at least every 25 days, and we strip YouTube data from videos that are no longer available. Search results are cached for 24 hours.
+> We store the video ID, title, channel name, thumbnail URL, category, length and publish date for videos members have rated, saved or nominated. We refresh them at least every 25 days, strip YouTube data from videos that are no longer available, and delete videos nobody refers to any more. Search results are cached for 24 hours. Members can save videos to watch later and filter that list by length; once a year they nominate and rate videos in a members' poll, ranked by their own ratings.
 >
 > We don't request statistics, don't build metrics from YouTube data, and don't access members' YouTube accounts. Every score shown comes from members' own ratings and is labelled that way. Users agree to the YouTube Terms of Service when they sign in. Our privacy policy is at [domain]/privacy and our terms are at [domain]/terms.
 

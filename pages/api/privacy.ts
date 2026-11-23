@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { prisma } from '../../lib/prisma'
 import { getUser } from '../../lib/auth'
+import { enforceRateLimit } from '../../lib/rateLimit'
 
 const FIELDS = ['discoverable', 'publicProfile', 'showActivity', 'allowRecommendations'] as const
 
@@ -22,6 +23,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (req.method === 'PUT' || req.method === 'PATCH') {
+    if (!(await enforceRateLimit(req, res, { id: `privacy:${me.id}`, limit: 30, windowMs: 60_000 }))) return
+
     const data: Record<string, boolean> = {}
     for (const f of FIELDS) {
       if (typeof req.body?.[f] === 'boolean') data[f] = req.body[f]

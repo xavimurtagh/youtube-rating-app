@@ -30,7 +30,9 @@ against them.
    gradients, no blur, no floating cards. Corners are 2px at most (avatars are
    the only circles).
 4. **No emoji and no icon packs.** Text glyphs (→ ↗ ↓ ×) only, sparingly. The
-   one drawn mark is the half-filled circle on the Lights toggle.
+   drawn marks are the half-filled circle on the Lights toggle and the
+   sprocket: ten in the rating strip, one on its own for Save and for a
+   nomination's place on the ballot (hollow, then filled).
 5. **One big thing per screen.** A headline, a feature, a title — then quieter
    material. Today is: greeting, one feature, a row of four, friends, an end.
 6. **Every recommendation shows its reason**, in italic serif: one short
@@ -86,6 +88,23 @@ width `--measure` 37rem.
 - **Stills** — 16:9, a hairline frame, colour slightly calmed until hover, so
   loud thumbnails sit quietly in the page.
 - **The dateline** — mono, uppercase: FRIDAY 6 NOVEMBER 2026.
+- **The single sprocket** — Save is one perforation that fills when you keep
+  the video (with a small punch). The same mark says whether a nomination is
+  on the ballot.
+- **The question is the control** — "Got *20* minutes?": the number is the
+  select, set in the headline itself. A mood filter extends the question
+  ("…and want something calming?").
+- **The reel** — your Saved list as a strip of film, one frame per video, as
+  wide as it is long, with hour marks. Filters dim frames; the pick is amber.
+- **Perforations for what's to come** — the poll's phase line: dotted (like
+  film perforations) for future phases, solid ink for now, an amber tick at
+  today. An empty Saved list is a strip of blank stock.
+- **The poster numeral** — the poll's year, huge, in a hairline outline behind
+  the headline ('26), like a festival poster. One per page, never filled.
+- **Developing stills** — a still that arrives as the answer to something (a
+  pick, a nomination, a winner) comes up like a print in the tray.
+- **Chips** — filters and choices are 2px-cornered hairline rectangles that
+  invert (ink, paper text) when pressed. Never pills.
 
 ## Review loop
 

@@ -24,6 +24,17 @@ export const REFRESH_AFTER_DAYS = 25
 /** YouTube searches one member may trigger per Pacific day (cache hits are free). */
 export const SEARCH_PER_MEMBER_DAILY = Number(process.env.YOUTUBE_SEARCH_PER_MEMBER || 15)
 
+/**
+ * videos.list calls one member may cause per Pacific day, by rating, saving or
+ * opening videos we don't hold yet. Each call is 1 unit of the general bucket
+ * (10,000 a day). Without this, a signed-in script could spend the whole day's
+ * quota in a few hours, one unknown id at a time.
+ */
+export const LOOKUPS_PER_MEMBER_DAILY = Number(process.env.YOUTUBE_LOOKUPS_PER_MEMBER || 400)
+
+/** videos.list calls allowed per Pacific day across everyone, leaving room for the daily refresh. */
+export const LOOKUPS_DAILY = Number(process.env.YOUTUBE_LOOKUPS_DAILY || 8000)
+
 /** One cache key per meaningfully different query. */
 export function normaliseQuery(q: string): string {
   return q.normalize('NFKC').trim().toLowerCase().replace(/\s+/g, ' ').slice(0, 120)

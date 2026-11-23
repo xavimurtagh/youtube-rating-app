@@ -1,15 +1,19 @@
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { signIn, useSession } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import { useTheme } from 'next-themes';
 import Avatar from './Avatar';
+import { useSignIn } from './Human';
 import { BRAND } from '../lib/brand';
+import { currentPoll } from '../lib/polls';
 
 const NAV = [
   { href: '/', label: 'Today' },
-  { href: '/search', label: 'Search' },
+  { href: '/saved', label: 'Saved' },
   { href: '/diary', label: 'Diary' },
   { href: '/people', label: 'People' },
+  { href: '/search', label: 'Search' },
 ];
 
 /**
@@ -33,11 +37,28 @@ export function LightsToggle() {
   );
 }
 
+/** The poll, while there is one, joins the masthead (decided after hydration: it depends on the date). */
+function usePollNav() {
+  const [poll, setPoll] = useState(null);
+  useEffect(() => {
+    const p = currentPoll();
+    setPoll(p ? { href: `/polls/${p.slug}`, label: 'Poll' } : null);
+  }, []);
+  return poll;
+}
+
 export default function Layout({ children }) {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const signIn = useSignIn();
+  const poll = usePollNav();
+  const items = poll ? [...NAV.slice(0, 4), poll, ...NAV.slice(4)] : NAV;
 
-  const isActive = (href) => (href === '/' ? router.pathname === '/' : router.pathname.startsWith(href));
+  const isActive = (href) => {
+    if (href === '/') return router.pathname === '/';
+    if (href.startsWith('/polls')) return router.pathname.startsWith('/polls');
+    return router.pathname.startsWith(href);
+  };
 
   return (
     <>
@@ -49,7 +70,7 @@ export default function Layout({ children }) {
 
           {session && (
             <nav className="nav" aria-label="Main">
-              {NAV.map((item) => (
+              {items.map((item) => (
                 <Link key={item.href} href={item.href} aria-current={isActive(item.href) ? 'page' : undefined}>
                   {item.label}
                 </Link>
@@ -65,7 +86,7 @@ export default function Layout({ children }) {
               </Link>
             )}
             {status === 'unauthenticated' && (
-              <button type="button" className="btn btn--small btn--ghost" onClick={() => signIn('google')}>
+              <button type="button" className="btn btn--small btn--ghost" onClick={() => signIn()}>
                 Sign in
               </button>
             )}
@@ -83,6 +104,7 @@ export default function Layout({ children }) {
             {session && <Link href="/settings">Settings</Link>}
             <Link href="/privacy">Privacy</Link>
             <Link href="/terms">Terms</Link>
+            <Link href="/security">Security</Link>
             <a href={BRAND.supportUrl} rel="noopener noreferrer" target="_blank">
               Support the project
             </a>
@@ -109,13 +131,14 @@ export function Consent() {
 
 /** Shown in place of a signed-in page when nobody is signed in. */
 export function SignInPrompt({ title, body }) {
+  const signIn = useSignIn();
   return (
     <div className="page">
       <div className="empty" style={{ paddingTop: 'var(--s-9)' }}>
         <h1 className="h1">{title}</h1>
         {body && <p className="lede">{body}</p>}
         <div>
-          <button type="button" className="btn" onClick={() => signIn('google')}>
+          <button type="button" className="btn" onClick={() => signIn()}>
             Continue with Google
           </button>
         </div>

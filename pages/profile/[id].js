@@ -45,6 +45,7 @@ export default function Profile() {
   const [profile, setProfile] = useState(null);
   const [error, setError] = useState(null);
   const [following, setFollowing] = useState(false);
+  const [followedAtLoad, setFollowedAtLoad] = useState(false);
 
   useEffect(() => {
     if (!id || status !== 'authenticated') return;
@@ -54,7 +55,8 @@ export default function Profile() {
       .getProfile(id)
       .then((p) => {
         setProfile(p);
-        setFollowing((p.followers || []).some((f) => f.followerId === p.viewerId));
+        setFollowing(!!p.isFollowing);
+        setFollowedAtLoad(!!p.isFollowing);
       })
       .catch(() => setError('We couldn’t find that profile.'));
   }, [id, status]);
@@ -97,6 +99,9 @@ export default function Profile() {
   };
 
   const favourites = (profile.favourites || []).slice(0, 4);
+  const bothSaved = (profile.bothSaved || []).slice(0, 4);
+  const followerCount = (profile.followerCount || 0) + (following ? 1 : 0) - (followedAtLoad ? 1 : 0);
+  const firstName = profile.name.split(' ')[0];
 
   return (
     <>
@@ -120,10 +125,11 @@ export default function Profile() {
                   </span>
                 )}
                 <span>
-                  <b>{(profile.following || []).length}</b>following
+                  <b>{profile.followingCount || 0}</b>following
                 </span>
                 <span>
-                  <b>{(profile.followers || []).length}</b>followers
+                  <b>{followerCount}</b>
+                  {followerCount === 1 ? 'follower' : 'followers'}
                 </span>
               </p>
             )}
@@ -150,7 +156,7 @@ export default function Profile() {
             {match && (
               <section className="section">
                 <div className="match">
-                  <span className="label">You and {profile.name.split(' ')[0]}</span>
+                  <span className="label">You and {firstName}</span>
                   {match.percent != null ? (
                     <>
                       <p className="h2">
@@ -165,6 +171,30 @@ export default function Profile() {
                         : `You’ve rated ${spelled(match.common)} of the same videos. A few more and we can compare your taste.`}
                     </p>
                   )}
+                </div>
+              </section>
+            )}
+
+            {bothSaved.length > 0 && (
+              <section className="section">
+                <div className="section__head">
+                  <h2 className="h2">
+                    <em>{spelled((profile.bothSaved || []).length, { capital: true })}</em> you both want to watch
+                  </h2>
+                  <Link href="/saved" className="arrow-link">
+                    Your Saved <span aria-hidden="true">→</span>
+                  </Link>
+                </div>
+                <div className="favourites">
+                  {bothSaved.map((v) => (
+                    <Link key={v.id} href={`/watch/${v.id}`} className="entry">
+                      <Still id={v.id} title={v.title} />
+                      <span className="entry__title" style={{ fontSize: '1.02rem' }}>
+                        {v.title}
+                      </span>
+                      <span className="entry__by">{v.channel}</span>
+                    </Link>
+                  ))}
                 </div>
               </section>
             )}

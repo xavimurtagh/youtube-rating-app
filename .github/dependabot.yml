@@ -1,0 +1,18 @@
+# Weekly pull requests for outdated dependencies and GitHub Actions.
+# Security updates also need "Dependabot alerts" and "Dependabot security
+# updates" turned on in the repository's settings (Code security).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

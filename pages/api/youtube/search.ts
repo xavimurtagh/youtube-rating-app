@@ -29,7 +29,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const me = await getUser(req, res)
   if (!me) return res.status(401).json({ error: 'Sign in to search' })
 
-  if (!enforceRateLimit(req, res, { id: `yt-search:${me.id}`, limit: 30, windowMs: 60 * 60 * 1000 })) return
+  if (!(await enforceRateLimit(req, res, { id: `yt-search:${me.id}`, limit: 30, windowMs: 60 * 60 * 1000 }))) return
 
   try {
     const local = await prisma.video.findMany({

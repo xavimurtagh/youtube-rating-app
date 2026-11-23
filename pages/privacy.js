@@ -8,19 +8,22 @@ export default function Privacy() {
   return (
     <LegalPage
       title="Privacy"
-      updated="10 November 2026"
+      updated="22 November 2026"
       intro={`What ${n} keeps, why, and how to remove it. In short: we keep what you choose to add, we never see your password, your imported watch history stays in your browser, and you can delete everything at any time.`}
     >
       <section>
         <h2 className="h3">What we collect</h2>
         <ul>
           <li>
-            <strong>When you sign in with Google:</strong> your name, email address and profile picture. We never see
-            your Google password, and we don’t ask for access to your YouTube account.
+            <strong>When you sign in with Google:</strong> your name, email address, profile picture and Google’s id
+            for your account. Your account here is tied to that id rather than to your email address, so if an
+            address ever changes hands, the new owner can’t get into your account. We never see your Google password,
+            and we don’t ask for access to your YouTube account.
           </li>
           <li>
-            <strong>What you do here:</strong> your ratings, favourites, the people you follow, your bio if you write
-            one, and your privacy settings.
+            <strong>What you do here:</strong> your ratings, favourites, the videos you save for later, the moods you
+            tap after rating, your poll nominations, the people you follow, your bio if you write one, and your
+            privacy settings.
           </li>
           <li>
             <strong>Only in your browser:</strong> if you import your watch history from Google Takeout, the file is
@@ -28,8 +31,15 @@ export default function Privacy() {
             those videos, that rating is saved to your account like any other.
           </li>
           <li>
-            <strong>Basic logs:</strong> our hosting provider keeps short-lived server logs, such as IP addresses, to
-            run the service and prevent abuse.
+            <strong>Basic logs and limits:</strong> our hosting provider keeps short-lived server logs, such as IP
+            addresses, to run the service and prevent abuse. To stop anyone flooding the site we also keep
+            short-lived counters (for example, how many requests came from one address in the last minute); the
+            names of those counters are scrambled, so they don’t contain your address or account.
+          </li>
+          <li>
+            <strong>“Are you a person?” checks:</strong> when you create an account, or rate a lot of videos very
+            quickly, Cloudflare Turnstile may check that you’re not an automated script. Cloudflare sees technical
+            details such as your IP address and browser to do this, as described in Cloudflare’s privacy policy.
           </li>
         </ul>
       </section>
@@ -45,7 +55,15 @@ export default function Privacy() {
             “someone with similar taste”, without your score. Turn recommendations off in Settings and your ratings
             are left out.
           </li>
-          <li>To show people who follow you what you’ve rated, if Show activity is on and your profile is public.</li>
+          <li>
+            To show people who follow you what you’ve rated highly and what you’ve saved (“Sam saved this too”), if
+            Show activity is on and your profile is public.
+          </li>
+          <li>
+            Moods you tap are shown only as part of a crowd (“Mostly calming”), once at least three people agree, and
+            never with your name. Poll nominations are counted, never shown with names, and poll votes are your
+            ordinary ratings.
+          </li>
           <li>
             We don’t sell your data or use it for advertising. Videos play in YouTube’s player, which may show
             YouTube’s own ads.
@@ -88,16 +106,18 @@ export default function Privacy() {
       <section>
         <h2 className="h3">Who else handles it</h2>
         <p>
-          Our hosting and database providers store your data for us. Google handles sign-in, and YouTube serves the
-          videos and their details. Nobody else receives it.
+          Our hosting and database providers store your data for us, and a cache provider keeps the short-lived
+          counters described above. Google handles sign-in, YouTube serves the videos and their details, and
+          Cloudflare runs the “are you a person?” check. Nobody else receives it.
         </p>
       </section>
 
       <section>
         <h2 className="h3">How long we keep it</h2>
         <p>
-          Your account and ratings stay until you delete them. Video details from YouTube are refreshed or deleted
-          within 30 days, as YouTube’s rules require, and search results are kept for a day.
+          Your account, ratings, saves and moods stay until you delete them. A video leaves your Saved list when you
+          rate it. Video details from YouTube are refreshed or deleted within 30 days, as YouTube’s rules require,
+          and search results are kept for a day. Limit counters last minutes to a day.
         </p>
       </section>
 
@@ -106,8 +126,8 @@ export default function Privacy() {
         <p>
           In <Link className="link" href="/settings">Settings</Link> you can hide your profile, stop appearing in
           search, hide your activity, turn off personalised recommendations, download your data, and delete your
-          account. Deleting removes your account, ratings, favourites, follows and activity from our database
-          straight away.
+          account. Deleting removes your account, ratings, favourites, saves, moods, poll nominations, follows and
+          activity from our database straight away.
         </p>
       </section>
 

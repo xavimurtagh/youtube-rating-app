@@ -7,6 +7,8 @@ import RatingStrip, { Meter } from './RatingStrip';
 import Still from './Still';
 import { dateline, describeReason, plural, spelled } from '../lib/format';
 import { rememberProgramme, rememberVideos } from '../lib/videoCache';
+import { currentPoll, phaseOf, pollDay, pollName } from '../lib/polls';
+import { BRAND } from '../lib/brand';
 
 const UNLOCK = 10;
 const LOVED = 8;
@@ -131,6 +133,36 @@ function Friends({ items }) {
           .
         </p>
       )}
+    </section>
+  );
+}
+
+/** One line about the poll, while there is one: a programme note, not a banner. */
+function PollNote() {
+  const [note, setNote] = useState(null);
+  useEffect(() => {
+    const poll = currentPoll();
+    if (!poll) return;
+    const phase = phaseOf(poll);
+    const line = {
+      upcoming: `Nominations open on ${pollDay(poll.opensAt)}. Start thinking about your favourites of ${poll.year}.`,
+      nominations: `Nominations are open until ${pollDay(poll.votingAt, { lastDay: true })}. What were your favourites of ${poll.year}?`,
+      voting: `Voting is open until ${pollDay(poll.closesAt, { lastDay: true })}. Rate the nominees you’ve seen.`,
+      counting: `Voting has closed. The results are out on ${pollDay(poll.publishedAt)}.`,
+      results: `The results are in: the best of ${poll.year}, as members rated it.`,
+    }[phase];
+    const action = { upcoming: 'See the categories', nominations: 'Nominate', voting: 'Your ballot', counting: 'The ballot', results: 'The results' }[phase];
+    const href = phase === 'results' ? `/polls/${poll.slug}/results` : `/polls/${poll.slug}`;
+    setNote({ line, action, href, name: `${pollName(BRAND.name)} ${poll.year}` });
+  }, []);
+  if (!note) return null;
+  return (
+    <section className="section poll-line">
+      <p className="dateline">{note.name}</p>
+      <p className="poll-line__text">{note.line}</p>
+      <Link href={note.href} className="arrow-link">
+        {note.action} <span aria-hidden="true">→</span>
+      </Link>
     </section>
   );
 }
@@ -292,6 +324,7 @@ export default function Today() {
         )}
 
         <Picks title="Or start with these" recs={communityRecs} />
+        <PollNote />
         {activity && <Friends items={friends} />}
       </div>
     );
@@ -350,6 +383,8 @@ export default function Today() {
       )}
 
       {fallback && <Picks title="Popular here" recs={communityRecs} />}
+
+      <PollNote />
 
       {activity && <Friends items={friends} />}
 

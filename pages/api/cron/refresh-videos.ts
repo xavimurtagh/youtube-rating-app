@@ -2,6 +2,8 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import { prisma } from '../../../lib/prisma'
 import { REFRESH_AFTER_DAYS } from '../../../lib/quota'
 import { getVideosDetails } from '../../../utils/youtube'
+import { detailsData } from '../../../lib/videos'
+import { settlePolls } from '../../../lib/pollStore'
 
 // Vercel runs this once a day (see vercel.json) with
 // `Authorization: Bearer $CRON_SECRET`.
@@ -13,8 +15,10 @@ const PER_RUN = Number(process.env.REFRESH_VIDEOS_PER_RUN || 1000)
 /**
  * Keeps stored YouTube data within the 30-day limit in YouTube's developer
  * policies: re-fetches videos last refreshed more than REFRESH_AFTER_DAYS ago,
- * strips YouTube data from videos that have been removed, and clears old
- * search results. 1,000 videos cost 20 quota units.
+ * strips YouTube data from videos that have been removed, deletes videos
+ * nothing here refers to any more, and clears old search results. 1,000
+ * videos cost 20 quota units. It also decides poll ballots and freezes poll
+ * results when they're due.
  */
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const secret = process.env.CRON_SECRET
@@ -69,18 +73,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const v = found.get(id)
         if (v) {
           refreshed++
-          return prisma.video.update({
-            where: { id },
-            data: {
-              title: v.title,
-              channel: v.channel,
-              thumbnail: v.thumbnail || null,
-              ...(v.category ? { category: v.category } : {}),
-              duration: v.duration || null,
-              publishedAt: v.publishedAt ? new Date(v.publishedAt) : null,
-              refreshedAt: now,
-            },
-          })
+          return prisma.video.update({ where: { id }, data: detailsData(v, now) })
         }
         unavailable++
         return prisma.video.update({
@@ -89,6 +82,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         })
       })
     )
+  }
+
+  // A video row nobody has rated, saved, favourited, tagged or nominated is
+  // YouTube data we no longer need: delete it rather than refresh it. Rows
+  // touched in the last day are left, so one being added right now is safe.
+  const { count: orphansDeleted } = await prisma.video.deleteMany({
+    where: {
+      refreshedAt: { lt: new Date(Date.now() - 24 * 3600 * 1000) },
+      ratings: { none: {} },
+      saved: { none: {} },
+      favourites: { none: {} },
+      moods: { none: {} },
+      pollEntries: { none: {} },
+    },
+  })
+
+  let pollsSettled: string[] = []
+  try {
+    pollsSettled = await settlePolls()
+  } catch (error: any) {
+    console.error('Settling polls failed:', error?.message || error)
   }
 
   const twoDaysAgo = new Date(Date.now() - 2 * 24 * 3600 * 1000)
@@ -103,5 +117,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   return res
     .status(200)
-    .json({ checked: stale.length, refreshed, unavailable, failedBatches, searchesCleared, countersCleared, activityCleaned, stoppedEarly })
+    .json({
+      checked: stale.length,
+      refreshed,
+      unavailable,
+      failedBatches,
+      orphansDeleted,
+      pollsSettled,
+      searchesCleared,
+      countersCleared,
+      activityCleaned,
+      stoppedEarly,
+    })
 }

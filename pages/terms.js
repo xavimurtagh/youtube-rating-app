@@ -8,7 +8,7 @@ export default function Terms() {
   return (
     <LegalPage
       title="Terms"
-      updated="9 November 2026"
+      updated="22 November 2026"
       intro={`The rules for using ${n}. They’re short, and written to be read.`}
     >
       <section>
@@ -43,20 +43,26 @@ export default function Terms() {
       <section>
         <h2 className="h3">What you add</h2>
         <p>
-          Your ratings, favourites and bio are yours. You let us store and show them as your privacy settings allow,
-          including as the reason for someone else’s pick when personalised recommendations are on. You can delete
-          them at any time.
+          Your ratings, favourites, saves, moods, nominations and bio are yours. You let us store and show them as your
+          privacy settings allow, including as the reason for someone else’s pick when personalised recommendations
+          are on, and counted in polls. You can delete them at any time.
         </p>
       </section>
 
       <section>
         <h2 className="h3">Fair use</h2>
         <ul>
-          <li>Rate honestly. Don’t use extra accounts, scripts or swaps to push a video’s score up or down.</li>
+          <li>
+            Rate honestly, and only what you’ve watched. Don’t use extra accounts, scripts or swaps to push a video’s
+            score or a poll’s result up or down.
+          </li>
           <li>Don’t harass people, impersonate anyone, or put anything unlawful in your bio.</li>
           <li>Don’t scrape {n}, overload it, or try to get around its limits or security.</li>
         </ul>
-        <p>We may remove ratings or close accounts that break these rules.</p>
+        <p>
+          We may remove ratings, take poll entries off a ballot, leave ratings out of poll results, or close accounts
+          that break these rules.
+        </p>
       </section>
 
       <section>

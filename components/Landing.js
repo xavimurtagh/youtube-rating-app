@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { signIn } from 'next-auth/react';
 import RatingStrip from './RatingStrip';
+import { useSignIn } from './Human';
 import Avatar from './Avatar';
 import { withArticle } from '../lib/format';
 import { Consent } from './Layout';
@@ -8,7 +8,8 @@ import { Consent } from './Layout';
 const FRIENDS = ['Sam', 'Priya', 'Jo'];
 
 export default function Landing() {
-  const start = () => signIn('google');
+  const signIn = useSignIn();
+  const start = () => signIn();
   const [demo, setDemo] = useState(null);
 
   return (

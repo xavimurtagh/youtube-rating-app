@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Still from './Still';
 import Avatar from './Avatar';
+import SaveButton from './SaveButton';
 import { describeReason, withArticle } from '../lib/format';
 import { rememberVideos } from '../lib/videoCache';
 
@@ -22,6 +23,12 @@ export function FeatureEntry({ rec }) {
         </Link>
         <p className="entry__by">{rec.video.channel}</p>
         <p className="entry__why">{describeReason(rec)}</p>
+        <div className="feature__actions">
+          <Link href={href} onClick={() => remember(rec)} className="arrow-link">
+            Watch now <span aria-hidden="true">→</span>
+          </Link>
+          <SaveButton video={rec.video} source="card" label="Save for later" />
+        </div>
       </div>
     </article>
   );
@@ -38,7 +45,10 @@ export function CardEntry({ rec }) {
       <Link href={href} onClick={() => remember(rec)}>
         <h3 className="entry__title">{rec.video.title}</h3>
       </Link>
-      <p className="entry__by">{rec.video.channel}</p>
+      <p className="entry__by entry__by--split">
+        <span>{rec.video.channel}</span>
+        <SaveButton video={rec.video} source="card" />
+      </p>
       <p className="entry__why">{describeReason(rec, { short: true })}</p>
     </article>
   );
@@ -46,15 +56,23 @@ export function CardEntry({ rec }) {
 
 /** A compact pick, for the longer list behind "More picks". */
 export function RowEntry({ rec }) {
+  const href = `/watch/${rec.video.id}`;
   return (
-    <Link href={`/watch/${rec.video.id}`} className="row" onClick={() => remember(rec)}>
-      <Still id={rec.video.id} title={rec.video.title} size="sm" />
+    <div className="row row--link">
+      <Link href={href} onClick={() => remember(rec)} aria-label={rec.video.title}>
+        <Still id={rec.video.id} title={rec.video.title} size="sm" />
+      </Link>
       <span className="row__body">
-        <span className="row__title">{rec.video.title}</span>
+        <Link href={href} onClick={() => remember(rec)} className="row__title">
+          {rec.video.title}
+        </Link>
         <span className="row__sub">{rec.video.channel}</span>
         <span className="row__why">{describeReason(rec, { short: true })}</span>
       </span>
-    </Link>
+      <span className="row__end">
+        <SaveButton video={rec.video} source="card" />
+      </span>
+    </div>
   );
 }
 
@@ -75,6 +93,9 @@ export function FriendEntry({ item }) {
         <span>
           <strong>{item.name}</strong> gave it {withArticle(item.score)}
         </span>
+      </p>
+      <p className="entry__save">
+        <SaveButton video={item.video} source="card" />
       </p>
     </article>
   );
